@@ -44,6 +44,9 @@ function Show-Menu {
     Write-Host "  [1] 🔍  Benchmark completo (ver estado del sistema)" -ForegroundColor White
     Write-Host "  [Q] 🏥  Health Check rápido (resumen visual)" -ForegroundColor White
     Write-Host ""
+    Write-Host "  ─── 🧙 PRINCIPIANTE ───────────────────────────────────" -ForegroundColor Magenta
+    Write-Host "  [Z] 🧙  Wizard guiado (paso a paso, sin tecnicismos)" -ForegroundColor Magenta
+    Write-Host ""
     Write-Host "  ─── OPTIMIZACIÓN ──────────────────────────────────────" -ForegroundColor Gray
     Write-Host "  [2] 💾  Crear Rescue Point (respaldo antes de tocar)" -ForegroundColor Green
     Write-Host "  [3] 🗑️  Debloater (eliminar apps basura)" -ForegroundColor Yellow
@@ -78,6 +81,8 @@ function Show-Menu {
     Write-Host "  [M] 🔄  Revertir Network Optimizer" -ForegroundColor Cyan
     Write-Host ""
     Write-Host "  ─── EXTRAS ────────────────────────────────────────────" -ForegroundColor Gray
+    Write-Host "  [V] 🔧  Driver Updater (escanear drivers)" -ForegroundColor Cyan
+    Write-Host "  [Y] 📥  Actualizar MejoraNotebook desde GitHub" -ForegroundColor Cyan
     Write-Host "  [I] 📊  Generar reporte HTML" -ForegroundColor Cyan
     Write-Host "  [X] 📊  Reporte completo (benchmark + HTML + abrir)" -ForegroundColor Cyan
     Write-Host "  [K] ⏰  Optimización programada (benchmark semanal)" -ForegroundColor Cyan
@@ -254,6 +259,9 @@ do {
         }
         "N" { & "$ScriptsDir\network-optimizer.ps1" -Action optimize; pause }
         "M" { & "$ScriptsDir\network-optimizer.ps1" -Action revert; pause }
+        "V" { & "$ScriptsDir\driver-updater.ps1" -Action scan; pause }
+        "Y" { & "$ScriptsDir\updater.ps1" -Action update; pause }
+        "Z" { & "$ScriptsDir\wizard.ps1"; pause }
         "X" {
             Write-Header "📊 REPORTE COMPLETO"
             & "$ScriptsDir\benchmark.ps1" -Mode completo
