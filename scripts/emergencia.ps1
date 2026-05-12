@@ -25,110 +25,191 @@ if ($confirm -ne "SI") {
 
 Log "EMERGENCIA: Iniciando restauración total"
 
+$totalSteps = 10
+$completed = 0
+$errors = 0
+
 # 1. Plan de energía equilibrado
 Write-Step 1 "Restaurando plan equilibrado..."
-powercfg /setactive 381b4222-f694-41f0-9685-ff5bb260df2e 2>&1 | Out-Null
-Write-Success "Plan equilibrado activado"
+try {
+    $null = powercfg /setactive 381b4222-f694-41f0-9685-ff5bb260df2e 2>&1
+    # Validar
+    $activePlan = powercfg /getactivescheme 2>&1
+    if ($activePlan -match "381b4222") {
+        Write-Success "Plan equilibrado activado"
+        $completed++
+    } else {
+        Write-Warn "Plan equilibrado: no se pudo confirmar el cambio"
+        $errors++
+    }
+} catch {
+    Write-Error "Error al restaurar plan de energía: $_"
+    $errors++
+}
 
 # 2. Reactivar servicios
 Write-Step 2 "Reactivando servicios..."
-# Usar lista centralizada de config.ps1
-$servicesToRestore = ($Global:ServicesToManual | ForEach-Object { $_.Name }) + 
-                     ($Global:ServicesToDisable | ForEach-Object { $_.Name })
-
-# Servicios que siempre van a Manual (nunca Automatic)
-$manualServices = @("SysMain", "WSearch")
-
-$restored = 0
-foreach ($svcName in $servicesToRestore) {
-    try {
+try {
+    $servicesToRestore = ($Global:ServicesToManual | ForEach-Object { $_.Name }) + 
+                         ($Global:ServicesToDisable | ForEach-Object { $_.Name })
+    
+    # Servicios que siempre van a Manual (nunca Automatic)
+    $manualServices = @("SysMain", "WSearch")
+    
+    $restored = 0
+    $svcErrors = 0
+    foreach ($svcName in $servicesToRestore) {
         $targetStartType = if ($svcName -in $manualServices) { "Manual" } else { "Automatic" }
-        Set-Service -Name $svcName -StartupType $targetStartType -ErrorAction SilentlyContinue
-        Start-Service -Name $svcName -ErrorAction SilentlyContinue
-        $restored++
-    } catch {}
+        try {
+            Set-Service -Name $svcName -StartupType $targetStartType -ErrorAction Stop
+            Start-Service -Name $svcName -ErrorAction SilentlyContinue
+            $restored++
+        } catch {
+            $svcErrors++
+            Log "WARN: No se pudo restaurar servicio $svcName : $_"
+        }
+    }
+    Write-Success "$restored servicios reactivados"
+    if ($svcErrors -gt 0) { Write-Warn "$svcErrors servicios no se pudieron restaurar" }
+    $completed++
+} catch {
+    Write-Error "Error al reactivar servicios: $_"
+    $errors++
 }
-Write-Success "$restored servicios reactivados"
 
 # 3. Restaurar efectos visuales
 Write-Step 3 "Restaurando efectos visuales..."
-Set-ItemProperty "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\VisualEffects" `
-    -Name "VisualFXSetting" -Value 0 -ErrorAction SilentlyContinue
-Set-ItemProperty "HKCU:\Control Panel\Desktop" -Name "MenuShowDelay" -Value "400" -ErrorAction SilentlyContinue
-Set-ItemProperty "HKCU:\Control Panel\Desktop" -Name "DragFullWindows" -Value "1" -ErrorAction SilentlyContinue
-Set-ItemProperty "HKCU:\Software\Microsoft\Windows\CurrentVersion\Themes\Personalize" `
-    -Name "EnableTransparency" -Value 1 -ErrorAction SilentlyContinue
-Set-ItemProperty "HKCU:\Software\Microsoft\Windows\DWM" `
-    -Name "EnableAeroPeek" -Value 1 -ErrorAction SilentlyContinue
-Write-Success "Efectos visuales restaurados"
+try {
+    Set-RegProperty "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\VisualEffects" `
+        -Name "VisualFXSetting" -Value 0
+    Set-RegProperty "HKCU:\Control Panel\Desktop" -Name "MenuShowDelay" -Value "400"
+    Set-RegProperty "HKCU:\Control Panel\Desktop" -Name "DragFullWindows" -Value "1"
+    Set-RegProperty "HKCU:\Software\Microsoft\Windows\CurrentVersion\Themes\Personalize" `
+        -Name "EnableTransparency" -Value 1
+    Set-RegProperty "HKCU:\Software\Microsoft\Windows\DWM" `
+        -Name "EnableAeroPeek" -Value 1
+    Write-Success "Efectos visuales restaurados"
+    $completed++
+} catch {
+    Write-Error "Error al restaurar efectos visuales: $_"
+    $errors++
+}
 
 # 4. Reactivar background apps
 Write-Step 4 "Reactivando apps en segundo plano..."
-Remove-ItemProperty "HKCU:\Software\Microsoft\Windows\CurrentVersion\BackgroundAccessApplications" `
-    -Name "GlobalUserDisabled" -ErrorAction SilentlyContinue
-Write-Success "Background apps reactivadas"
+try {
+    Remove-ItemProperty "HKCU:\Software\Microsoft\Windows\CurrentVersion\BackgroundAccessApplications" `
+        -Name "GlobalUserDisabled" -ErrorAction SilentlyContinue
+    Write-Success "Background apps reactivadas"
+    $completed++
+} catch {
+    Write-Error "Error al reactivar background apps: $_"
+    $errors++
+}
 
 # 5. Reactivar telemetría
 Write-Step 5 "Reactivando telemetría (necesario para Windows Update)..."
-$regPath = "HKLM:\SOFTWARE\Policies\Microsoft\Windows\DataCollection"
-if (Test-Path $regPath) {
-    Remove-ItemProperty $regPath -Name "AllowTelemetry" -ErrorAction SilentlyContinue
+try {
+    $regPath = "HKLM:\SOFTWARE\Policies\Microsoft\Windows\DataCollection"
+    if (Test-Path $regPath) {
+        Remove-ItemProperty $regPath -Name "AllowTelemetry" -ErrorAction SilentlyContinue
+    }
+    $regPath2 = "HKLM:\SOFTWARE\Policies\Microsoft\Windows\System"
+    if (Test-Path $regPath2) {
+        Remove-ItemProperty $regPath2 -Name "EnableActivityFeed" -ErrorAction SilentlyContinue
+        Remove-ItemProperty $regPath2 -Name "PublishUserActivities" -ErrorAction SilentlyContinue
+    }
+    Write-Success "Telemetría reactivada"
+    $completed++
+} catch {
+    Write-Error "Error al reactivar telemetría: $_"
+    $errors++
 }
-$regPath2 = "HKLM:\SOFTWARE\Policies\Microsoft\Windows\System"
-if (Test-Path $regPath2) {
-    Remove-ItemProperty $regPath2 -Name "EnableActivityFeed" -ErrorAction SilentlyContinue
-    Remove-ItemProperty $regPath2 -Name "PublishUserActivities" -ErrorAction SilentlyContinue
-}
-Write-Success "Telemetría reactivada"
 
 # 6. Reactivar Windows Update
 Write-Step 6 "Reactivando Windows Update..."
-$wuPath = "HKLM:\SOFTWARE\Policies\Microsoft\Windows\WindowsUpdate\AU"
-if (Test-Path $wuPath) {
-    Remove-ItemProperty $wuPath -Name "NoAutoUpdate" -ErrorAction SilentlyContinue
+try {
+    $wuPath = "HKLM:\SOFTWARE\Policies\Microsoft\Windows\WindowsUpdate\AU"
+    if (Test-Path $wuPath) {
+        Remove-ItemProperty $wuPath -Name "NoAutoUpdate" -ErrorAction SilentlyContinue
+    }
+    Write-Success "Windows Update reactivado"
+    $completed++
+} catch {
+    Write-Error "Error al reactivar Windows Update: $_"
+    $errors++
 }
-Write-Success "Windows Update reactivado"
 
 # 7. Restaurar prioridades CPU
 Write-Step 7 "Restaurando prioridades CPU..."
-Set-ItemProperty "HKLM:\SYSTEM\CurrentControlSet\Control\PriorityControl" `
-    -Name "Win32PrioritySeparation" -Value 2 -ErrorAction SilentlyContinue
-Write-Success "Prioridades CPU restauradas"
+try {
+    Set-RegProperty "HKLM:\SYSTEM\CurrentControlSet\Control\PriorityControl" `
+        -Name "Win32PrioritySeparation" -Value 2
+    Write-Success "Prioridades CPU restauradas"
+    $completed++
+} catch {
+    Write-Error "Error al restaurar prioridades CPU: $_"
+    $errors++
+}
 
 # 8. Reactivar Superfetch (si no es SSD)
 Write-Step 8 "Verificando Superfetch..."
-$disk = Get-PhysicalDisk | Where-Object { $_.MediaType -eq "SSD" -or $_.MediaType -eq "NVMe" }
-if (!$disk) {
-    Set-Service "SysMain" -StartupType Automatic -ErrorAction SilentlyContinue
-    Start-Service "SysMain" -ErrorAction SilentlyContinue
-    Write-Success "Superfetch reactivado (HDD detectado)"
-} else {
-    Write-Info "SSD detectado. Superfetch se mantiene desactivado (recomendado)."
+try {
+    if (!$Global:IsSSD) {
+        Set-Service "SysMain" -StartupType Automatic -ErrorAction SilentlyContinue
+        Start-Service "SysMain" -ErrorAction SilentlyContinue
+        Write-Success "Superfetch reactivado (HDD detectado)"
+    } else {
+        Write-Info "SSD detectado. Superfetch se mantiene desactivado (recomendado)."
+    }
+    $completed++
+} catch {
+    Write-Error "Error al verificar Superfetch: $_"
+    $errors++
 }
 
 # 9. Reactivar tips
 Write-Step 9 "Reactivando tips de Windows..."
-$path = "HKCU:\Software\Microsoft\Windows\CurrentVersion\ContentDeliveryManager"
-Set-ItemProperty $path -Name "SoftLandingEnabled" -Value 1 -ErrorAction SilentlyContinue
-Set-ItemProperty $path -Name "SystemPaneSuggestionsEnabled" -Value 1 -ErrorAction SilentlyContinue
-Write-Success "Tips reactivados"
+try {
+    $path = "HKCU:\Software\Microsoft\Windows\CurrentVersion\ContentDeliveryManager"
+    Set-RegProperty $path -Name "SoftLandingEnabled" -Value 1
+    Set-RegProperty $path -Name "SystemPaneSuggestionsEnabled" -Value 1
+    Write-Success "Tips reactivados"
+    $completed++
+} catch {
+    Write-Error "Error al reactivar tips: $_"
+    $errors++
+}
 
 # 10. Eliminar estado turbo
 Write-Step 10 "Limpiando estado turbo..."
-Remove-Item (Join-Path $RescueDir "turbo_state.json") -Force -ErrorAction SilentlyContinue
-Write-Success "Estado turbo limpiado"
+try {
+    Remove-Item (Join-Path $RescueDir "turbo_state.json") -Force -ErrorAction SilentlyContinue
+    Write-Success "Estado turbo limpiado"
+    $completed++
+} catch {
+    Write-Error "Error al limpiar estado turbo: $_"
+    $errors++
+}
 
+# Resumen
 Write-Host ""
-Write-Header "✅ RESTAURACIÓN COMPLETADA"
-Write-Success "Sistema restaurado al estado original."
+if ($errors -eq 0) {
+    Write-Header "✅ RESTAURACIÓN COMPLETADA ($completed/$totalSteps)"
+    Write-Success "Sistema restaurado al estado original."
+} else {
+    Write-Header "⚠️ RESTAURACIÓN PARCIAL ($completed/$totalSteps, $errors errores)"
+    Write-Warn "Algunos pasos no se completaron. Revisá el log."
+}
 Write-Info "Se recomienda reiniciar para aplicar todos los cambios."
+Show-LogPath
 Write-Host ""
 Write-Host "  ¿Reiniciar ahora? [S/N]" -ForegroundColor Yellow
 $reboot = Read-Host "  Opción"
 if ($reboot -eq "S" -or $reboot -eq "s") {
-    Log "EMERGENCIA: Restauración completada, reiniciando..."
+    Log "EMERGENCIA: Restauración completada ($completed/$totalSteps), reiniciando..."
     Restart-Computer -Force
 } else {
-    Log "EMERGENCIA: Restauración completada, reinicio pendiente"
+    Log "EMERGENCIA: Restauración completada ($completed/$totalSteps), reinicio pendiente"
     Write-Info "Recordá reiniciar más tarde."
 }

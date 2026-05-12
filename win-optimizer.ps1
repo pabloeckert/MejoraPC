@@ -51,6 +51,10 @@ function Show-Menu {
     Write-Host "  [8] 🔄  Restaurar Rescue Point" -ForegroundColor Green
     Write-Host "  [9] 🚨  EMERGENCIA - Restaurar TODO" -ForegroundColor Red
     Write-Host ""
+    Write-Host "  ─── EXTRAS ────────────────────────────────────────────" -ForegroundColor Gray
+    Write-Host "  [D] 🧪  Toggle Dry-RUN $(if($Global:DryRun){'(ACTIVO ✅)'}else{'(off)'})" -ForegroundColor $(if($Global:DryRun){"Yellow"}else{"Gray"})
+    Write-Host "  [L] 📄  Ver log de esta sesión" -ForegroundColor Gray
+    Write-Host ""
     Write-Host "  [0] ❌  Salir" -ForegroundColor Gray
     Write-Host ""
 }
@@ -66,6 +70,22 @@ function Run-OptimizeAll {
     Write-Host ""
     Write-Warn "Se creará un Rescue Point antes de empezar."
     Write-Host ""
+    Write-Host "  [1] Ejecutar normalmente" -ForegroundColor Green
+    Write-Host "  [2] Ejecutar en modo DRY-RUN (simular sin aplicar)" -ForegroundColor Yellow
+    Write-Host "  [0] Cancelar" -ForegroundColor Red
+    Write-Host ""
+    $mode = Read-Host "  Opción"
+    
+    if ($mode -eq "0") {
+        Write-Info "Cancelado."
+        return
+    }
+    
+    $isDryRun = ($mode -eq "2")
+    if ($isDryRun) {
+        Set-DryRun $true
+    }
+    
     $confirm = Read-Host "  Escribí SI para confirmar"
     if ($confirm -ne "SI") {
         Write-Info "Cancelado."
@@ -122,6 +142,16 @@ do {
         "S" { & "$ScriptsDir\turbo-boost.ps1" -Action status; pause }
         "8" { & "$ScriptsDir\rescue.ps1" -Action restore; pause }
         "9" { & "$ScriptsDir\emergencia.ps1"; pause }
+        "D" { 
+            Set-DryRun (!$Global:DryRun)
+            if ($Global:DryRun) {
+                Write-Success "Dry-RUN activado — los scripts simularán sin aplicar cambios."
+            } else {
+                Write-Info "Dry-RUN desactivado — los scripts aplicarán cambios reales."
+            }
+            Start-Sleep -Seconds 2
+        }
+        "L" { Show-RecentLogs -Lines 30; pause }
         "0" { 
             Write-Host ""
             Write-Host "  ¡Chau! 👋" -ForegroundColor Cyan

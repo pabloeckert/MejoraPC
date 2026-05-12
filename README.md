@@ -47,6 +47,10 @@ Activar: opción `[T]` | Revertir: opción `[R]`
 - ✅ No toca Windows Defender, VBS, ni BitLocker
 - ✅ Emergencia restaura todo con un click
 - ✅ Todo es reversible
+- ✅ Modo DRY-RUN para simular sin aplicar cambios
+- ✅ Validación post-optimización (confirma que cada cambio se aplicó)
+- ✅ Auto-detección de SSD vs HDD (ajusta servicios automáticamente)
+- ✅ Logs detallados de cada operación
 
 ## 📖 Documentación
 

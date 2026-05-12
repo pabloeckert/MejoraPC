@@ -156,3 +156,110 @@ $Global:TurboProcesses = @(
     "TabTip", "tabtip32",
     "ctfmon"
 )
+
+# ============================================================
+# DRY-RUN MODE
+# ============================================================
+$Global:DryRun = $false
+
+function Set-DryRun([bool]$enabled) {
+    $Global:DryRun = $enabled
+    if ($enabled) {
+        Write-Warn "MODO DRY-RUN ACTIVADO — No se aplicarán cambios reales."
+        Write-Host ""
+    }
+}
+
+# Wrapper para registry: respeta dry-run
+function Set-RegProperty {
+    param($Path, $Name, $Value)
+    if ($Global:DryRun) {
+        Write-Info "[DRY-RUN] Set-ItemProperty $Path -Name $Name -Value $Value"
+        return
+    }
+    Set-ItemProperty $Path -Name $Name -Value $Value -ErrorAction SilentlyContinue
+}
+
+# Wrapper para servicios: respeta dry-run
+function Set-ServiceState {
+    param([string]$Name, [string]$StartupType, [bool]$Stop = $false)
+    if ($Global:DryRun) {
+        Write-Info "[DRY-RUN] Set-Service $Name -StartupType $StartupType$(if($Stop){' + Stop-Service'})"
+        return
+    }
+    if ($Stop) { Stop-Service -Name $Name -Force -ErrorAction SilentlyContinue }
+    Set-Service -Name $Name -StartupType $StartupType -ErrorAction SilentlyContinue
+}
+
+# ============================================================
+# AUTO-DETECT SSD vs HDD
+# ============================================================
+$Global:IsSSD = $false
+
+function Detect-DriveType {
+    try {
+        $disk = Get-PhysicalDisk | Where-Object { $_.MediaType -eq "SSD" -or $_.MediaType -eq "NVMe" }
+        $Global:IsSSD = [bool]$disk
+    } catch {
+        $Global:IsSSD = $false
+    }
+    return $Global:IsSSD
+}
+
+# Ejecutar detección al cargar
+Detect-DriveType | Out-Null
+
+# ============================================================
+# VALIDACIÓN POST-OPERACIÓN
+# ============================================================
+function Confirm-ServiceState {
+    param([string]$Name, [string]$ExpectedStartType, [string]$Desc = "")
+    $svc = Get-Service -Name $Name -ErrorAction SilentlyContinue
+    if (!$svc) {
+        Write-Info "Servicio $Name no encontrado (puede que no exista en este sistema)"
+        return $true
+    }
+    if ($svc.StartType -eq $ExpectedStartType) {
+        return $true
+    } else {
+        Write-Warn "Servicio $Name : esperado=$ExpectedStartType, actual=$($svc.StartType)"
+        return $false
+    }
+}
+
+function Confirm-RegistryValue {
+    param($Path, $Name, $ExpectedValue)
+    $actual = (Get-ItemProperty $Path -Name $Name -ErrorAction SilentlyContinue).$Name
+    if ($actual -eq $ExpectedValue) {
+        return $true
+    } else {
+        Write-Warn "Registro $Path\$Name : esperado=$ExpectedValue, actual=$actual"
+        return $false
+    }
+}
+
+# ============================================================
+# LOG DISPLAY
+# ============================================================
+function Show-LogPath {
+    $logFile = Join-Path $LogDir "optimizer_$Timestamp.log"
+    if (Test-Path $logFile) {
+        Write-Host ""
+        Write-Info "Log guardado en: $logFile"
+    }
+}
+
+function Show-RecentLogs {
+    param([int]$Lines = 20)
+    $logFile = Join-Path $LogDir "optimizer_$Timestamp.log"
+    if (Test-Path $logFile) {
+        Write-Host ""
+        Write-Host "  ─── ÚLTIMAS $Lines LÍNEAS DEL LOG ───" -ForegroundColor Gray
+        Get-Content $logFile -Tail $Lines | ForEach-Object {
+            Write-Host "    $_" -ForegroundColor DarkGray
+        }
+        Write-Host ""
+    } else {
+        Write-Info "No hay logs de esta sesión."
+    }
+}

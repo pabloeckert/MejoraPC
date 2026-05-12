@@ -7,6 +7,7 @@ Assert-Admin
 Write-Header "💾 MEMORY OPTIMIZER"
 
 $tweaks = 0
+$errors = 0
 
 # 1. Estado actual de la memoria
 Write-Step "📊" "Estado actual de memoria:"
@@ -30,8 +31,10 @@ if ($pctUsed -gt 90) {
 # 2. Liberar memoria inmediatamente
 Write-Step 1 "Liberando memoria RAM..."
 try {
-    # Limpiar working sets
-    $signature = @"
+    if ($Global:DryRun) {
+        Write-Info "[DRY-RUN] Liberar memoria (EmptyWorkingSet + GC.Collect)"
+    } else {
+        $signature = @"
     using System;
     using System.Runtime.InteropServices;
     public class Memory {
@@ -41,133 +44,147 @@ try {
         public static extern int EmptyWorkingSet(IntPtr hwProc);
     }
 "@
-    Add-Type -TypeDefinition $signature -ErrorAction SilentlyContinue
-    
-    # Limpiar procesos propios
-    Get-Process | Where-Object { $_.WorkingSet64 -gt 50MB -and $_.Name -notin @("System", "Idle", "svchost") } | ForEach-Object {
-        try {
-            [Memory]::EmptyWorkingSet($_.Handle) | Out-Null
-        } catch {}
+        Add-Type -TypeDefinition $signature -ErrorAction SilentlyContinue
+        
+        Get-Process | Where-Object { $_.WorkingSet64 -gt 50MB -and $_.Name -notin @("System", "Idle", "svchost") } | ForEach-Object {
+            try {
+                [Memory]::EmptyWorkingSet($_.Handle) | Out-Null
+            } catch {}
+        }
+        
+        [System.GC]::Collect()
+        [System.GC]::WaitForPendingFinalizers()
+        
+        $newFree = [math]::Round((Get-CimInstance Win32_OperatingSystem).FreePhysicalMemory / 1MB, 2)
+        $freed = [math]::Round($newFree - $freeRAM, 2)
+        Write-Success "Memoria liberada: ${freed} GB"
     }
-    
-    # Forzar garbage collection
-    [System.GC]::Collect()
-    [System.GC]::WaitForPendingFinalizers()
-    
-    $newFree = [math]::Round((Get-CimInstance Win32_OperatingSystem).FreePhysicalMemory / 1MB, 2)
-    $freed = [math]::Round($newFree - $freeRAM, 2)
-    Write-Success "Memoria liberada: ${freed} GB"
     $tweaks++
 } catch {
     Write-Error "Error al liberar memoria: $_"
+    $errors++
 }
 
 # 3. Ajustar pagefile
 Write-Step 2 "Optimizando archivo de paginación..."
 try {
-    # Desactivar administración automática
-    $cs = Get-CimInstance Win32_ComputerSystem
-    if ($cs.AutomaticManagedPagefile) {
-        Set-CimInstance -InputObject $cs -Property @{ AutomaticManagedPagefile = $false } -ErrorAction Stop
+    if ($Global:DryRun) {
+        Write-Info "[DRY-RUN] Configurar pagefile a 1.5x RAM (fijo)"
+    } else {
+        $cs = Get-CimInstance Win32_ComputerSystem
+        if ($cs.AutomaticManagedPagefile) {
+            Set-CimInstance -InputObject $cs -Property @{ AutomaticManagedPagefile = $false } -ErrorAction Stop
+        }
+        
+        $ramMB = [int]($os.TotalVisibleMemorySize / 1KB)
+        $pagefileSize = [int]($ramMB * 1.5)
+        
+        $pagefile = Get-CimInstance Win32_PageFileSetting -ErrorAction SilentlyContinue
+        if ($pagefile) {
+            $pagefile.InitialSize = $pagefileSize
+            $pagefile.MaximumSize = $pagefileSize
+            Set-CimInstance -InputObject $pagefile -ErrorAction Stop
+        }
+        Write-Success "Pagefile configurado: ${pagefileSize} MB (fijo)"
     }
-    
-    # Configurar pagefile: 1.5x RAM para sistemas con 8GB
-    $ramMB = [int]($os.TotalVisibleMemorySize / 1KB)
-    $pagefileSize = [int]($ramMB * 1.5)
-    
-    $pagefile = Get-CimInstance Win32_PageFileSetting -ErrorAction SilentlyContinue
-    if ($pagefile) {
-        $pagefile.InitialSize = $pagefileSize
-        $pagefile.MaximumSize = $pagefileSize
-        Set-CimInstance -InputObject $pagefile -ErrorAction Stop
-    }
-    
-    Write-Success "Pagefile configurado: ${pagefileSize} MB (fijo)"
     $tweaks++
 } catch {
     Write-Error "Error al configurar pagefile: $_"
+    $errors++
 }
 
 # 4. Desactivar apps en segundo plano
 Write-Step 3 "Desactivando apps en segundo plano..."
 try {
     $path = "HKCU:\Software\Microsoft\Windows\CurrentVersion\BackgroundAccessApplications"
-    Set-ItemProperty $path -Name "GlobalUserDisabled" -Value 1 -ErrorAction SilentlyContinue
+    Set-RegProperty $path -Name "GlobalUserDisabled" -Value 1
     
-    # Excepciones para apps importantes
     $excludeApps = @("Microsoft.WindowsCalculator", "Microsoft.WindowsStore", "Microsoft.Windows.Photos")
     foreach ($app in $excludeApps) {
         $appPath = "$path\$app"
         if (Test-Path $appPath) {
-            Set-ItemProperty $appPath -Name "Disabled" -Value 0 -ErrorAction SilentlyContinue
+            Set-RegProperty $appPath -Name "Disabled" -Value 0
         }
     }
     
-    Write-Success "Apps en segundo plano desactivadas (excepto Calculator, Store, Photos)"
+    # Validar
+    if (!$Global:DryRun) {
+        $val = (Get-ItemProperty $path -Name "GlobalUserDisabled" -ErrorAction SilentlyContinue).GlobalUserDisabled
+        if ($val -eq 1) {
+            Write-Success "Apps en segundo plano desactivadas (excepto Calculator, Store, Photos)"
+        } else {
+            Write-Warn "El registro no se aplicó correctamente"
+            $errors++
+        }
+    } else {
+        Write-Success "Apps en segundo plano (dry-run)"
+    }
     $tweaks++
 } catch {
     Write-Error "Error al desactivar apps en segundo plano: $_"
+    $errors++
 }
 
 # 5. Optimizar servicios que consumen RAM
 Write-Step 4 "Reduciendo consumo de servicios..."
 try {
-    # Limitar svchost.exe instances
-    $path = "HKLM:\SYSTEM\CurrentControlSet\Control"
-    Set-ItemProperty $path -Name "SvcHostSplitThresholdInKB" -Value ($os.TotalVisibleMemorySize) -ErrorAction SilentlyContinue
-    
+    Set-RegProperty "HKLM:\SYSTEM\CurrentControlSet\Control" -Name "SvcHostSplitThresholdInKB" -Value ($os.TotalVisibleMemorySize)
     Write-Success "Servicios optimizados para reducir RAM"
     $tweaks++
 } catch {
     Write-Error "Error al optimizar servicios: $_"
+    $errors++
 }
 
 # 6. Desactivar NTFS last access timestamp
 Write-Step 5 "Optimizando NTFS..."
 try {
-    fsutil behavior set disablelastaccess 1 2>&1 | Out-Null
+    if (!$Global:DryRun) {
+        fsutil behavior set disablelastaccess 1 2>&1 | Out-Null
+    } else {
+        Write-Info "[DRY-RUN] fsutil behavior set disablelastaccess 1"
+    }
     Write-Success "NTFS last access desactivado"
     $tweaks++
 } catch {
     Write-Error "Error al optimizar NTFS: $_"
+    $errors++
 }
 
 # 7. Limpiar memoria del sistema
 Write-Step 6 "Limpiando caché del sistema..."
 try {
-    # Limpiar DNS cache
-    ipconfig /flushdns 2>&1 | Out-Null
-    
-    # Limpiar standby memory
-    $signature2 = @"
-    using System;
-    using System.Runtime.InteropServices;
-    public class SysMem {
-        [DllImport("ntdll.dll")]
-        public static extern int NtSetSystemInformation(int InfoClass, IntPtr Info, int Length);
+    if (!$Global:DryRun) {
+        ipconfig /flushdns 2>&1 | Out-Null
+        Write-Success "Caché del sistema limpiado"
+    } else {
+        Write-Info "[DRY-RUN] ipconfig /flushdns"
     }
-"@
-    Add-Type -TypeDefinition $signature2 -ErrorAction SilentlyContinue
-    
-    Write-Success "Caché del sistema limpiado"
     $tweaks++
 } catch {
     Write-Error "Error al limpiar caché: $_"
+    $errors++
 }
 
 # Resultado final
 Write-Host ""
 Write-Step "📊" "Estado después de optimizar:"
-$newOS = Get-CimInstance Win32_OperatingSystem
-$newFree = [math]::Round($newOS.FreePhysicalMemory / 1MB, 2)
-$newUsed = [math]::Round($totalRAM - $newFree, 2)
-$newPct = [math]::Round(($newUsed / $totalRAM) * 100, 1)
+if (!$Global:DryRun) {
+    $newOS = Get-CimInstance Win32_OperatingSystem
+    $newFree = [math]::Round($newOS.FreePhysicalMemory / 1MB, 2)
+    $newUsed = [math]::Round($totalRAM - $newFree, 2)
+    $newPct = [math]::Round(($newUsed / $totalRAM) * 100, 1)
 
-Write-Host ""
-Write-Host "    Libre:      ${freeRAM} GB → ${newFree} GB" -ForegroundColor $(if ($newFree -gt $freeRAM) { "Green" } else { "White" })
-Write-Host "    Usado:      $pctUsed% → $newPct%" -ForegroundColor $(if ($newPct -lt $pctUsed) { "Green" } else { "White" })
-Write-Host ""
+    Write-Host ""
+    Write-Host "    Libre:      ${freeRAM} GB → ${newFree} GB" -ForegroundColor $(if ($newFree -gt $freeRAM) { "Green" } else { "White" })
+    Write-Host "    Usado:      $pctUsed% → $newPct%" -ForegroundColor $(if ($newPct -lt $pctUsed) { "Green" } else { "White" })
+    Write-Host ""
+} else {
+    Write-Info "[DRY-RUN] Estado final no disponible en modo simulación"
+}
 
 Write-Header "✅ MEMORY OPTIMIZER COMPLETADO"
 Write-Success "$tweaks optimizaciones aplicadas."
-Log "Memory optimizer completado: $tweaks tweaks, RAM libre: ${freeRAM}GB → ${newFree}GB"
+if ($errors -gt 0) { Write-Warn "Errores: $errors" }
+Show-LogPath
+Log "Memory optimizer completado: $tweaks tweaks, $errors errores, RAM libre: ${freeRAM}GB"

@@ -90,11 +90,20 @@ $startupCount = (Get-CimInstance Win32_StartupCommand -ErrorAction SilentlyConti
 $regRunCount = (Get-ItemProperty "HKCU:\Software\Microsoft\Windows\CurrentVersion\Run" -ErrorAction SilentlyContinue).PSObject.Properties.Count
 Write-Host "  Startup: $startupCount items" -ForegroundColor $(if ($startupCount -gt 10) { "Yellow" } else { "Green" })
 
+$report.Startup = @{
+    Count = $startupCount
+}
+
 # 6. Servicios
 Write-Step 6 "Servicios..."
 $runningSvc = (Get-Service | Where-Object { $_.Status -eq "Running" } | Measure-Object).Count
 $autoSvc = (Get-Service | Where-Object { $_.StartType -eq "Automatic" } | Measure-Object).Count
 Write-Host "  Corriendo: $runningSvc | Auto: $autoSvc" -ForegroundColor $(if ($runningSvc -gt 100) { "Yellow" } else { "Green" })
+
+$report.Services = @{
+    Running = $runningSvc
+    Auto = $autoSvc
+}
 
 # 7. Procesos
 Write-Step 7 "Procesos..."
@@ -103,6 +112,11 @@ $heavyProcs = Get-Process | Where-Object { $_.WorkingSet64 -gt 100MB } |
     Sort-Object WorkingSet64 -Descending | Select-Object -First 5 Name, @{N="RAM_MB";E={[math]::Round($_.WorkingSet64/1MB,0)}}
 
 Write-Host "  Total procesos: $procCount" -ForegroundColor $(if ($procCount -gt 200) { "Yellow" } else { "Green" })
+
+$report.Processes = @{
+    Count = $procCount
+    Top5 = $heavyProcs
+}
 Write-Host "  Top 5 por RAM:" -ForegroundColor Gray
 foreach ($p in $heavyProcs) {
     Write-Host "    $($p.Name): $($p.RAM_MB) MB" -ForegroundColor Gray
@@ -142,12 +156,72 @@ if ($issues.Count -eq 0) {
     }
 }
 
-# Guardar reporte
+# Guardar reporte y comparar con benchmark anterior
+$report.Timestamp = Get-Date -Format "yyyy-MM-dd HH:mm:ss"
+$report.DriveType = if ($Global:IsSSD) { "SSD" } else { "HDD" }
+
 if ($Mode -ne "rapido") {
     $reportFile = Join-Path $LogDir "benchmark_${Mode}_$Timestamp.json"
     $report | ConvertTo-Json -Depth 5 | Out-File $reportFile -Encoding UTF8
     Write-Host ""
     Write-Info "Reporte guardado en: $reportFile"
 }
+
+# Comparar con benchmark "antes" si existe y estamos en modo "despues"
+if ($Mode -eq "despues") {
+    $antesFile = Get-ChildItem (Join-Path $LogDir "benchmark_antes_*.json") -ErrorAction SilentlyContinue | 
+        Sort-Object LastWriteTime -Descending | Select-Object -First 1
+    
+    if ($antesFile) {
+        Write-Host ""
+        Write-Header "📊 COMPARACIÓN ANTES vs DESPUÉS"
+        $antes = Get-Content $antesFile.FullName -Raw | ConvertFrom-Json
+        
+        # RAM
+        $ramDiff = [math]::Round($report.Memory.Free - $antes.Memory.Free, 2)
+        $ramColor = if ($ramDiff -gt 0) { "Green" } elseif ($ramDiff -lt 0) { "Red" } else { "White" }
+        Write-Host "  RAM Libre:     $($antes.Memory.Free) GB → $($report.Memory.Free) GB " -NoNewline
+        Write-Host "($(if($ramDiff -gt 0){"+"})${ramDiff} GB)" -ForegroundColor $ramColor
+        
+        # CPU
+        $cpuDiff = $antes.CPU.Load - $report.CPU.Load
+        $cpuColor = if ($cpuDiff -gt 0) { "Green" } elseif ($cpuDiff -lt 0) { "Red" } else { "White" }
+        Write-Host "  CPU Carga:     $($antes.CPU.Load)% → $($report.CPU.Load)% " -NoNewline
+        Write-Host "($cpuDiff%)" -ForegroundColor $cpuColor
+        
+        # Servicios
+        $antesSvc = $antes.Services.Running
+        $currSvc = $report.Services.Running
+        $svcDiff = $antesSvc - $currSvc
+        $svcColor = if ($svcDiff -gt 0) { "Green" } elseif ($svcDiff -lt 0) { "Red" } else { "White" }
+        Write-Host "  Servicios:     $antesSvc → $currSvc " -NoNewline
+        Write-Host("(-$svcDiff)" ) -ForegroundColor $svcColor
+        
+        # Procesos
+        $antesProc = $antes.Processes.Count
+        $currProc = $report.Processes.Count
+        $procDiff = $antesProc - $currProc
+        $procColor = if ($procDiff -gt 0) { "Green" } elseif ($procDiff -lt 0) { "Red" } else { "White" }
+        Write-Host "  Procesos:      $antesProc → $currProc " -NoNewline
+        Write-Host "(-$procDiff)" -ForegroundColor $procColor
+        
+        # Startup
+        $antesStart = $antes.Startup.Count
+        $currStart = $report.Startup.Count
+        $startDiff = $antesStart - $currStart
+        $startColor = if ($startDiff -gt 0) { "Green" } elseif ($startDiff -lt 0) { "Red" } else { "White" }
+        Write-Host "  Startup:       $antesStart → $currStart " -NoNewline
+        Write-Host "(-$startDiff)" -ForegroundColor $startColor
+        
+        Write-Host ""
+    } else {
+        Write-Info "No se encontró benchmark 'antes' para comparar."
+        Write-Info "Ejecutá: .\benchmark.ps1 -Mode antes   antes de optimizar."
+    }
+}
+
+# Guardar snapshot rápido para comparaciones futuras
+$snapshotFile = Join-Path $LogDir "benchmark_latest.json"
+$report | ConvertTo-Json -Depth 5 | Out-File $snapshotFile -Encoding UTF8
 
 Log "Benchmark completado ($Mode): RAM $pctUsed%, CPU $cpuLoad%, Disco $($report.Disk.PercentUsed)%"
