@@ -15,8 +15,6 @@ $Bloatware = @(
     "Disney.37853FC22B2CE"
     "Netflix"
     "BytedancePte.Ltd.TikTok"
-    "Clipchamp.Clipchamp"
-    
     # Apps de Microsoft innecesarias
     "Microsoft.3DBuilder"
     "Microsoft.BingNews"

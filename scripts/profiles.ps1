@@ -6,7 +6,7 @@ Assert-Admin
 
 param(
     [ValidateSet("save", "load", "list", "delete")]
-    [string]$Action = "list",
+    [string]$Action = "save",
     [string]$Name = ""
 )
 

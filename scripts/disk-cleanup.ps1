@@ -222,10 +222,13 @@ $currentStep++
 Write-Progress -Activity "Disk Cleanup" -Status "Paso $currentStep/$totalSteps — Iconos" -PercentComplete ([math]::Round(($currentStep/$totalSteps)*100,0))
 Write-Step 8 "Limpiando caché de iconos..."
 try {
-    $iconCache = "$env:LOCALAPPDATA\Microsoft\Windows\Explorer\iconcache_*.db"
-    $iconFiles = Get-ChildItem (Split-Path $iconCache) -Filter "iconcache_*" -Force -ErrorAction SilentlyContinue
+    $iconDir = "$env:LOCALAPPDATA\Microsoft\Windows\Explorer"
+    $iconFiles = @()
+    if (Test-Path $iconDir) {
+        $iconFiles = Get-ChildItem $iconDir -Filter "iconcache_*" -Force -ErrorAction SilentlyContinue
+    }
     $iconSize = ($iconFiles | Measure-Object -Property Length -Sum).Sum
-    if (!$Global:DryRun) {
+    if (!$Global:DryRun -and $iconFiles.Count -gt 0) {
         $iconFiles | Remove-Item -Force -ErrorAction SilentlyContinue
     }
     $iconMB = [math]::Round($iconSize / 1MB, 1)

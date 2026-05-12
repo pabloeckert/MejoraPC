@@ -49,7 +49,7 @@ function Activate-Turbo {
     $servicesStopped = @()
     $processesKilled = @()
     $null = (powercfg /getactivescheme) -match '([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})'
-    $originalPlan = $Matches[1]
+    $originalPlan = if ($Matches[1]) { $Matches[1] } else { "381b4222-f694-41f0-9685-ff5bb260df2e" }
     
     # 1. PLAN DE ENERGÍA MÁXIMO
     Write-Step 1 "Activando plan de energía ULTIMATE PERFORMANCE..."

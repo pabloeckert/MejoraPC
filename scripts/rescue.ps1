@@ -116,13 +116,20 @@ function Restore-RescuePoint {
     if (Test-Path $servicesFile) {
         Write-Step 1 "Restaurando servicios..."
         $savedServices = Import-Csv $servicesFile
+        $svcRestored = 0
         foreach ($svc in $savedServices) {
             $current = Get-Service -Name $svc.Name -ErrorAction SilentlyContinue
-            if ($current -and $current.StartType -ne $svc.StartType) {
-                Set-Service -Name $svc.Name -StartupType $svc.StartType -ErrorAction SilentlyContinue
+            if ($current) {
+                if ($current.StartType.ToString() -ne $svc.StartType) {
+                    Set-Service -Name $svc.Name -StartupType $svc.StartType -ErrorAction SilentlyContinue
+                }
+                if ($svc.Status -eq "Running" -and $current.Status -ne "Running") {
+                    Start-Service -Name $svc.Name -ErrorAction SilentlyContinue
+                }
+                $svcRestored++
             }
         }
-        Write-Success "Servicios restaurados"
+        Write-Success "Servicios restaurados ($svcRestored procesados)"
     }
     
     # Restaurar plan de energía

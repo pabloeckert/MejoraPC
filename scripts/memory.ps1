@@ -10,7 +10,7 @@ $tweaks = 0
 $errors = 0
 
 # 1. Estado actual de la memoria
-Write-Step "📊" "Estado actual de memoria:"
+Write-Host "  📊 Estado actual de memoria:" -ForegroundColor Yellow
 $os = Get-CimInstance Win32_OperatingSystem
 $totalRAM = [math]::Round($os.TotalVisibleMemorySize / 1MB, 2)
 $freeRAM = [math]::Round($os.FreePhysicalMemory / 1MB, 2)
@@ -168,7 +168,7 @@ try {
 
 # Resultado final
 Write-Host ""
-Write-Step "📊" "Estado después de optimizar:"
+Write-Host "  📊 Estado después de optimizar:" -ForegroundColor Yellow
 if (!$Global:DryRun) {
     $newOS = Get-CimInstance Win32_OperatingSystem
     $newFree = [math]::Round($newOS.FreePhysicalMemory / 1MB, 2)
