@@ -73,7 +73,15 @@
 
 - ✅ Todos los commits subidos a GitHub
 - ✅ Branch `main` sincronizado con `origin/main`
-- ✅ Última versión: v1.5.0
+- ✅ Última versión: v1.6.0
+- ✅ Git credential store configurado (push automático sin pedir token)
+- ✅ Script `push.sh` creado para push rápido
+
+## Configuración Git (para retomar)
+
+El token de GitHub está guardado en `~/.git-credentials` (formato: `user:token@github.com`).
+El remote URL usa `https://pabloeckert@github.com/...` para que el credential helper funcione.
+Para hacer push: `git push origin main` o `./push.sh "mensaje"`
 
 ---
 
