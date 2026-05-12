@@ -4,6 +4,9 @@ logs/
 # Rescue points (contienen info del sistema del usuario)
 rescue/
 
+# Profiles (configuraciones del usuario)
+profiles/
+
 # State files
 *_state.json
 

@@ -27,6 +27,8 @@ Después: click derecho en `INICIAR.bat` → **Ejecutar como administrador**
 | 💾 Memory Optimizer | Libera RAM, ajusta pagefile | 🔥🔥 |
 | 🧹 Disk Cleanup | Temp files, WU cache, navegadores, papelera | 🔥🔥 |
 | 🎮 Gaming Mode | Game DVR off, GPU prioridad, baja latencia | 🔥🔥🔥 |
+| 📂 Profiles | Guardar/cargar configuraciones | 🔥🔥 |
+| 🔒 WU Blocker | Pausar/reanudar Windows Update | 🔥🔥 |
 | 🔥🔥🔥 TURBO BOOST | Modo máximo rendimiento | 🔥🔥🔥🔥🔥 |
 | 🚨 Emergencia | Restaurar TODO si algo sale mal | 🛡️ |
 
@@ -84,6 +86,27 @@ Para reinstalaciones o configuración rápida — ejecuta todo sin prompts:
 ```
 
 Incluye benchmark antes/después automáticamente.
+
+## 📂 Profiles
+
+Guardá y cargá configuraciones completas del sistema:
+
+- **Trabajo:** servicios mínimos, rendimiento alto, telemetría off
+- **Gaming:** Gaming Mode activo, Game DVR off
+- **Default:** configuración de fábrica de Windows
+
+Desde el menú: `[P]` → guardar, cargar, listar o eliminar perfiles.
+
+## 🔒 Windows Update Blocker
+
+Pausá Windows Update cuando necesitás toda la RAM:
+
+- Detiene el servicio Windows Update
+- Bloquea descargas e instalaciones automáticas
+- Bloquea reinicios automáticos
+- Todo reversible con un click
+
+Desde el menú: `[W]` → bloquear, desbloquear o ver status.
 
 ## 🛡️ Seguridad
 

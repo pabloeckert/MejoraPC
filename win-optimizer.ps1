@@ -68,6 +68,10 @@ function Show-Menu {
     Write-Host "  [8] 🔄  Restaurar Rescue Point" -ForegroundColor Green
     Write-Host "  [9] 🚨  EMERGENCIA - Restaurar TODO" -ForegroundColor Red
     Write-Host ""
+    Write-Host "  ─── PERFILES ──────────────────────────────────────────" -ForegroundColor Gray
+    Write-Host "  [P] 📂  Perfiles (guardar/cargar configuraciones)" -ForegroundColor Cyan
+    Write-Host "  [W] 🔒  Windows Update Blocker (pausar/reanudar)" -ForegroundColor Cyan
+    Write-Host ""
     Write-Host "  ─── EXTRAS ────────────────────────────────────────────" -ForegroundColor Gray
     Write-Host "  [D] 🧪  Toggle Dry-RUN $(if($Global:DryRun){'(ACTIVO ✅)'}else{'(off)'})" -ForegroundColor $(if($Global:DryRun){"Yellow"}else{"Gray"})
     Write-Host "  [L] 📄  Ver log de esta sesión" -ForegroundColor Gray
@@ -206,6 +210,38 @@ do {
         "J" { & "$ScriptsDir\gaming-mode.ps1" -Action status; pause }
         "8" { & "$ScriptsDir\rescue.ps1" -Action restore; pause }
         "9" { & "$ScriptsDir\emergencia.ps1"; pause }
+        "P" { 
+            Write-Host ""
+            Write-Host "  [1] Listar perfiles" -ForegroundColor Cyan
+            Write-Host "  [2] Guardar perfil actual" -ForegroundColor Green
+            Write-Host "  [3] Cargar perfil" -ForegroundColor Yellow
+            Write-Host "  [4] Eliminar perfil" -ForegroundColor Red
+            Write-Host "  [0] Volver" -ForegroundColor Gray
+            Write-Host ""
+            $pChoice = Read-Host "  Opción"
+            switch ($pChoice) {
+                "1" { & "$ScriptsDir\profiles.ps1" -Action list }
+                "2" { & "$ScriptsDir\profiles.ps1" -Action save }
+                "3" { & "$ScriptsDir\profiles.ps1" -Action load }
+                "4" { & "$ScriptsDir\profiles.ps1" -Action delete }
+            }
+            pause
+        }
+        "W" {
+            Write-Host ""
+            Write-Host "  [1] Ver status de Windows Update" -ForegroundColor Cyan
+            Write-Host "  [2] Bloquear Windows Update" -ForegroundColor Red
+            Write-Host "  [3] Desbloquear Windows Update" -ForegroundColor Green
+            Write-Host "  [0] Volver" -ForegroundColor Gray
+            Write-Host ""
+            $wChoice = Read-Host "  Opción"
+            switch ($wChoice) {
+                "1" { & "$ScriptsDir\wu-blocker.ps1" -Action status }
+                "2" { & "$ScriptsDir\wu-blocker.ps1" -Action block }
+                "3" { & "$ScriptsDir\wu-blocker.ps1" -Action unblock }
+            }
+            pause
+        }
         "D" { 
             Set-DryRun (!$Global:DryRun)
             if ($Global:DryRun) {

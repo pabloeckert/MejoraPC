@@ -210,6 +210,55 @@ Incluye benchmark antes/después automáticamente.
 
 ---
 
+## Perfiles (opcional)
+
+Podés guardar tu configuración actual como perfil y cargarla después:
+
+```
+Seleccioná: [P] 📂 Perfiles
+```
+
+### ¿Para qué sirve?
+
+- **Trabajo:** guardás una config de máximo rendimiento
+- **Gaming:** guardás Gaming Mode activado
+- **Default:** volvés a la config de fábrica
+
+### Uso rápido
+
+```
+[P] → [2] Guardar perfil actual → nombre: "trabajo"
+[P] → [3] Cargar perfil → seleccionar "trabajo"
+```
+
+---
+
+## Windows Update Blocker (opcional)
+
+Cuando Windows Update te come la RAM en medio de un trabajo importante:
+
+```
+Seleccioná: [W] 🔒 Windows Update Blocker
+```
+
+### ¿Cuándo usarlo?
+
+- Presentaciones o demos
+- Sesiones de gaming
+- Trabajo intensivo donde no querés interrupciones
+- Cuando tenés 8GB RAM y cada MB cuenta
+
+### Uso
+
+```
+[W] → [2] Bloquear    → Pausa todo
+[W] → [3] Desbloquear → Reactiva todo
+```
+
+**No te olvides de desbloquear** cuando terminés, para recibir actualizaciones de seguridad.
+
+---
+
 ## ¿Algo salió mal?
 
 ### Problema: "No se ejecuta como administrador"

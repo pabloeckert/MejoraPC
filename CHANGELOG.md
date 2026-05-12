@@ -1,5 +1,17 @@
 # 📋 CHANGELOG
 
+## v1.3.0 — 2026-05-13
+
+### Nuevos módulos
+- **Profiles** (`scripts/profiles.ps1`) — guardar/cargar perfiles de optimización (servicios, efectos visuales, background apps, telemetría, plan de energía, startup)
+- **Windows Update Blocker** (`scripts/wu-blocker.ps1`) — pausar/reanudar Windows Update con un click (servicio, registro, reinicios automáticos)
+
+### Menú
+- Opción `[P]` — submenú de perfiles (listar, guardar, cargar, eliminar)
+- Opción `[W]` — submenú de Windows Update (status, bloquear, desbloquear)
+
+---
+
 ## v1.2.0 — 2026-05-13
 
 ### Nuevos módulos

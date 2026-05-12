@@ -14,7 +14,9 @@
 10. [Gaming Mode](#10-gaming-mode)
 11. [Emergencia](#11-emergencia)
 12. [Modo Silencioso](#12-modo-silencioso)
-13. [Archivos del sistema](#13-archivos-del-sistema)
+13. [Profiles](#13-profiles)
+14. [Windows Update Blocker](#14-windows-update-blocker)
+15. [Archivos del sistema](#15-archivos-del-sistema)
 
 ---
 
@@ -364,7 +366,115 @@ Sin prompts, sin interacción. Ideal para reinstalaciones de Windows.
 
 ---
 
-## 13. Archivos del sistema
+## 13. Profiles
+
+**Script:** `scripts/profiles.ps1`
+**Opción del menú:** `[P]`
+
+### ¿Qué hace?
+
+Guarda y carga configuraciones completas del sistema como "perfiles". Cada perfil captura:
+
+| Dato | Qué guarda |
+|------|-----------|
+| Servicios | Estado y tipo de inicio de todos los servicios |
+| Efectos visuales | VisualFXSetting, transparencia, AeroPeek |
+| Background apps | Si están activas o desactivadas |
+| Telemetría | Nivel de telemetría permitido |
+| Plan de energía | GUID del plan activo |
+| Startup | Entradas del registro HKCU Run |
+
+### Acciones
+
+| Acción | Qué hace |
+|--------|----------|
+| `list` | Muestra todos los perfiles guardados |
+| `save` | Captura estado actual y lo guarda como perfil |
+| `load` | Aplica un perfil guardado (crea rescue point primero) |
+| `delete` | Elimina un perfil |
+
+### Uso desde menú
+
+```
+[P] → [1] Listar perfiles
+[P] → [2] Guardar perfil actual
+[P] → [3] Cargar perfil
+[P] → [4] Eliminar perfil
+```
+
+### Uso desde CLI
+
+```powershell
+.\profiles.ps1 -Action save -Name "trabajo"
+.\profiles.ps1 -Action load -Name "trabajo"
+.\profiles.ps1 -Action list
+.\profiles.ps1 -Action delete -Name "trabajo"
+```
+
+### ¿Dónde se guardan?
+
+En la carpeta `profiles/` como archivos JSON.
+
+### Seguridad
+
+- Al cargar un perfil, crea un rescue point automáticamente antes de aplicar
+- Solo modifica configuración, no desinstala apps ni toca archivos personales
+
+---
+
+## 14. Windows Update Blocker
+
+**Script:** `scripts/wu-blocker.ps1`
+**Opción del menú:** `[W]`
+
+### ¿Qué hace?
+
+Pausa o reanuda completamente Windows Update. Útil cuando necesitás toda la RAM sin interrupciones.
+
+### Qué bloquea
+
+| Componente | Cómo |
+|-----------|------|
+| Servicio WU | Detenido + Disabled |
+| Update Orchestrator | Detenido + Disabled |
+| Auto-update | Registro: NoAutoUpdate = 1 |
+| Update internet | Registro: DisableWindowsUpdateAccess = 1 |
+| Reinicios automáticos | Registro: NoAutoRebootWithLoggedOnUsers = 1 |
+| Power management | Registro: AUPowerManagement = 0 |
+
+### Acciones
+
+| Acción | Qué hace |
+|--------|----------|
+| `block` | Detiene servicios, bloquea via registro |
+| `unblock` | Reactiva servicios, elimina restricciones |
+| `status` | Muestra estado actual del bloqueo |
+
+### Uso desde menú
+
+```
+[W] → [1] Ver status
+[W] → [2] Bloquear
+[W] → [3] Desbloquear
+```
+
+### Uso desde CLI
+
+```powershell
+.\wu-blocker.ps1 -Action block
+.\wu-blocker.ps1 -Action unblock
+.\wu-blocker.ps1 -Action status
+```
+
+### ⚠️ Importante
+
+- **No te olvides de desbloquear** cuando terminés
+- Sin actualizaciones, tu PC no recibe parches de seguridad
+- Ideal para sesiones puntuales, no para uso permanente
+
+---
+
+## 15. Archivos del sistema
 
 ### Estructura
 
@@ -390,6 +500,8 @@ MejoraNotebook/
 │   ├── disk-cleanup.ps1     # Limpiar archivos temporales
 │   ├── gaming-mode.ps1      # Modo gaming
 │   ├── turbo-boost.ps1      # Turbo Boost
+│   ├── profiles.ps1         # Guardar/cargar perfiles
+│   ├── wu-blocker.ps1       # Windows Update Blocker
 │   └── emergencia.ps1       # Restaurar todo
 ├── logs/                    # Logs automáticos
 │   ├── optimizer_*.log
