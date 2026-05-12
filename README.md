@@ -25,6 +25,8 @@ Después: click derecho en `INICIAR.bat` → **Ejecutar como administrador**
 | 🔧 Services Optimizer | Desactiva servicios innecesarios | 🔥🔥 |
 | 🚀 Performance | Efectos visuales, plan energía, telemetría | 🔥🔥🔥 |
 | 💾 Memory Optimizer | Libera RAM, ajusta pagefile | 🔥🔥 |
+| 🧹 Disk Cleanup | Temp files, WU cache, navegadores, papelera | 🔥🔥 |
+| 🎮 Gaming Mode | Game DVR off, GPU prioridad, baja latencia | 🔥🔥🔥 |
 | 🔥🔥🔥 TURBO BOOST | Modo máximo rendimiento | 🔥🔥🔥🔥🔥 |
 | 🚨 Emergencia | Restaurar TODO si algo sale mal | 🛡️ |
 
@@ -40,6 +42,48 @@ Cuando necesitás máximo rendimiento para trabajo intenso:
 - Prioridad CPU máxima para apps activas
 
 Activar: opción `[T]` | Revertir: opción `[R]`
+
+## 🎮 Gaming Mode
+
+Optimizado para jugar (diferente a Turbo Boost):
+
+- Game DVR desactivado (el mayor killer de FPS)
+- GPU prioridad máxima
+- Red optimizada para baja latencia
+- Servicios de audio/red **activos** (a diferencia de Turbo)
+- Telemetría de fondo detenida
+
+Activar: opción `[G]` | Revertir: opción `[H]`
+
+## 🧹 Disk Cleanup
+
+Limpia basura del sistema:
+
+- Archivos temporales del usuario y Windows
+- Caché de Windows Update
+- Thumbnails e iconos cache
+- Prefetch (>30 días)
+- Papelera de reciclaje
+- Caché de navegadores (Chrome, Edge, Firefox)
+
+Ejecutar: desde menú o como paso del "Optimizar Todo"
+
+## 🔇 Modo Silencioso
+
+Para reinstalaciones o configuración rápida — ejecuta todo sin prompts:
+
+```powershell
+# Optimización completa silenciosa
+.\win-optimizer.ps1 -Silent
+
+# Simular sin aplicar cambios
+.\win-optimizer.ps1 -Silent -DryRun
+
+# Incluir Gaming Mode
+.\win-optimizer.ps1 -Silent -WithGaming
+```
+
+Incluye benchmark antes/después automáticamente.
 
 ## 🛡️ Seguridad
 

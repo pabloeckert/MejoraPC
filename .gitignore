@@ -4,6 +4,9 @@ logs/
 # Rescue points (contienen info del sistema del usuario)
 rescue/
 
+# State files
+*_state.json
+
 # PowerShell temp
 *.ps1xml
 

@@ -5,6 +5,12 @@
 #  ⚠️  Ejecutar como Administrador
 # ============================================================
 
+param(
+    [switch]$Silent,
+    [switch]$DryRun,
+    [switch]$WithGaming
+)
+
 $ScriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 $ScriptsDir = Join-Path $ScriptDir "scripts"
 
@@ -18,6 +24,12 @@ if (!$principal.IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
     Write-Host ""
     pause
     exit 1
+}
+
+# Modo silencioso: ejecutar todo sin prompts y salir
+if ($Silent) {
+    Run-Silent
+    exit 0
 }
 
 function Show-Menu {
@@ -46,6 +58,11 @@ function Show-Menu {
     Write-Host "  [T] 🔥🔥🔥  ACTIVAR TURBO BOOST (máximo rendimiento)" -ForegroundColor Red
     Write-Host "  [R] 🔄  Revertir Turbo Boost (volver a normal)" -ForegroundColor Cyan
     Write-Host "  [S] 📊  Status Turbo Boost" -ForegroundColor Cyan
+    Write-Host ""
+    Write-Host "  ─── GAMING ────────────────────────────────────────────" -ForegroundColor Gray
+    Write-Host "  [G] 🎮  ACTIVAR Gaming Mode (optimizado para jugar)" -ForegroundColor Green
+    Write-Host "  [H] 🔄  Revertir Gaming Mode" -ForegroundColor Cyan
+    Write-Host "  [J] 📊  Status Gaming Mode" -ForegroundColor Cyan
     Write-Host ""
     Write-Host "  ─── RESTAURAR ─────────────────────────────────────────" -ForegroundColor Gray
     Write-Host "  [8] 🔄  Restaurar Rescue Point" -ForegroundColor Green
@@ -92,13 +109,17 @@ function Run-OptimizeAll {
         return
     }
     
+    Run-OptimizeAll-Inner
+}
+
+function Run-OptimizeAll-Inner {
     # Rescue point primero
     & "$ScriptsDir\rescue.ps1" -Action create -Name "pre-optimize-all"
     Write-Host ""
     
     # Ejecutar cada paso
-    $steps = @("debloater.ps1", "startup-cleaner.ps1", "services.ps1", "performance.ps1", "memory.ps1")
-    $stepNames = @("Debloater", "Startup Cleaner", "Services", "Performance", "Memory")
+    $steps = @("debloater.ps1", "startup-cleaner.ps1", "services.ps1", "performance.ps1", "memory.ps1", "disk-cleanup.ps1")
+    $stepNames = @("Debloater", "Startup Cleaner", "Services", "Performance", "Memory", "Disk Cleanup")
     
     for ($i = 0; $i -lt $steps.Count; $i++) {
         Write-Host ""
@@ -116,11 +137,51 @@ function Run-OptimizeAll {
     Write-Header "✅ OPTIMIZACIÓN COMPLETA FINALIZADA"
     Write-Success "Todos los pasos completados."
     Write-Info "Se recomienda REINICIAR para aplicar todos los cambios."
+    Show-LogPath
+}
+
+# ============================================================
+# MODO SILENCIOSO — ejecuta todo sin prompts
+# ============================================================
+function Run-Silent {
     Write-Host ""
-    $reboot = Read-Host "  ¿Reiniciar ahora? [S/N]"
-    if ($reboot -eq "S" -or $reboot -eq "s") {
-        Restart-Computer -Force
+    Write-Host "  ╔═══════════════════════════════════════════════════════╗" -ForegroundColor Magenta
+    Write-Host "  ║           WIN OPTIMIZER — MODO SILENCIOSO            ║" -ForegroundColor Magenta
+    Write-Host "  ╚═══════════════════════════════════════════════════════╝" -ForegroundColor Magenta
+    Write-Host ""
+    
+    if ($DryRun) {
+        Set-DryRun $true
+        Write-Info "Modo DRY-RUN activado — no se aplicarán cambios reales."
+        Write-Host ""
     }
+    
+    # Benchmark antes
+    Write-Header "📊 BENCHMARK ANTES"
+    & "$ScriptsDir\benchmark.ps1" -Mode antes
+    
+    # Optimización completa
+    Run-OptimizeAll-Inner
+    
+    # Gaming mode (opcional)
+    if ($WithGaming) {
+        Write-Host ""
+        Write-Header "🎮 ACTIVANDO GAMING MODE"
+        & "$ScriptsDir\gaming-mode.ps1" -Action activate
+    }
+    
+    # Benchmark después
+    Write-Host ""
+    Write-Header "📊 BENCHMARK DESPUÉS"
+    & "$ScriptsDir\benchmark.ps1" -Mode despues
+    
+    Write-Host ""
+    Write-Header "✅ MODO SILENCIOSO COMPLETADO"
+    Write-Success "Todas las optimizaciones aplicadas."
+    if (!$DryRun) {
+        Write-Info "Se recomienda REINICIAR para aplicar todos los cambios."
+    }
+    Show-LogPath
 }
 
 # Loop principal
@@ -140,6 +201,9 @@ do {
         "T" { & "$ScriptsDir\turbo-boost.ps1" -Action activate; pause }
         "R" { & "$ScriptsDir\turbo-boost.ps1" -Action revert; pause }
         "S" { & "$ScriptsDir\turbo-boost.ps1" -Action status; pause }
+        "G" { & "$ScriptsDir\gaming-mode.ps1" -Action activate; pause }
+        "H" { & "$ScriptsDir\gaming-mode.ps1" -Action revert; pause }
+        "J" { & "$ScriptsDir\gaming-mode.ps1" -Action status; pause }
         "8" { & "$ScriptsDir\rescue.ps1" -Action restore; pause }
         "9" { & "$ScriptsDir\emergencia.ps1"; pause }
         "D" { 
