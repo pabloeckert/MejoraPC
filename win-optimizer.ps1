@@ -88,6 +88,7 @@ function Show-Menu {
     Write-Host "  [B] 📥  Importar benchmark de otra PC" -ForegroundColor Cyan
     Write-Host "  [F] 🏪  App Store (reinstalar apps desinstaladas)" -ForegroundColor Cyan
     Write-Host "  [O] 📦  Paquete offline (sin internet)" -ForegroundColor Cyan
+    Write-Host "  [X] 🌐  Dashboard web (monitoreo en tiempo real)" -ForegroundColor Cyan
     Write-Host "  [I] 📊  Generar reporte HTML" -ForegroundColor Cyan
     Write-Host "  [X] 📊  Reporte completo (benchmark + HTML + abrir)" -ForegroundColor Cyan
     Write-Host "  [K] ⏰  Optimización programada (benchmark semanal)" -ForegroundColor Cyan
@@ -271,6 +272,7 @@ do {
         "B" { & "$ScriptsDir\share-benchmark.ps1" -Action import; pause }
         "F" { & "$ScriptsDir\app-store.ps1" -Action list; pause }
         "O" { & "$ScriptsDir\offline-pack.ps1" -Action export; pause }
+        "X" { & "$ScriptsDir\dashboard.ps1" -Action start; pause }
         "Z" { & "$ScriptsDir\wizard.ps1"; pause }
         "X" {
             Write-Header "📊 REPORTE COMPLETO"
