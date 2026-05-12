@@ -42,6 +42,7 @@ function Show-Menu {
     Write-Host ""
     Write-Host "  ─── DIAGNÓSTICO ───────────────────────────────────────" -ForegroundColor Gray
     Write-Host "  [1] 🔍  Benchmark completo (ver estado del sistema)" -ForegroundColor White
+    Write-Host "  [Q] 🏥  Health Check rápido (resumen visual)" -ForegroundColor White
     Write-Host ""
     Write-Host "  ─── OPTIMIZACIÓN ──────────────────────────────────────" -ForegroundColor Gray
     Write-Host "  [2] 💾  Crear Rescue Point (respaldo antes de tocar)" -ForegroundColor Green
@@ -71,6 +72,10 @@ function Show-Menu {
     Write-Host "  ─── PERFILES ──────────────────────────────────────────" -ForegroundColor Gray
     Write-Host "  [P] 📂  Perfiles (guardar/cargar configuraciones)" -ForegroundColor Cyan
     Write-Host "  [W] 🔒  Windows Update Blocker (pausar/reanudar)" -ForegroundColor Cyan
+    Write-Host ""
+    Write-Host "  ─── RED ───────────────────────────────────────────────" -ForegroundColor Gray
+    Write-Host "  [N] 🌐  Network Optimizer (optimizar TCP/DNS/latencia)" -ForegroundColor Cyan
+    Write-Host "  [M] 🔄  Revertir Network Optimizer" -ForegroundColor Cyan
     Write-Host ""
     Write-Host "  ─── EXTRAS ────────────────────────────────────────────" -ForegroundColor Gray
     Write-Host "  [I] 📊  Generar reporte HTML" -ForegroundColor Cyan
@@ -199,6 +204,7 @@ do {
     
     switch ($choice.ToUpper()) {
         "1" { & "$ScriptsDir\benchmark.ps1" -Mode rapido; pause }
+        "Q" { & "$ScriptsDir\health-check.ps1"; pause }
         "2" { & "$ScriptsDir\rescue.ps1" -Action create -Name "manual"; pause }
         "3" { & "$ScriptsDir\debloater.ps1"; pause }
         "4" { & "$ScriptsDir\startup-cleaner.ps1"; pause }
@@ -246,6 +252,8 @@ do {
             }
             pause
         }
+        "N" { & "$ScriptsDir\network-optimizer.ps1" -Action optimize; pause }
+        "M" { & "$ScriptsDir\network-optimizer.ps1" -Action revert; pause }
         "X" {
             Write-Header "📊 REPORTE COMPLETO"
             & "$ScriptsDir\benchmark.ps1" -Mode completo

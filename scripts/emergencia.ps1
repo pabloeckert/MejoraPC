@@ -25,7 +25,7 @@ if ($confirm -ne "SI") {
 
 Log "EMERGENCIA: Iniciando restauración total"
 
-$totalSteps = 10
+$totalSteps = 12
 $completed = 0
 $errors = 0
 
@@ -185,10 +185,69 @@ try {
 Write-Step 10 "Limpiando estado turbo..."
 try {
     Remove-Item (Join-Path $RescueDir "turbo_state.json") -Force -ErrorAction SilentlyContinue
-    Write-Success "Estado turbo limpiado"
+    Remove-Item (Join-Path $RescueDir "gaming_state.json") -Force -ErrorAction SilentlyContinue
+    Write-Success "Estados turbo/gaming limpiados"
     $completed++
 } catch {
-    Write-Error "Error al limpiar estado turbo: $_"
+    Write-Error "Error al limpiar estados: $_"
+    $errors++
+}
+
+# 11. Restaurar red
+Write-Step 11 "Restaurando configuración de red..."
+try {
+    # Restaurar TCP global
+    netsh int tcp set global autotuninglevel=normal 2>&1 | Out-Null
+    netsh int tcp set global chimney=disabled 2>&1 | Out-Null
+    netsh int tcp set global congestionprovider=default 2>&1 | Out-Null
+    # Restaurar parámetros TCP
+    $tcpParams = "HKLM:\SYSTEM\CurrentControlSet\Services\Tcpip\Parameters"
+    Remove-ItemProperty $tcpParams -Name "TcpAckFrequency" -ErrorAction SilentlyContinue
+    Remove-ItemProperty $tcpParams -Name "TCPNoDelay" -ErrorAction SilentlyContinue
+    Remove-ItemProperty $tcpParams -Name "TcpDelAckTicks" -ErrorAction SilentlyContinue
+    Remove-ItemProperty $tcpParams -Name "DefaultTTL" -ErrorAction SilentlyContinue
+    Remove-ItemProperty $tcpParams -Name "MaxFreeTcbs" -ErrorAction SilentlyContinue
+    Remove-ItemProperty $tcpParams -Name "MaxUserPort" -ErrorAction SilentlyContinue
+    Remove-ItemProperty $tcpParams -Name "TcpTimedWaitDelay" -ErrorAction SilentlyContinue
+    # Restaurar DNS
+    Get-NetAdapter -Physical -ErrorAction SilentlyContinue | Where-Object { $_.Status -eq "Up" } | ForEach-Object {
+        Set-DnsClientServerAddress -InterfaceIndex $_.InterfaceIndex -ResetServerAddresses -ErrorAction SilentlyContinue
+    }
+    # Restaurar throttling
+    $mmPath = "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Multimedia\SystemProfile"
+    Set-RegProperty $mmPath -Name "NetworkThrottlingIndex" -Value 10
+    Set-RegProperty $mmPath -Name "SystemResponsiveness" -Value 20
+    # Limpiar estado
+    Remove-Item (Join-Path $RescueDir "network_state.json") -Force -ErrorAction SilentlyContinue
+    Write-Success "Configuración de red restaurada"
+    $completed++
+} catch {
+    Write-Error "Error al restaurar red: $_"
+    $errors++
+}
+
+# 12. Desbloquear Windows Update
+Write-Step 12 "Desbloqueando Windows Update..."
+try {
+    Set-Service wuauserv -StartupType Manual -ErrorAction SilentlyContinue
+    Start-Service wuauserv -ErrorAction SilentlyContinue
+    $wuPath = "HKLM:\SOFTWARE\Policies\Microsoft\Windows\WindowsUpdate\AU"
+    if (Test-Path $wuPath) {
+        Remove-ItemProperty $wuPath -Name "NoAutoUpdate" -ErrorAction SilentlyContinue
+        Remove-ItemProperty $wuPath -Name "AUOptions" -ErrorAction SilentlyContinue
+        Remove-ItemProperty $wuPath -Name "NoAutoRebootWithLoggedOnUsers" -ErrorAction SilentlyContinue
+        Remove-ItemProperty $wuPath -Name "AUPowerManagement" -ErrorAction SilentlyContinue
+    }
+    $wuPath2 = "HKLM:\SOFTWARE\Policies\Microsoft\Windows\WindowsUpdate"
+    if (Test-Path $wuPath2) {
+        Remove-ItemProperty $wuPath2 -Name "DoNotConnectToWindowsUpdateInternetLocations" -ErrorAction SilentlyContinue
+        Remove-ItemProperty $wuPath2 -Name "DisableWindowsUpdateAccess" -ErrorAction SilentlyContinue
+    }
+    Remove-Item (Join-Path $RescueDir "wu_blocker_state.json") -Force -ErrorAction SilentlyContinue
+    Write-Success "Windows Update desbloqueado"
+    $completed++
+} catch {
+    Write-Error "Error al desbloquear WU: $_"
     $errors++
 }
 

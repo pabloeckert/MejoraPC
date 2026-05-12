@@ -60,23 +60,11 @@
 
 ---
 
-## Notas para retomar
+## Estado del repo
 
-El proyecto tiene 14 módulos principales. Todo el código fue auditado y corregido. Los commits están hechos pero **falta push a GitHub** (no hay credenciales configuradas en el entorno de desarrollo).
-
-Commits pendientes de push:
-```
-ae1d235 docs: versión v1.4.0 alineada + PROGRESS.md para continuidad
-cdbc6cd fix: auditoría completa — bugs corregidos en múltiples módulos
-50f8238 feat: módulo uninstall-tool + menú mejorado + reporte completo
-[next] docs: documentación actualizada para v1.5.0
-```
-
-Para hacer push:
-```bash
-cd MejoraNotebook
-git push origin main
-```
+- ✅ Todos los commits subidos a GitHub
+- ✅ Branch `main` sincronizado con `origin/main`
+- ✅ Última versión: v1.5.0
 
 ---
 

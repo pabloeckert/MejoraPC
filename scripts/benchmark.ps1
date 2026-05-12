@@ -224,6 +224,32 @@ if ($Mode -eq "despues") {
 $snapshotFile = Join-Path $LogDir "benchmark_latest.json"
 $report | ConvertTo-Json -Depth 5 | Out-File $snapshotFile -Encoding UTF8
 
+# Exportar a CSV (histórico)
+$csvFile = Join-Path $LogDir "benchmark_history.csv"
+$csvRow = [PSCustomObject]@{
+    Timestamp = $report.Timestamp
+    RAM_Total_GB = $report.System.RAM_Total
+    RAM_Used_GB = $report.Memory.Used
+    RAM_Free_GB = $report.Memory.Free
+    RAM_Pct = $report.Memory.PercentUsed
+    CPU_Load = $report.CPU.Load
+    Disk_Letter = $report.Disk.Letter
+    Disk_Free_GB = $report.Disk.Free
+    Disk_Total_GB = $report.Disk.Total
+    Disk_Pct = $report.Disk.PercentUsed
+    Services_Running = $report.Services.Running
+    Services_Auto = $report.Services.Auto
+    Processes = $report.Processes.Count
+    Startup = $report.Startup.Count
+    DriveType = $report.DriveType
+    Mode = $Mode
+}
+$csvExists = Test-Path $csvFile
+$csvRow | Export-Csv -Path $csvFile -NoTypeInformation -Append -Force
+if (!$csvExists) {
+    Write-Info "Archivo CSV creado: $csvFile"
+}
+
 # Modo completo: generar HTML automáticamente
 if ($Mode -eq "completo") {
     Write-Host ""
@@ -240,6 +266,14 @@ if ($Mode -eq "completo") {
     } catch {
         Write-Warn "No se pudo generar el reporte HTML: $_"
     }
+}
+
+# Mostrar tendencias si hay datos históricos
+$csvData = Import-Csv $csvFile -ErrorAction SilentlyContinue
+if ($csvData -and $csvData.Count -gt 1) {
+    Write-Host ""
+    Write-Info "📊 Histórico: $($csvData.Count) benchmarks guardados"
+    Write-Info "CSV: $csvFile"
 }
 
 Log "Benchmark completado ($Mode): RAM $pctUsed%, CPU $cpuLoad%, Disco $($report.Disk.PercentUsed)%"
