@@ -1,88 +1,109 @@
 # 📋 PROGRESS — MejoraNotebook
 
-> **Archivo de continuidad para retomar trabajo entre sesiones.**
-> Cuando digas "continuemos", lee este archivo para saber dónde quedamos.
+> **Archivo de continuidad.** Cuando digas "continuemos", lee este archivo.
+> Última sesión: 2026-05-13
 
 ---
 
 ## Estado actual
 
-- **Versión:** v1.4.0
-- **Último trabajo:** Auditoría completa del código + fixes + mejoras (2026-05-13)
-- **Branch:** main
-- **Último commit:** Auditoría completa + fixes Fase 2
+| Campo | Valor |
+|-------|-------|
+| **Versión** | v1.6.0 |
+| **Módulos** | 19 scripts PowerShell |
+| **Branch** | main |
+| **Repo** | https://github.com/pabloeckert/MejoraNotebook |
+| **Último commit** | `6ded365` — chore: push.sh + PROGRESS |
+| **Commits totales** | 14 |
+| **Estado** | ✅ Todo subido a GitHub |
 
 ---
 
-## Fases completadas
+## Resumen de lo completado (2026-05-13)
 
-### ✅ Fase 1: Alineación de versión (2026-05-13)
-- [x] Versión actualizada a v1.4.0 en: README.md, win-optimizer.ps1, INICIAR.bat, html-report.ps1
-- [x] Archivo de continuidad PROGRESS.md creado
-- **Commit:** `docs: versión v1.4.0 alineada en todo el proyecto`
+### Fase 1: Alineación de versión
+- Versión v1.4.0 → v1.4.0 alineada en README, win-optimizer.ps1, INICIAR.bat, html-report.ps1
+- PROGRESS.md creado
+- Commit: `ae1d235`
 
-### ✅ Fase 2: Auditoría y corrección de código (2026-05-13)
-- [x] Bug: `debloater.ps1` — entrada duplicada "Clipchamp.Clipchamp" eliminada
-- [x] Bug: `profiles.ps1` — parámetro `$Action` con valor por defecto "list" inconsistente con menú (cambiado a "save")
-- [x] Bug: `memory.ps1` — `Write-Step` con dos strings en vez de num+string (corregido)
-- [x] Bug: `disk-cleanup.ps1` — `Get-ChildItem` con wildcard en directorio no existente para iconos (corregido)
-- [x] Mejora: `rescue.ps1` — restauración ahora también reactiva servicios que estaban corriendo
-- [x] Mejora: `gaming-mode.ps1` — corregido typo "Rendir" → "Rendimiento" en comentario
-- **Commit:** `fix: auditoría completa — bugs corregidos en debloater, profiles, memory, disk-cleanup, rescue`
+### Fase 2: Auditoría de código (7 bugs corregidos)
+- `debloater.ps1`: entrada duplicada eliminada
+- `profiles.ps1`: parámetro por defecto corregido
+- `memory.ps1`: Write-Step con parámetros incorrectos (2 lugares)
+- `disk-cleanup.ps1`: icon cache path corregido
+- `rescue.ps1`: restauración reactiva servicios corriendo
+- `turbo-boost.ps1`: fallback seguro si powercfg falla
+- `gaming-mode.ps1`: fallback seguro si powercfg falla
+- Commit: `cdbc6cd`
 
-### ✅ Fase 3: Mejoras y nuevos features (2026-05-13)
-- [x] Nuevo módulo: `uninstall-tool.ps1` — desinstalador completo con respaldo y restore
-- [x] Mejora: `config.ps1` — agregadas listas centralizadas de apps bloatware y procesos seguros
-- [x] Mejora: `win-optimizer.ps1` — opción [U] en menú para desinstalador
-- [x] Mejora: `win-optimizer.ps1` — opción [X] en menú para reporte completo (benchmark + HTML + abrir)
-- [x] Mejora: `benchmark.ps1` — modo "completo" que genera HTML automáticamente
-- **Commit:** `feat: módulo uninstall-tool + menú mejorado + reporte completo`
+### Fase 3: Nuevos módulos + menú mejorado
+- `uninstall-tool.ps1`: desinstalador completo con restauración desde rescue point
+- Opciones de menú: [U] desinstalador, [X] reporte completo
+- `benchmark.ps1`: modo "completo" con HTML automático
+- Commit: `50f8238`
 
-### ✅ Fase 4: Documentación final (2026-05-13)
-- [x] CHANGELOG.md actualizado con v1.4.0 y v1.5.0
-- [x] README.md actualizado con nuevos módulos
-- [x] TUTORIAL.md actualizado con sección de desinstalador
-- [x] MANUAL.md actualizado con documentación completa del nuevo módulo
-- [x] PROGRESS.md actualizado
-- **Commit:** `docs: documentación actualizada para v1.5.0`
+### Fase 4: Documentación v1.5.0
+- CHANGELOG, README, TUTORIAL, MANUAL actualizados
+- Commit: `9a5f376`
 
----
+### Fase 5: Network Optimizer + Health Check + CSV
+- `network-optimizer.ps1`: TCP/DNS/latencia/throttling/NIC/gaming profile
+- `health-check.ps1`: verificación rápida con estado de optimizaciones
+- `benchmark.ps1`: exportación CSV automática
+- `emergencia.ps1`: expandido a 12 pasos (red + gaming + WU)
+- Menú: [N], [M], [Q] agregados
+- Commit: `5aa6fdf`
 
-### ✅ Fase 5: Network Optimizer + Health Check + CSV (2026-05-13)
-- [x] Nuevo módulo: `network-optimizer.ps1` — optimización avanzada TCP/DNS/latencia
-- [x] Nuevo módulo: `health-check.ps1` — verificación rápida del sistema
-- [x] `benchmark.ps1`: exportación automática a CSV para histórico
-- [x] `emergencia.ps1`: ahora revierte red, gaming mode y WU blocker (12 pasos)
-- [x] `win-optimizer.ps1`: opciones [N], [M], [Q] en menú
-- **Commit:** `feat: Network Optimizer + Health Check + CSV export + Emergencia mejorada`
-- **Push:** ✅ Subido a GitHub
+### Fase 6: Configuración Git + push.sh
+- Git credential store configurado (token persiste entre sesiones)
+- Remote URL con usuario para credential helper
+- Script `push.sh` para push rápido
+- Commit: `6ded365`
 
 ---
 
-## Pendiente (para próxima sesión)
+## Módulos actuales (19 scripts)
 
-- [ ] Testing real en Windows (este código fue auditado en Linux, necesita validación en máquina real)
-- [ ] Posible módulo: Driver Updater (verificar actualizaciones de drivers)
-- [ ] Posible feature: Auto-update del propio script desde GitHub
-- [ ] Posible feature: Modo wizard interactivo para principiantes
+| # | Script | Menú | Descripción |
+|---|--------|------|-------------|
+| 1 | `benchmark.ps1` | [1] | Diagnóstico completo + CSV + HTML |
+| 2 | `rescue.ps1` | [2] | Crear/restaurar rescue points |
+| 3 | `debloater.ps1` | [3] | Eliminar ~30 apps bloatware |
+| 4 | `startup-cleaner.ps1` | [4] | Limpiar programas de inicio |
+| 5 | `services.ps1` | [5] | Optimizar servicios (Manual/Disabled) |
+| 6 | `performance.ps1` | [6] | Efectos visuales, energía, telemetría |
+| 7 | `memory.ps1` | [7] | Liberar RAM, pagefile, background apps |
+| 8 | `disk-cleanup.ps1` | [A] | Temp, WU cache, navegadores, papelera |
+| 9 | `turbo-boost.ps1` | [T]/[R]/[S] | Modo máximo rendimiento |
+| 10 | `gaming-mode.ps1` | [G]/[H]/[J] | Optimizado para gaming |
+| 11 | `emergencia.ps1` | [9] | Restaurar TODO (12 pasos) |
+| 12 | `profiles.ps1` | [P] | Guardar/cargar configuraciones |
+| 13 | `wu-blocker.ps1` | [W] | Pausar/reanudar Windows Update |
+| 14 | `html-report.ps1` | [I] | Reporte HTML del benchmark |
+| 15 | `scheduler.ps1` | [K] | Benchmark semanal automático |
+| 16 | `uninstall-tool.ps1` | [U] | Desinstalador completo |
+| 17 | `network-optimizer.ps1` | [N]/[M] | TCP/DNS/latencia optimizados |
+| 18 | `health-check.ps1` | [Q] | Verificación rápida del sistema |
+| 19 | `config.ps1` | — | Configuración compartida |
+
+---
+
+## Pendiente (próxima sesión)
+
+- [ ] Testing real en Windows (auditado en Linux, necesita validación)
+- [ ] Módulo: Driver Updater (verificar actualizaciones de drivers)
+- [ ] Feature: Auto-update del propio script desde GitHub
+- [ ] Feature: Modo wizard interactivo para principiantes
 - [ ] Revisar issues en GitHub si los hay
 
 ---
 
-## Estado del repo
-
-- ✅ Todos los commits subidos a GitHub
-- ✅ Branch `main` sincronizado con `origin/main`
-- ✅ Última versión: v1.6.0
-- ✅ Git credential store configurado (push automático sin pedir token)
-- ✅ Script `push.sh` creado para push rápido
-
 ## Configuración Git (para retomar)
 
-El token de GitHub está guardado en `~/.git-credentials` (formato: `user:token@github.com`).
-El remote URL usa `https://pabloeckert@github.com/...` para que el credential helper funcione.
-Para hacer push: `git push origin main` o `./push.sh "mensaje"`
+El token de GitHub está en `~/.git-credentials` con permisos 600.
+El remote URL usa `https://pabloeckert@github.com/...`.
+Push automático: `git push origin main` o `./push.sh "mensaje"`.
 
 ---
 
-*Última actualización: 2026-05-13*
+*Última actualización: 2026-05-13 05:50 UTC+8*

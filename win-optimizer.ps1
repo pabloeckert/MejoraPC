@@ -1,5 +1,5 @@
 # ============================================================
-#  WIN OPTIMIZER v1.4.0
+#  WIN OPTIMIZER v1.6.0
 #  Optimizador de Windows 11 - BANGHO MAX L5
 # ============================================================
 #  ⚠️  Ejecutar como Administrador
@@ -36,7 +36,7 @@ function Show-Menu {
     Clear-Host
     Write-Host ""
     Write-Host "  ╔═══════════════════════════════════════════════════════╗" -ForegroundColor Cyan
-    Write-Host "  ║           WIN OPTIMIZER v1.4.0                       ║" -ForegroundColor Cyan
+    Write-Host "  ║           WIN OPTIMIZER v1.6.0                       ║" -ForegroundColor Cyan
     Write-Host "  ║           Windows 11 - BANGHO MAX L5                 ║" -ForegroundColor Cyan
     Write-Host "  ╚═══════════════════════════════════════════════════════╝" -ForegroundColor Cyan
     Write-Host ""
