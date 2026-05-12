@@ -62,7 +62,15 @@
 
 ## Notas para retomar
 
-El proyecto tiene 13 módulos principales + 1 nuevo (uninstall-tool). Todo el código fue auditado y corregido. Los commits están hechos pero **falta push a GitHub** (no hay credenciales configuradas en el entorno de desarrollo).
+El proyecto tiene 14 módulos principales. Todo el código fue auditado y corregido. Los commits están hechos pero **falta push a GitHub** (no hay credenciales configuradas en el entorno de desarrollo).
+
+Commits pendientes de push:
+```
+ae1d235 docs: versión v1.4.0 alineada + PROGRESS.md para continuidad
+cdbc6cd fix: auditoría completa — bugs corregidos en múltiples módulos
+50f8238 feat: módulo uninstall-tool + menú mejorado + reporte completo
+[next] docs: documentación actualizada para v1.5.0
+```
 
 Para hacer push:
 ```bash

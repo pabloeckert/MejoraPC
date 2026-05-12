@@ -1,5 +1,29 @@
 # 📋 CHANGELOG
 
+## v1.5.0 — 2026-05-13
+
+### Nuevos módulos
+- **Uninstall Tool** (`scripts/uninstall-tool.ps1`) — desinstalador completo que restaura todo al estado original y opcionalmente elimina el programa del sistema. Incluye restauración desde rescue point, reactivación de todos los servicios/telemetría/WU, y auto-eliminación.
+
+### Menú
+- Opción `[U]` — desinstalador completo
+- Opción `[X]` — reporte completo (benchmark + HTML + abrir navegador)
+
+### Correcciones (auditoría completa)
+- `debloater.ps1`: eliminada entrada duplicada "Clipchamp.Clipchamp"
+- `profiles.ps1`: parámetro Action con valor por defecto corregido
+- `memory.ps1`: Write-Step con parámetros incorrectos corregido (2 lugares)
+- `disk-cleanup.ps1`: icon cache path corregido para evitar error con wildcard
+- `rescue.ps1`: restauración ahora reactiva servicios que estaban corriendo
+- `turbo-boost.ps1`: fallback seguro si powercfg no retorna GUID válido
+- `gaming-mode.ps1`: fallback seguro si powercfg no retorna GUID válido
+
+### Documentación
+- README.md: versión actualizada a v1.4.0
+- PROGRESS.md: archivo de continuidad para retomar trabajo entre sesiones
+
+---
+
 ## v1.4.0 — 2026-05-13
 
 ### Nuevos módulos

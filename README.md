@@ -31,6 +31,7 @@ Después: click derecho en `INICIAR.bat` → **Ejecutar como administrador**
 | 🔒 WU Blocker | Pausar/reanudar Windows Update | 🔥🔥 |
 | 📊 Reporte HTML | Benchmark visual exportado a HTML | 🔥 |
 | ⏰ Scheduler | Benchmark semanal automático | 🔥 |
+| 🗑️ Uninstall Tool | Desinstalador completo con restauración | 🛡️ |
 | 🔥🔥🔥 TURBO BOOST | Modo máximo rendimiento | 🔥🔥🔥🔥🔥 |
 | 🚨 Emergencia | Restaurar TODO si algo sale mal | 🛡️ |
 

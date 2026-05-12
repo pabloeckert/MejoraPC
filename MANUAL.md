@@ -18,7 +18,8 @@
 14. [Windows Update Blocker](#14-windows-update-blocker)
 15. [HTML Report](#15-html-report)
 16. [Scheduler](#16-scheduler)
-17. [Archivos del sistema](#17-archivos-del-sistema)
+17. [Uninstall Tool](#17-uninstall-tool)
+18. [Archivos del sistema](#18-archivos-del-sistema)
 
 ---
 
@@ -551,7 +552,57 @@ Crea una tarea de Windows Task Scheduler que ejecuta el benchmark automáticamen
 
 ---
 
-## 17. Archivos del sistema
+## 17. Uninstall Tool
+
+**Script:** `scripts/uninstall-tool.ps1`
+**Opción del menú:** `[U]`
+
+### ¿Qué hace?
+
+Desinstalador completo que revierte todas las optimizaciones y opcionalmente elimina el programa del sistema.
+
+### Proceso
+
+1. **Restaurar desde Rescue Point** (opcional): Si existen rescue points, ofrece restaurar desde el más reciente
+2. **Restaurar valores por defecto**: Servicios, plan de energía, efectos visuales, telemetría, Windows Update, Game DVR, background apps, prioridades CPU, tips
+3. **Limpiar archivos**: Logs, archivos de estado, tarea programada
+4. **Eliminar programa** (opcional): Puede eliminar la carpeta completa del programa
+
+### Qué restaura
+
+| Componente | Valor restaurado |
+|------------|-----------------|
+| Servicios | Automatic (los que estaban en Manual) |
+| SysMain/WSearch | Manual (si es HDD) / Disabled (si es SSD) |
+| Plan de energía | Equilibrado |
+| Efectos visuales | Por defecto de Windows |
+| Telemetría | Reactivada |
+| Windows Update | Reactivado + servicio reactivado |
+| Game DVR | Reactivado |
+| Background apps | Reactivadas |
+| Prioridades CPU | Valor por defecto (2) |
+| Tips de Windows | Reactivados |
+
+### Uso
+
+```powershell
+# Desde el menú
+[U] → seguir instrucciones
+
+# Directamente
+.\scripts\uninstall-tool.ps1
+```
+
+### Seguridad
+
+- Siempre ofrece restaurar desde Rescue Point primero
+- Pide confirmación antes de eliminar la carpeta
+- Auto-eliminación via batch script (no puede eliminarse a sí mismo)
+- Pregunta si reiniciar al final
+
+---
+
+## 18. Archivos del sistema
 
 ### Estructura
 

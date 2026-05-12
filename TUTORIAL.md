@@ -332,6 +332,26 @@ Seleccioná: [R] 🔄 Revertir Turbo Boost
 
 ---
 
+## Desinstalar (si querés revertir todo)
+
+Si querés deshacer todas las optimizaciones y eliminar el programa:
+
+```
+Seleccioná: [U] 🗑️ Desinstalador
+```
+
+Esto va a:
+1. Restaurar todos los servicios a su estado original
+2. Restaurar efectos visuales y plan de energía
+3. Reactivar telemetría y Windows Update
+4. Reactivar apps en segundo plano
+5. Limpiar archivos de estado del programa
+6. (Opcional) Eliminar la carpeta del programa
+
+**Si tenés un Rescue Point, el desinstalador te ofrece restaurar desde él antes de eliminar.**
+
+---
+
 ## ¿Preguntas?
 
 Creá un issue en: https://github.com/pabloeckert/MejoraNotebook/issues
