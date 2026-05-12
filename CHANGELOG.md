@@ -1,5 +1,15 @@
 # 📋 CHANGELOG
 
+## v2.0.0 — 2026-05-13
+
+### Nuevos módulos
+- **Dashboard** (`scripts/dashboard.ps1`) — servidor web local con monitoreo en tiempo real. Gráficos interactivos de CPU, RAM, Disco. Estado de optimizaciones. Top 5 procesos. Auto-actualización cada 5s.
+
+### Menú
+- Opción `[X]` — Dashboard web (monitoreo en tiempo real)
+
+---
+
 ## v1.9.0 — 2026-05-13
 
 ### Nuevos módulos

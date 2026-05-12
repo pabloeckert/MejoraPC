@@ -9,12 +9,12 @@
 
 | Campo | Valor |
 |-------|-------|
-| **Versión** | v1.9.0 |
-| **Módulos** | 26 scripts PowerShell |
+| **Versión** | v2.0.0 |
+| **Módulos** | 27 scripts PowerShell |
 | **Branch** | main |
 | **Repo** | https://github.com/pabloeckert/MejoraNotebook |
-| **Último commit** | `b6c6985` — feat: App Store + Share Benchmark |
-| **Commits totales** | 19 |
+| **Último commit** | `586e2ed` — feat: Dashboard web local |
+| **Commits totales** | 21 |
 | **Estado** | ✅ Todo subido a GitHub |
 
 ---
@@ -31,12 +31,14 @@
 - Benchmark Compare, Offline Pack
 
 ### Sesión 4 (06:03 - 06:10) — App Store + Share Benchmark
-- App Store (reinstalar apps desinstaladas)
-- Share Benchmark (exportar/importar entre PCs)
+- App Store, Share Benchmark
+
+### Sesión 5 (06:06 - 06:15) — Dashboard web
+- Dashboard web local con gráficos en tiempo real
 
 ---
 
-## Módulos actuales (26 scripts)
+## Módulos actuales (27 scripts)
 
 | # | Script | Menú | Descripción |
 |---|--------|------|-------------|
@@ -65,7 +67,8 @@
 | 23 | `offline-pack.ps1` | [O] | Exportar paquete sin internet |
 | 24 | `app-store.ps1` | [F] | Reinstalar apps desinstaladas |
 | 25 | `share-benchmark.ps1` | [E]/[B] | Exportar/importar entre PCs |
-| 26 | `config.ps1` | — | Configuración compartida |
+| 26 | `dashboard.ps1` | [X] | Dashboard web en tiempo real |
+| 27 | `config.ps1` | — | Configuración compartida |
 
 ---
 
@@ -73,8 +76,8 @@
 
 - [ ] Testing real en Windows (auditado en Linux)
 - [ ] Revisar issues en GitHub si los hay
-- [ ] Posible: Integración con Chocolatey/winget para instalación masiva
-- [ ] Posible: Dashboard web local con gráficos
+- [ ] Posible: Integración con Chocolatey/winget
+- [ ] Posible: Notificaciones de sistema (toast notifications)
 
 ---
 
@@ -85,4 +88,4 @@ Push: `git push origin main` o `./push.sh "mensaje"`.
 
 ---
 
-*Última actualización: 2026-05-13 06:10 UTC+8*
+*Última actualización: 2026-05-13 06:15 UTC+8*
