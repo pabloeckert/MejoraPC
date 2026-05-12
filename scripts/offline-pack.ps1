@@ -132,7 +132,7 @@ explorer "%INSTALL_DIR%"
 ## Versión
 
 Paquete generado: $(Get-Date -Format "yyyy-MM-dd HH:mm")
-Versión: v1.7.0
+Versión: v2.2.0
 
 ## Soporte
 
