@@ -203,6 +203,7 @@ function Activate-Turbo {
     Write-Host ""
     
     Log "TURBO BOOST activado: $($servicesStopped.Count) servicios, $($processesKilled.Count) procesos"
+    Send-Notification -Title "🔥 Turbo Boost" -Message "Modo máximo rendimiento activado" -Icon "fire"
 }
 
 # ============================================================

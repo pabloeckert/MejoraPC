@@ -115,6 +115,7 @@ function Block-WU {
     Write-Info "Para reanudar: .\wu-blocker.ps1 -Action unblock"
     Show-LogPath
     Log "Windows Update bloqueado: $steps pasos, $errors errores"
+    Send-Notification -Title "🔒 Windows Update" -Message "Actualizaciones bloqueadas temporalmente" -Icon "warning"
 }
 
 # ============================================================

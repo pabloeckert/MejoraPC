@@ -263,3 +263,16 @@ function Show-RecentLogs {
         Write-Info "No hay logs de esta sesión."
     }
 }
+
+# ============================================================
+# NOTIFICACIONES (wrapper)
+# ============================================================
+function Send-Notification {
+    param([string]$Title, [string]$Message, [string]$Icon = "info")
+    try {
+        $scriptPath = Join-Path $PSScriptRoot "notifications.ps1"
+        if (Test-Path $scriptPath) {
+            & $scriptPath -Title $Title -Message $Message -Icon $Icon -Duration 3
+        }
+    } catch {}
+}

@@ -214,6 +214,7 @@ function Activate-Gaming {
     Write-Host ""
     
     Log "GAMING MODE activado: $($servicesStopped.Count) servicios, $($processesKilled.Count) procesos"
+    Send-Notification -Title "🎮 Gaming Mode" -Message "Optimizado para gaming" -Icon "game"
 }
 
 # ============================================================

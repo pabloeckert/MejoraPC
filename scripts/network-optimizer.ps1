@@ -200,6 +200,7 @@ function Optimize-Network {
     Write-Info "Se recomienda REINICIAR para aplicar todos los cambios."
     Show-LogPath
     Log "Network optimizer completado: $optimized tweaks, $errors errores"
+    Send-Notification -Title "🌐 Red Optimizada" -Message "TCP/DNS/latencia optimizados" -Icon "globe"
 }
 
 # ============================================================

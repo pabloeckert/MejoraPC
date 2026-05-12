@@ -277,3 +277,4 @@ if ($csvData -and $csvData.Count -gt 1) {
 }
 
 Log "Benchmark completado ($Mode): RAM $pctUsed%, CPU $cpuLoad%, Disco $($report.Disk.PercentUsed)%"
+Send-Notification -Title "📊 Benchmark" -Message "RAM: ${pctUsed}%, CPU: ${cpuLoad}%, Disco: $($report.Disk.PercentUsed)%" -Icon "chart"
