@@ -48,14 +48,23 @@
 
 ---
 
+### ✅ Fase 5: Network Optimizer + Health Check + CSV (2026-05-13)
+- [x] Nuevo módulo: `network-optimizer.ps1` — optimización avanzada TCP/DNS/latencia
+- [x] Nuevo módulo: `health-check.ps1` — verificación rápida del sistema
+- [x] `benchmark.ps1`: exportación automática a CSV para histórico
+- [x] `emergencia.ps1`: ahora revierte red, gaming mode y WU blocker (12 pasos)
+- [x] `win-optimizer.ps1`: opciones [N], [M], [Q] en menú
+- **Commit:** `feat: Network Optimizer + Health Check + CSV export + Emergencia mejorada`
+- **Push:** ✅ Subido a GitHub
+
+---
+
 ## Pendiente (para próxima sesión)
 
 - [ ] Testing real en Windows (este código fue auditado en Linux, necesita validación en máquina real)
-- [ ] Posible módulo: Network Optimizer (optimización avanzada de TCP/UDP)
 - [ ] Posible módulo: Driver Updater (verificar actualizaciones de drivers)
 - [ ] Posible feature: Auto-update del propio script desde GitHub
 - [ ] Posible feature: Modo wizard interactivo para principiantes
-- [ ] Posible feature: Exportar benchmark a CSV para análisis histórico
 - [ ] Revisar issues en GitHub si los hay
 
 ---

@@ -32,6 +32,8 @@ Después: click derecho en `INICIAR.bat` → **Ejecutar como administrador**
 | 📊 Reporte HTML | Benchmark visual exportado a HTML | 🔥 |
 | ⏰ Scheduler | Benchmark semanal automático | 🔥 |
 | 🗑️ Uninstall Tool | Desinstalador completo con restauración | 🛡️ |
+| 🌐 Network Optimizer | TCP/DNS/latencia optimizados | 🔥🔥 |
+| 🏥 Health Check | Verificación rápida del sistema | 🔥 |
 | 🔥🔥🔥 TURBO BOOST | Modo máximo rendimiento | 🔥🔥🔥🔥🔥 |
 | 🚨 Emergencia | Restaurar TODO si algo sale mal | 🛡️ |
 

@@ -1,5 +1,25 @@
 # 📋 CHANGELOG
 
+## v1.6.0 — 2026-05-13
+
+### Nuevos módulos
+- **Network Optimizer** (`scripts/network-optimizer.ps1`) — optimización avanzada de red: TCP global, parámetros TCP, DNS (Cloudflare+Google), throttling, NIC, gaming profile. Incluye revert y status.
+- **Health Check** (`scripts/health-check.ps1`) — verificación rápida del sistema con resumen visual de CPU, RAM, disco, servicios, procesos, red y estado de optimizaciones activas.
+
+### Benchmark
+- Exportación automática a CSV (`benchmark_history.csv`) para tracking histórico de rendimiento
+
+### Emergencia
+- Ahora revierte red, gaming mode y WU blocker (expandido de 10 a 12 pasos)
+
+### Menú
+- Opción `[N]` — Network Optimizer
+- Opción `[M]` — Revertir Network Optimizer
+- Opción `[Q]` — Health Check rápido
+- Sección RED separada en el menú
+
+---
+
 ## v1.5.0 — 2026-05-13
 
 ### Nuevos módulos
