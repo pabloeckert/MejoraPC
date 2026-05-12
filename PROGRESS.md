@@ -1,7 +1,7 @@
 # 📋 PROGRESS — MejoraNotebook
 
 > **Archivo de continuidad.** Cuando digas "continuemos", lee este archivo.
-> Última sesión: 2026-05-13
+> Última sesión: 2026-05-13 07:19 UTC+8
 
 ---
 
@@ -13,95 +13,120 @@
 | **Módulos** | 29 scripts PowerShell + menú rediseñado |
 | **Branch** | main |
 | **Repo** | https://github.com/pabloeckert/MejoraNotebook |
-| **Último commit** | `—` — feat: Menú UX completo con dashboard |
-| **Commits totales** | 25+ |
+| **Último commit** | `c759910` — fix: v3.0.1 auditoría profunda |
+| **Commits totales** | 27 |
 | **Estado** | ⏳ Pendiente de push |
 
 ---
 
-## Resumen de sesiones
+## Qué se hizo hoy (2026-05-13)
 
-### Sesión 1-5 (05:31 - 06:15) — Módulos base
-- Auditoría, bugs, uninstall, network, health check, compare, offline, app store, share, dashboard, notifications
-
-### Sesión 6 (06:18 - 06:25) — Daemon de monitoreo
-- Daemon de monitoreo silencioso con aprendizaje automático
-- Aprende patrones de uso y optimiza automáticamente
-
-### Sesión 7 (06:44 - 07:00) — Rediseño UX del menú
-- **v3.0.0**: Menú completamente rediseñado
+### Fase 1: Rediseño UX del menú (v3.0.0)
+- Menú completamente rediseñado desde cero
 - Dashboard en vivo con estado del sistema (CPU, RAM, Disco, Servicios, Procesos, Startup)
 - Navegación por 5 categorías en vez de 30+ opciones planas
-- ASCII art banner
-- Progress bars visuales para CPU/RAM/Disco
+- ASCII art banner con progress bars dinámicos
 - Submenús contextuales con descripciones
+- Componentes de UI reutilizables (Draw-Box, Draw-StatusBar, Draw-MenuItem)
+- Paleta de diseño centralizada
 - Flujo guiado: Diagnóstico → Optimizar → Modos → Seguridad → Herramientas
-- Wizard accesible desde menú Optimizar
-- Menú de perfiles integrado en Seguridad
-- Daemon integrado en Seguridad
-- Toggle Dry-Run visible en Herramientas
 
-### Sesión 8 (07:00 - 07:15) — Auditoría profunda + fixes
-- **v3.0.1**: Auditoría de 29 scripts (~8200 líneas)
-- 9 bugs corregidos (rescue, profiles, startup-cleaner, html-report, debloater, services, turbo-boost, gaming-mode, daemon)
-- 12 mejoras de seguridad y arquitectura
-- Listas centralizadas en config.ps1 (bloatware, descripciones, versión)
-- Auto rescue point en scripts que modifican el sistema
-- Confirmaciones explícitas en operaciones destructivas
-- #Requires -Version 5.1 para fail-fast
-- Rotación de logs en daemon
+### Fase 2: Auditoría profunda (v3.0.1)
+- Auditoría de 29 scripts (~8200 líneas de código)
+- 9 bugs corregidos
+- 12 mejoras de seguridad y arquitectura aplicadas
 
----
+#### Bugs corregidos (9)
+1. `rescue.ps1` — `$rescueDirs[$i]` → `$rescueDirs[$idx]` (nombre incorrecto al restaurar)
+2. `profiles.ps1` — `param()` movido antes de `. config.ps1` (parámetros no funcionaban al invocar)
+3. `startup-cleaner.ps1` — Detectar HKCU vs HKLM correctamente al desactivar items de registry
+4. `html-report.ps1` — Versión hardcodeada actualizada a v3.0.0
+5. `debloater.ps1` — Eliminados duplicados (Disney, Spotify aparecían dos veces)
+6. `services.ps1` — Ahora incluye "Automatic (Delayed Start)" además de "Automatic"
+7. `turbo-boost.ps1` — `Set-ItemProperty` → `Set-RegProperty` (respeta DryRun)
+8. `gaming-mode.ps1` — Mismo fix de consistencia DryRun
+9. `daemon.ps1` — `Add-Type` movido al inicio (evita re-declaración cada 60s)
 
-## Módulos actuales (29 scripts)
+#### Mejoras de seguridad (6)
+1. Auto rescue point en `services.ps1`, `performance.ps1`, `turbo-boost.ps1`, `gaming-mode.ps1`
+2. Confirmación explícita "SI" en Turbo Boost y Gaming Mode antes de activar
+3. Advertencia DNS en Network Optimizer (cambia a 1.1.1.1/8.8.8.8)
+4. `#Requires -Version 5.1` en `config.ps1` para fail-fast
+5. Advertencia sobre redes corporativas en Network Optimizer
+6. Auto rescue point antes de Optimizar Todo (ya existía, verificado)
 
-| # | Script | Menú | Descripción |
-|---|--------|------|-------------|
-| 1 | `benchmark.ps1` | Diagnóstico [1] | Diagnóstico completo + CSV + HTML |
-| 2 | `rescue.ps1` | Seguridad [1]/[2] | Crear/restaurar rescue points |
-| 3 | `debloater.ps1` | Optimizar [1] | Eliminar ~30 apps bloatware |
-| 4 | `startup-cleaner.ps1` | Optimizar [2] | Limpiar programas de inicio |
-| 5 | `services.ps1` | Optimizar [3] | Optimizar servicios |
-| 6 | `performance.ps1` | Optimizar [4] | Efectos visuales, energía, telemetría |
-| 7 | `memory.ps1` | Optimizar [5] | Liberar RAM, pagefile |
-| 8 | `disk-cleanup.ps1` | Optimizar [6] | Temp, WU cache, navegadores |
-| 9 | `turbo-boost.ps1` | Modos [1]/[2]/[3] | Modo máximo rendimiento |
-| 10 | `gaming-mode.ps1` | Modos [4]/[5]/[6] | Optimizado para gaming |
-| 11 | `emergencia.ps1` | Seguridad [4] | Restaurar TODO (12 pasos) |
-| 12 | `profiles.ps1` | Seguridad [3] | Guardar/cargar configuraciones |
-| 13 | `wu-blocker.ps1` | Modos [7]/[8]/[9] | Pausar/reanudar Windows Update |
-| 14 | `html-report.ps1` | Herramientas [2] | Reporte HTML del benchmark |
-| 15 | `scheduler.ps1` | Herramientas [3] | Benchmark semanal automático |
-| 16 | `uninstall-tool.ps1` | Herramientas [8] | Desinstalador completo |
-| 17 | `network-optimizer.ps1` | Optimizar [7] | TCP/DNS/latencia optimizados |
-| 18 | `health-check.ps1` | Diagnóstico [2] | Verificación rápida del sistema |
-| 19 | `driver-updater.ps1` | Herramientas [1] | Escaneo de drivers |
-| 20 | `updater.ps1` | Herramientas [7] | Auto-actualización desde GitHub |
-| 21 | `wizard.ps1` | Optimizar [Z] | Modo guiado para principiantes |
-| 22 | `compare.ps1` | Diagnóstico [3] | Comparar benchmarks + tendencia |
-| 23 | `offline-pack.ps1` | Herramientas [6] | Exportar paquete sin internet |
-| 24 | `app-store.ps1` | Herramientas [5] | Reinstalar apps desinstaladas |
-| 25 | `share-benchmark.ps1` | Diagnóstico [5] | Exportar/importar entre PCs |
-| 26 | `dashboard.ps1` | Diagnóstico [4] | Dashboard web en tiempo real |
-| 27 | `notifications.ps1` | — | Notificaciones toast |
-| 28 | `daemon.ps1` | Seguridad [5-8] | Monitoreo silencioso + aprendizaje |
-| 29 | `config.ps1` | — | Configuración compartida |
+#### Mejoras de arquitectura (6)
+1. Lista centralizada de bloatware en `config.ps1` (`$Global:BloatwareApps`)
+2. Descripciones centralizadas en `config.ps1` (`$Global:AppDescriptions`)
+3. Versión centralizada en `config.ps1` (`$Global:AppVersion = "3.0.0"`)
+4. `debloater.ps1` y `app-store.ps1` usan listas centralizadas (eliminada duplicación)
+5. `win-optimizer.ps1` usa `$Global:AppVersion` en vez de hardcodear
+6. Rotación de logs en daemon (max 1MB, mantiene `.old`)
 
 ---
 
-## Pendiente (próxima sesión)
+## Archivos modificados hoy
 
-- [ ] Testing real en Windows (auditado en Linux)
+| Archivo | Cambios |
+|---------|---------|
+| `win-optimizer.ps1` | Reescrito: dashboard + categorías + componentes UI |
+| `INICIAR.bat` | ASCII art actualizado v3.0.0 |
+| `scripts/config.ps1` | #Requires, versión, bloatware centralizado, descripciones |
+| `scripts/debloater.ps1` | Usa lista centralizada, duplicados eliminados |
+| `scripts/app-store.ps1` | Usa listas centralizadas |
+| `scripts/services.ps1` | Auto rescue point, "Delayed Start" incluido |
+| `scripts/performance.ps1` | Auto rescue point |
+| `scripts/turbo-boost.ps1` | Confirmación, rescue point, DryRun fix |
+| `scripts/gaming-mode.ps1` | Confirmación, rescue point, DryRun fix |
+| `scripts/network-optimizer.ps1` | Advertencia DNS |
+| `scripts/rescue.ps1` | Bug $i → $idx |
+| `scripts/profiles.ps1` | Bug param() order |
+| `scripts/startup-cleaner.ps1` | Bug HKCU/HKLM |
+| `scripts/html-report.ps1` | Versión actualizada |
+| `scripts/daemon.ps1` | Add-Type fix, log rotation |
+| `README.md` | v3.0.0, sección nuevo menú |
+| `CHANGELOG.md` | v3.0.0 y v3.0.1 documentados |
+| `PROGRESS.md` | Este archivo |
+
+---
+
+## Estado del proyecto
+
+### ✅ Completado
+- [x] 29 scripts funcionales
+- [x] Menú UX rediseñado con dashboard
+- [x] Auditoría profunda completada
+- [x] Bugs corregidos
+- [x] Seguridad mejorada (auto-rescue, confirmaciones)
+- [x] Arquitectura mejorada (listas centralizadas)
+- [x] Documentación actualizada
+
+### ⏳ Pendiente
+- [ ] Push a GitHub (commit `c759910` local, sin push)
+- [ ] Testing real en Windows (auditado solo en Linux)
 - [ ] Revisar issues en GitHub si los hay
-- [ ] Push a GitHub (v3.0.0)
+
+---
+
+## Próximos pasos sugeridos
+
+1. **Push a GitHub** — ejecutar `./push.sh` desde la notebook
+2. **Testing real** — correr cada script en la BANGHO MAX L5
+3. **Posibles mejoras pendientes** (de la auditoría):
+   - Tests automatizados con mocks
+   - Verificación de integridad de scripts
+   - Multi-disco SSD detection
+   - Help global [H] en el menú
+   - Feedback post-acción (antes/después) en cada script
 
 ---
 
 ## Configuración Git
 
-Token en `~/.git-credentials` (permisos 600). Remote: `https://pabloeckert@github.com/...`.
-Push: `git push origin main` o `./push.sh "mensaje"`.
+Remote: `https://pabloeckert@github.com/pabloeckert/MejoraNotebook.git`
+Push: `git push origin main` o `./push.sh "mensaje"`
+Nota: no hay credenciales de GitHub en el servidor de desarrollo. Push manual desde notebook.
 
 ---
 
-*Última actualización: 2026-05-13 07:00 UTC+8*
+*Última actualización: 2026-05-13 07:19 UTC+8*
