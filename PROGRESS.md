@@ -9,31 +9,34 @@
 
 | Campo | Valor |
 |-------|-------|
-| **Versión** | v1.8.0 |
-| **Módulos** | 24 scripts PowerShell |
+| **Versión** | v1.9.0 |
+| **Módulos** | 26 scripts PowerShell |
 | **Branch** | main |
 | **Repo** | https://github.com/pabloeckert/MejoraNotebook |
-| **Último commit** | `d2d4232` — feat: Benchmark Compare + Offline Pack |
-| **Commits totales** | 17 |
+| **Último commit** | `b6c6985` — feat: App Store + Share Benchmark |
+| **Commits totales** | 19 |
 | **Estado** | ✅ Todo subido a GitHub |
 
 ---
 
 ## Resumen de sesiones
 
-### Sesión 1 (2026-05-13 05:31 - 05:50) — Auditoría + nuevos módulos
-- Fase 1-6: Auditoría, bugs, uninstall tool, network optimizer, health check, git config
+### Sesión 1 (05:31 - 05:50) — Auditoría + nuevos módulos
+- Auditoría, bugs, uninstall tool, network optimizer, health check, git config
 
-### Sesión 2 (2026-05-13 05:51 - 05:55) — Driver Updater + Auto-updater + Wizard
+### Sesión 2 (05:51 - 05:55) — Driver Updater + Auto-updater + Wizard
 - Driver Updater, Auto-updater, Wizard para principiantes
 
-### Sesión 3 (2026-05-13 05:59 - 06:05) — Compare + Offline
-- Benchmark Compare (tabla visual, tendencia, score)
-- Offline Pack (exportar/importar sin internet)
+### Sesión 3 (05:59 - 06:05) — Compare + Offline
+- Benchmark Compare, Offline Pack
+
+### Sesión 4 (06:03 - 06:10) — App Store + Share Benchmark
+- App Store (reinstalar apps desinstaladas)
+- Share Benchmark (exportar/importar entre PCs)
 
 ---
 
-## Módulos actuales (24 scripts)
+## Módulos actuales (26 scripts)
 
 | # | Script | Menú | Descripción |
 |---|--------|------|-------------|
@@ -60,7 +63,9 @@
 | 21 | `wizard.ps1` | [Z] | Modo guiado para principiantes |
 | 22 | `compare.ps1` | [C] | Comparar benchmarks + tendencia |
 | 23 | `offline-pack.ps1` | [O] | Exportar paquete sin internet |
-| 24 | `config.ps1` | — | Configuración compartida |
+| 24 | `app-store.ps1` | [F] | Reinstalar apps desinstaladas |
+| 25 | `share-benchmark.ps1` | [E]/[B] | Exportar/importar entre PCs |
+| 26 | `config.ps1` | — | Configuración compartida |
 
 ---
 
@@ -68,8 +73,8 @@
 
 - [ ] Testing real en Windows (auditado en Linux)
 - [ ] Revisar issues en GitHub si los hay
-- [ ] Posible: Integración con Chocolatey/winget
-- [ ] Posible: Benchmark comparativo entre PCs
+- [ ] Posible: Integración con Chocolatey/winget para instalación masiva
+- [ ] Posible: Dashboard web local con gráficos
 
 ---
 
@@ -80,4 +85,4 @@ Push: `git push origin main` o `./push.sh "mensaje"`.
 
 ---
 
-*Última actualización: 2026-05-13 06:05 UTC+8*
+*Última actualización: 2026-05-13 06:10 UTC+8*

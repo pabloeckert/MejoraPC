@@ -1,5 +1,18 @@
 # 📋 CHANGELOG
 
+## v1.9.0 — 2026-05-13
+
+### Nuevos módulos
+- **App Store** (`scripts/app-store.ps1`) — reinstalar apps desinstaladas por Debloater. Busca en winget y Microsoft Store. Incluye list, reinstall, search.
+- **Share Benchmark** (`scripts/share-benchmark.ps1`) — exportar/importar benchmarks entre PCs. Formato .portable.json con comparación visual.
+
+### Menú
+- Opción `[E]` — Exportar benchmark para otra PC
+- Opción `[B]` — Importar benchmark de otra PC
+- Opción `[F]` — App Store (reinstalar apps desinstaladas)
+
+---
+
 ## v1.8.0 — 2026-05-13
 
 ### Nuevos módulos

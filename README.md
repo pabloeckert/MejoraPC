@@ -1,4 +1,4 @@
-# 🔥 MejoraNotebook — Win Optimizer v1.8.0
+# 🔥 MejoraNotebook — Win Optimizer v1.9.0
 
 **Optimizador de Windows 11 para notebooks. Sin romper nada, todo reversible.**
 
@@ -39,6 +39,8 @@ Después: click derecho en `INICIAR.bat` → **Ejecutar como administrador**
 | 🧙 Wizard | Modo guiado para principiantes | 🔥🔥 |
 | 📊 Compare | Comparar benchmarks + tendencia | 🔥 |
 | 📦 Offline Pack | Exportar para uso sin internet | 🔥 |
+| 🏪 App Store | Reinstalar apps desinstaladas | 🔥 |
+| 📤 Share Benchmark | Comparar benchmarks entre PCs | 🔥 |
 | 🔥🔥🔥 TURBO BOOST | Modo máximo rendimiento | 🔥🔥🔥🔥🔥 |
 | 🚨 Emergencia | Restaurar TODO si algo sale mal | 🛡️ |
 
