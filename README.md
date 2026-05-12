@@ -1,4 +1,4 @@
-# 🔥 MejoraNotebook — Win Optimizer v1.0
+# 🔥 MejoraNotebook — Win Optimizer v1.4.0
 
 **Optimizador de Windows 11 para notebooks. Sin romper nada, todo reversible.**
 

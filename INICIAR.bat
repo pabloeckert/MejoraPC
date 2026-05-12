@@ -4,7 +4,7 @@
 
 echo.
 echo  ╔═══════════════════════════════════════════════════════╗
-echo  ║           WIN OPTIMIZER v1.0                         ║
+echo  ║           WIN OPTIMIZER v1.4.0                       ║
 echo  ║           Windows 11 Optimizer                       ║
 echo  ╚═══════════════════════════════════════════════════════╝
 echo.
