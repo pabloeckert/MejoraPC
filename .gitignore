@@ -1,0 +1,12 @@
+# Logs
+logs/
+
+# Rescue points (contienen info del sistema del usuario)
+rescue/
+
+# PowerShell temp
+*.ps1xml
+
+# Windows
+Thumbs.db
+Desktop.ini
