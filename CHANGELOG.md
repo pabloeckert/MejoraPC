@@ -1,5 +1,17 @@
 # 📋 CHANGELOG
 
+## v1.8.0 — 2026-05-13
+
+### Nuevos módulos
+- **Benchmark Compare** (`scripts/compare.ps1`) — comparación visual de benchmarks con tabla, score de mejora y tendencia histórica. Soporta modos: compare, list, trend.
+- **Offline Pack** (`scripts/offline-pack.ps1`) — exporta paquete completo para uso sin internet. Incluye instalador .bat y instrucciones.
+
+### Menú
+- Opción `[C]` — Comparar benchmarks (antes/después)
+- Opción `[O]` — Paquete offline (sin internet)
+
+---
+
 ## v1.7.0 — 2026-05-13
 
 ### Nuevos módulos
