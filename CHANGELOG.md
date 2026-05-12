@@ -1,5 +1,19 @@
 # 📋 CHANGELOG
 
+## v1.7.0 — 2026-05-13
+
+### Nuevos módulos
+- **Driver Updater** (`scripts/driver-updater.ps1`) — escaneo de drivers instalados, detección de problemas, verificación de actualizaciones vía Windows Update, reporte exportable.
+- **Auto-updater** (`scripts/updater.ps1`) — actualización automática desde GitHub. Descarga ZIP, crea backup, actualiza scripts y verifica versión.
+- **Wizard** (`scripts/wizard.ps1`) — modo guiado paso a paso para principiantes. Sin tecnicismos, 5 pasos: diagnóstico → respaldo → limpieza → optimización → resultado.
+
+### Menú
+- Opción `[V]` — Driver Updater (escanear drivers)
+- Opción `[Y]` — Actualizar MejoraNotebook desde GitHub
+- Opción `[Z]` — Wizard guiado para principiantes
+
+---
+
 ## v1.6.0 — 2026-05-13
 
 ### Nuevos módulos

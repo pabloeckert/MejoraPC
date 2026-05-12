@@ -393,7 +393,7 @@ $html = @"
         $comparisonHtml
         
         <div class="footer">
-            MejoraNotebook v1.6.0 — Reporte generado automáticamente<br>
+            MejoraNotebook v1.7.0 — Reporte generado automáticamente<br>
             <a href="https://github.com/pabloeckert/MejoraNotebook" style="color: #3498db">github.com/pabloeckert/MejoraNotebook</a>
         </div>
     </div>

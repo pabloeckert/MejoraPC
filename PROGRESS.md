@@ -9,60 +9,36 @@
 
 | Campo | Valor |
 |-------|-------|
-| **Versión** | v1.6.0 |
-| **Módulos** | 19 scripts PowerShell |
+| **Versión** | v1.7.0 |
+| **Módulos** | 22 scripts PowerShell |
 | **Branch** | main |
 | **Repo** | https://github.com/pabloeckert/MejoraNotebook |
-| **Último commit** | `6ded365` — chore: push.sh + PROGRESS |
-| **Commits totales** | 14 |
+| **Último commit** | `fb4c1f5` — feat: Driver Updater + Auto-updater + Wizard |
+| **Commits totales** | 15 |
 | **Estado** | ✅ Todo subido a GitHub |
 
 ---
 
-## Resumen de lo completado (2026-05-13)
+## Resumen de sesiones
 
-### Fase 1: Alineación de versión
-- Versión v1.4.0 → v1.4.0 alineada en README, win-optimizer.ps1, INICIAR.bat, html-report.ps1
-- PROGRESS.md creado
-- Commit: `ae1d235`
+### Sesión 1 (2026-05-13 05:31 - 05:50) — Auditoría + nuevos módulos
+- Fase 1: Versión v1.4.0 alineada, PROGRESS.md creado
+- Fase 2: Auditoría de código, 7 bugs corregidos
+- Fase 3: Uninstall tool + menú mejorado
+- Fase 4: Documentación v1.5.0
+- Fase 5: Network Optimizer + Health Check + CSV
+- Fase 6: Git credential store + push.sh
 
-### Fase 2: Auditoría de código (7 bugs corregidos)
-- `debloater.ps1`: entrada duplicada eliminada
-- `profiles.ps1`: parámetro por defecto corregido
-- `memory.ps1`: Write-Step con parámetros incorrectos (2 lugares)
-- `disk-cleanup.ps1`: icon cache path corregido
-- `rescue.ps1`: restauración reactiva servicios corriendo
-- `turbo-boost.ps1`: fallback seguro si powercfg falla
-- `gaming-mode.ps1`: fallback seguro si powercfg falla
-- Commit: `cdbc6cd`
-
-### Fase 3: Nuevos módulos + menú mejorado
-- `uninstall-tool.ps1`: desinstalador completo con restauración desde rescue point
-- Opciones de menú: [U] desinstalador, [X] reporte completo
-- `benchmark.ps1`: modo "completo" con HTML automático
-- Commit: `50f8238`
-
-### Fase 4: Documentación v1.5.0
-- CHANGELOG, README, TUTORIAL, MANUAL actualizados
-- Commit: `9a5f376`
-
-### Fase 5: Network Optimizer + Health Check + CSV
-- `network-optimizer.ps1`: TCP/DNS/latencia/throttling/NIC/gaming profile
-- `health-check.ps1`: verificación rápida con estado de optimizaciones
-- `benchmark.ps1`: exportación CSV automática
-- `emergencia.ps1`: expandido a 12 pasos (red + gaming + WU)
-- Menú: [N], [M], [Q] agregados
-- Commit: `5aa6fdf`
-
-### Fase 6: Configuración Git + push.sh
-- Git credential store configurado (token persiste entre sesiones)
-- Remote URL con usuario para credential helper
-- Script `push.sh` para push rápido
-- Commit: `6ded365`
+### Sesión 2 (2026-05-13 05:51 - 05:55) — Driver Updater + Auto-updater + Wizard
+- Nuevo: Driver Updater (escaneo de drivers, problemas, actualizaciones WU)
+- Nuevo: Auto-updater (actualización automática desde GitHub con backup)
+- Nuevo: Wizard (modo guiado 5 pasos para principiantes)
+- Versión actualizada a v1.7.0
+- Documentación completa actualizada
 
 ---
 
-## Módulos actuales (19 scripts)
+## Módulos actuales (22 scripts)
 
 | # | Script | Menú | Descripción |
 |---|--------|------|-------------|
@@ -84,26 +60,28 @@
 | 16 | `uninstall-tool.ps1` | [U] | Desinstalador completo |
 | 17 | `network-optimizer.ps1` | [N]/[M] | TCP/DNS/latencia optimizados |
 | 18 | `health-check.ps1` | [Q] | Verificación rápida del sistema |
-| 19 | `config.ps1` | — | Configuración compartida |
+| 19 | `driver-updater.ps1` | [V] | Escaneo de drivers y actualizaciones |
+| 20 | `updater.ps1` | [Y] | Auto-actualización desde GitHub |
+| 21 | `wizard.ps1` | [Z] | Modo guiado para principiantes |
+| 22 | `config.ps1` | — | Configuración compartida |
 
 ---
 
 ## Pendiente (próxima sesión)
 
 - [ ] Testing real en Windows (auditado en Linux, necesita validación)
-- [ ] Módulo: Driver Updater (verificar actualizaciones de drivers)
-- [ ] Feature: Auto-update del propio script desde GitHub
-- [ ] Feature: Modo wizard interactivo para principiantes
 - [ ] Revisar issues en GitHub si los hay
+- [ ] Posible: Modo offline (sin conexión a GitHub)
+- [ ] Posible: Integración con Chocolatey/winget para reinstalar apps
+- [ ] Posible: Benchmark comparativo entre PCs
 
 ---
 
-## Configuración Git (para retomar)
+## Configuración Git
 
-El token de GitHub está en `~/.git-credentials` con permisos 600.
-El remote URL usa `https://pabloeckert@github.com/...`.
-Push automático: `git push origin main` o `./push.sh "mensaje"`.
+Token en `~/.git-credentials` (permisos 600). Remote: `https://pabloeckert@github.com/...`.
+Push: `git push origin main` o `./push.sh "mensaje"`.
 
 ---
 
-*Última actualización: 2026-05-13 05:50 UTC+8*
+*Última actualización: 2026-05-13 05:55 UTC+8*
