@@ -1,5 +1,16 @@
 # 📋 CHANGELOG
 
+## v2.1.0 — 2026-05-13
+
+### Nuevos módulos
+- **Notifications** (`scripts/notifications.ps1`) — notificaciones toast para Windows 10/11. Soporta iconos personalizados (success, warning, error, fire, game, globe, chart). Fallback a msg.exe.
+
+### Integración
+- `config.ps1`: función `Send-Notification()` wrapper usable por todos los scripts
+- Notificaciones automáticas en: Turbo Boost, Gaming Mode, Benchmark, Network Optimizer, WU Blocker
+
+---
+
 ## v2.0.0 — 2026-05-13
 
 ### Nuevos módulos

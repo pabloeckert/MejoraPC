@@ -9,12 +9,12 @@
 
 | Campo | Valor |
 |-------|-------|
-| **Versión** | v2.0.0 |
-| **Módulos** | 27 scripts PowerShell |
+| **Versión** | v2.1.0 |
+| **Módulos** | 28 scripts PowerShell |
 | **Branch** | main |
 | **Repo** | https://github.com/pabloeckert/MejoraNotebook |
-| **Último commit** | `586e2ed` — feat: Dashboard web local |
-| **Commits totales** | 21 |
+| **Último commit** | `66d1d5a` — feat: Notificaciones toast |
+| **Commits totales** | 23 |
 | **Estado** | ✅ Todo subido a GitHub |
 
 ---
@@ -36,9 +36,13 @@
 ### Sesión 5 (06:06 - 06:15) — Dashboard web
 - Dashboard web local con gráficos en tiempo real
 
+### Sesión 6 (06:09 - 06:20) — Notificaciones toast
+- Notificaciones toast para Windows 10/11
+- Integración en turbo boost, gaming mode, benchmark, network, WU
+
 ---
 
-## Módulos actuales (27 scripts)
+## Módulos actuales (28 scripts)
 
 | # | Script | Menú | Descripción |
 |---|--------|------|-------------|
@@ -68,7 +72,8 @@
 | 24 | `app-store.ps1` | [F] | Reinstalar apps desinstaladas |
 | 25 | `share-benchmark.ps1` | [E]/[B] | Exportar/importar entre PCs |
 | 26 | `dashboard.ps1` | [X] | Dashboard web en tiempo real |
-| 27 | `config.ps1` | — | Configuración compartida |
+| 27 | `notifications.ps1` | — | Notificaciones toast |
+| 28 | `config.ps1` | — | Configuración compartida |
 
 ---
 
@@ -77,7 +82,6 @@
 - [ ] Testing real en Windows (auditado en Linux)
 - [ ] Revisar issues en GitHub si los hay
 - [ ] Posible: Integración con Chocolatey/winget
-- [ ] Posible: Notificaciones de sistema (toast notifications)
 
 ---
 
@@ -88,4 +92,4 @@ Push: `git push origin main` o `./push.sh "mensaje"`.
 
 ---
 
-*Última actualización: 2026-05-13 06:15 UTC+8*
+*Última actualización: 2026-05-13 06:20 UTC+8*
