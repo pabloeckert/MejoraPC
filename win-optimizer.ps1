@@ -80,6 +80,9 @@ function Show-Menu {
     Write-Host "  [N] 🌐  Network Optimizer (optimizar TCP/DNS/latencia)" -ForegroundColor Cyan
     Write-Host "  [M] 🔄  Revertir Network Optimizer" -ForegroundColor Cyan
     Write-Host ""
+    Write-Host "  ─── 🤖 DAEMON ─────────────────────────────────────────" -ForegroundColor Magenta
+    Write-Host "  [8] 🤖  Daemon de monitoreo automático (start/stop/status)" -ForegroundColor Magenta
+    Write-Host ""
     Write-Host "  ─── EXTRAS ────────────────────────────────────────────" -ForegroundColor Gray
     Write-Host "  [V] 🔧  Driver Updater (escanear drivers)" -ForegroundColor Cyan
     Write-Host "  [Y] 📥  Actualizar MejoraNotebook desde GitHub" -ForegroundColor Cyan
@@ -229,7 +232,25 @@ do {
         "G" { & "$ScriptsDir\gaming-mode.ps1" -Action activate; pause }
         "H" { & "$ScriptsDir\gaming-mode.ps1" -Action revert; pause }
         "J" { & "$ScriptsDir\gaming-mode.ps1" -Action status; pause }
-        "8" { & "$ScriptsDir\rescue.ps1" -Action restore; pause }
+        "8" {
+            Write-Host ""
+            Write-Host "  [1] Restaurar Rescue Point" -ForegroundColor Green
+            Write-Host "  [2] 🤖 Daemon — Iniciar" -ForegroundColor Magenta
+            Write-Host "  [3] 🤖 Daemon — Detener" -ForegroundColor Red
+            Write-Host "  [4] 🤖 Daemon — Status" -ForegroundColor Cyan
+            Write-Host "  [5] 🤖 Daemon — Ver logs" -ForegroundColor Gray
+            Write-Host "  [0] Volver" -ForegroundColor Gray
+            Write-Host ""
+            $dChoice = Read-Host "  Opción"
+            switch ($dChoice) {
+                "1" { & "$ScriptsDir\rescue.ps1" -Action restore }
+                "2" { & "$ScriptsDir\daemon.ps1" -Action start }
+                "3" { & "$ScriptsDir\daemon.ps1" -Action stop }
+                "4" { & "$ScriptsDir\daemon.ps1" -Action status }
+                "5" { & "$ScriptsDir\daemon.ps1" -Action log }
+            }
+            pause
+        }
         "9" { & "$ScriptsDir\emergencia.ps1"; pause }
         "P" { 
             Write-Host ""
