@@ -83,6 +83,8 @@ function Show-Menu {
     Write-Host "  ─── EXTRAS ────────────────────────────────────────────" -ForegroundColor Gray
     Write-Host "  [V] 🔧  Driver Updater (escanear drivers)" -ForegroundColor Cyan
     Write-Host "  [Y] 📥  Actualizar MejoraNotebook desde GitHub" -ForegroundColor Cyan
+    Write-Host "  [C] 📊  Comparar benchmarks (antes/después)" -ForegroundColor Cyan
+    Write-Host "  [O] 📦  Paquete offline (sin internet)" -ForegroundColor Cyan
     Write-Host "  [I] 📊  Generar reporte HTML" -ForegroundColor Cyan
     Write-Host "  [X] 📊  Reporte completo (benchmark + HTML + abrir)" -ForegroundColor Cyan
     Write-Host "  [K] ⏰  Optimización programada (benchmark semanal)" -ForegroundColor Cyan
@@ -261,6 +263,8 @@ do {
         "M" { & "$ScriptsDir\network-optimizer.ps1" -Action revert; pause }
         "V" { & "$ScriptsDir\driver-updater.ps1" -Action scan; pause }
         "Y" { & "$ScriptsDir\updater.ps1" -Action update; pause }
+        "C" { & "$ScriptsDir\compare.ps1" -Action compare; pause }
+        "O" { & "$ScriptsDir\offline-pack.ps1" -Action export; pause }
         "Z" { & "$ScriptsDir\wizard.ps1"; pause }
         "X" {
             Write-Header "📊 REPORTE COMPLETO"
