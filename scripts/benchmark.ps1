@@ -3,7 +3,7 @@
 # ============================================================
 
 param(
-    [ValidateSet("antes", "despues", "rapido")]
+    [ValidateSet("antes", "despues", "rapido", "completo")]
     [string]$Mode = "rapido"
 )
 
@@ -223,5 +223,23 @@ if ($Mode -eq "despues") {
 # Guardar snapshot rápido para comparaciones futuras
 $snapshotFile = Join-Path $LogDir "benchmark_latest.json"
 $report | ConvertTo-Json -Depth 5 | Out-File $snapshotFile -Encoding UTF8
+
+# Modo completo: generar HTML automáticamente
+if ($Mode -eq "completo") {
+    Write-Host ""
+    Write-Header "📊 GENERANDO REPORTE HTML..."
+    try {
+        & "$PSScriptRoot\html-report.ps1" -InputFile $snapshotFile
+        # Abrir en navegador
+        $reportFile = Get-ChildItem (Join-Path $LogDir "report_*.html") -ErrorAction SilentlyContinue |
+            Sort-Object LastWriteTime -Descending | Select-Object -First 1
+        if ($reportFile) {
+            Start-Process $reportFile.FullName
+            Write-Success "Reporte abierto en el navegador"
+        }
+    } catch {
+        Write-Warn "No se pudo generar el reporte HTML: $_"
+    }
+}
 
 Log "Benchmark completado ($Mode): RAM $pctUsed%, CPU $cpuLoad%, Disco $($report.Disk.PercentUsed)%"

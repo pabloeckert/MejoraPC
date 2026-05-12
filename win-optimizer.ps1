@@ -74,7 +74,9 @@ function Show-Menu {
     Write-Host ""
     Write-Host "  ─── EXTRAS ────────────────────────────────────────────" -ForegroundColor Gray
     Write-Host "  [I] 📊  Generar reporte HTML" -ForegroundColor Cyan
+    Write-Host "  [X] 📊  Reporte completo (benchmark + HTML + abrir)" -ForegroundColor Cyan
     Write-Host "  [K] ⏰  Optimización programada (benchmark semanal)" -ForegroundColor Cyan
+    Write-Host "  [U] 🗑️  Desinstalador (restaurar todo + eliminar)" -ForegroundColor Red
     Write-Host "  [D] 🧪  Toggle Dry-RUN $(if($Global:DryRun){'(ACTIVO ✅)'}else{'(off)'})" -ForegroundColor $(if($Global:DryRun){"Yellow"}else{"Gray"})
     Write-Host "  [L] 📄  Ver log de esta sesión" -ForegroundColor Gray
     Write-Host ""
@@ -244,7 +246,13 @@ do {
             }
             pause
         }
-        "D" { 
+        "X" {
+            Write-Header "📊 REPORTE COMPLETO"
+            & "$ScriptsDir\benchmark.ps1" -Mode completo
+            pause
+        }
+        "U" { & "$ScriptsDir\uninstall-tool.ps1"; pause }
+        "D" {
             Set-DryRun (!$Global:DryRun)
             if ($Global:DryRun) {
                 Write-Success "Dry-RUN activado — los scripts simularán sin aplicar cambios."
