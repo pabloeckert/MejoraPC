@@ -54,6 +54,7 @@ Esto te va a mostrar:
 - Cuántos programas de inicio hay
 - Cuántos servicios están corriendo
 - Si hay problemas detectados
+- Si tu disco es SSD o HDD
 
 **Anotá los números** para comparar después.
 
@@ -92,8 +93,9 @@ Esto ejecuta todos los pasos en orden:
 3. Services Optimizer (optimiza servicios)
 4. Performance Tweaks (rendimiento)
 5. Memory Optimizer (libera RAM)
+6. Disk Cleanup (limpia archivos temporales)
 
-Te va a pedir confirmación antes de cada paso.
+Te va a pedir confirmación. También podés elegir modo **DRY-RUN** para simular sin aplicar cambios.
 
 ### Opción manual: Paso a paso
 
@@ -160,6 +162,54 @@ Seleccioná: [R] 🔄 Revertir Turbo Boost
 
 ---
 
+## Paso 8: Gaming Mode (opcional)
+
+Cuando querés jugar:
+
+```
+Seleccioná: [G] 🎮 ACTIVAR Gaming Mode
+```
+
+### ¿Qué diferencia tiene con Turbo Boost?
+
+| | Turbo Boost | Gaming Mode |
+|---|---|---|
+| CPU | 100% siempre | Balanceado |
+| Audio | ❌ Detenido | ✅ Activo |
+| Red | ❌ Detenida | ✅ Activa |
+| Game DVR | Sin cambios | ❌ Desactivado |
+| GPU | Sin cambios | ✅ Prioridad máxima |
+| Latencia | Sin cambios | ✅ Optimizada |
+
+**Usá Gaming Mode para jugar, Turbo Boost para compilar/renderizar.**
+
+### Revertir
+
+```
+Seleccioná: [H] 🔄 Revertir Gaming Mode
+```
+
+---
+
+## Modo Silencioso (avanzado)
+
+Para reinstalaciones o configuración rápida, ejecutá todo sin prompts:
+
+```powershell
+# Optimización completa silenciosa
+.\win-optimizer.ps1 -Silent
+
+# Simular sin aplicar cambios
+.\win-optimizer.ps1 -Silent -DryRun
+
+# Incluir Gaming Mode
+.\win-optimizer.ps1 -Silent -WithGaming
+```
+
+Incluye benchmark antes/después automáticamente.
+
+---
+
 ## ¿Algo salió mal?
 
 ### Problema: "No se ejecuta como administrador"
@@ -197,10 +247,11 @@ Seleccioná: [R] 🔄 Revertir Turbo Boost
 ## Consejos
 
 1. **Siempre** creá un Rescue Point antes de optimizar
-2. **Siempre** revertí el Turbo Boost cuando terminés
+2. **Siempre** revertí el Turbo Boost / Gaming Mode cuando terminés
 3. **Reiniciá** después de las optimizaciones
-4. **No uses** Turbo Boost para uso diario
+4. **Probá con DRY-RUN** antes de aplicar si tenés dudas
 5. **El Emergencia** es tu red de seguridad — usalo si algo falla
+6. **Usá los logs** (`[L]`) para ver qué se hizo
 
 ---
 

@@ -154,8 +154,10 @@ if ($choice -eq "0") {
 
 $toDisable = if ($choice -eq "2") { $categorized } else { $safeItems }
 $disabled = 0
+$total = $toDisable.Count
 
 foreach ($item in $toDisable) {
+    Write-Progress -Activity "Desactivando startup" -Status "$disabled/$total — $($item.Name)" -PercentComplete ([math]::Round(($disabled/$total)*100,0))
     Write-Host "  Desactivando: $($item.Name)... " -NoNewline
     try {
         switch ($item.Type) {
@@ -181,6 +183,7 @@ foreach ($item in $toDisable) {
     }
 }
 
+Write-Progress -Activity "Desactivando startup" -Completed
 Write-Host ""
 Write-Success "$disabled programas desactivados del inicio."
 Write-Info "Reiniciá para ver el efecto."

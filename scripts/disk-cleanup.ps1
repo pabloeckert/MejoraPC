@@ -16,9 +16,15 @@ $freeBefore = [math]::Round($disk.FreeSpace / 1GB, 2)
 Write-Host "  Disco C: — Libre antes: ${freeBefore} GB" -ForegroundColor White
 Write-Host ""
 
+$totalSteps = 8
+$currentStep = 0
+
+$currentStep++
+
 # ============================================================
 # 1. Archivos temporales del usuario
 # ============================================================
+Write-Progress -Activity "Disk Cleanup" -Status "Paso $currentStep/$totalSteps — Temporales" -PercentComplete ([math]::Round(($currentStep/$totalSteps)*100,0))
 Write-Step 1 "Limpiando temporales del usuario..."
 try {
     $tempPaths = @(
@@ -46,9 +52,12 @@ try {
     $errors++
 }
 
+$currentStep++
+
 # ============================================================
 # 2. Windows Update Cache
 # ============================================================
+Write-Progress -Activity "Disk Cleanup" -Status "Paso $currentStep/$totalSteps — Windows Update" -PercentComplete ([math]::Round(($currentStep/$totalSteps)*100,0))
 Write-Step 2 "Limpiando caché de Windows Update..."
 try {
     $wuPath = "$env:WINDIR\SoftwareDistribution\Download"
@@ -73,9 +82,12 @@ try {
     $errors++
 }
 
+$currentStep++
+
 # ============================================================
 # 3. Caché de thumbnails
 # ============================================================
+Write-Progress -Activity "Disk Cleanup" -Status "Paso $currentStep/$totalSteps — Thumbnails" -PercentComplete ([math]::Round(($currentStep/$totalSteps)*100,0))
 Write-Step 3 "Limpiando caché de thumbnails..."
 try {
     $thumbPath = "$env:LOCALAPPDATA\Microsoft\Windows\Explorer"
@@ -93,9 +105,12 @@ try {
     $errors++
 }
 
+$currentStep++
+
 # ============================================================
 # 4. Logs de Windows (Event Logs antiguos)
 # ============================================================
+Write-Progress -Activity "Disk Cleanup" -Status "Paso $currentStep/$totalSteps — Event Logs" -PercentComplete ([math]::Round(($currentStep/$totalSteps)*100,0))
 Write-Step 4 "Limpiando logs de eventos antiguos..."
 try {
     if (!$Global:DryRun) {
@@ -115,9 +130,12 @@ try {
     $errors++
 }
 
+$currentStep++
+
 # ============================================================
 # 5. Prefetch
 # ============================================================
+Write-Progress -Activity "Disk Cleanup" -Status "Paso $currentStep/$totalSteps — Prefetch" -PercentComplete ([math]::Round(($currentStep/$totalSteps)*100,0))
 Write-Step 5 "Limpiando Prefetch..."
 try {
     $prefetchPath = "$env:WINDIR\Prefetch"
@@ -140,9 +158,12 @@ try {
     $errors++
 }
 
+$currentStep++
+
 # ============================================================
 # 6. Papelera de reciclaje
 # ============================================================
+Write-Progress -Activity "Disk Cleanup" -Status "Paso $currentStep/$totalSteps — Papelera" -PercentComplete ([math]::Round(($currentStep/$totalSteps)*100,0))
 Write-Step 6 "Vaciando papelera de reciclaje..."
 try {
     if (!$Global:DryRun) {
@@ -155,9 +176,12 @@ try {
     $errors++
 }
 
+$currentStep++
+
 # ============================================================
 # 7. Caché de navegadores (Chrome, Edge, Firefox)
 # ============================================================
+Write-Progress -Activity "Disk Cleanup" -Status "Paso $currentStep/$totalSteps — Navegadores" -PercentComplete ([math]::Round(($currentStep/$totalSteps)*100,0))
 Write-Step 7 "Limpiando caché de navegadores..."
 try {
     $browserPaths = @(
@@ -190,9 +214,12 @@ try {
     $errors++
 }
 
+$currentStep++
+
 # ============================================================
 # 8. Caché de iconos
 # ============================================================
+Write-Progress -Activity "Disk Cleanup" -Status "Paso $currentStep/$totalSteps — Iconos" -PercentComplete ([math]::Round(($currentStep/$totalSteps)*100,0))
 Write-Step 8 "Limpiando caché de iconos..."
 try {
     $iconCache = "$env:LOCALAPPDATA\Microsoft\Windows\Explorer\iconcache_*.db"
@@ -213,6 +240,7 @@ try {
 # ============================================================
 # Resultado
 # ============================================================
+Write-Progress -Activity "Disk Cleanup" -Completed
 Write-Host ""
 
 if (!$Global:DryRun) {

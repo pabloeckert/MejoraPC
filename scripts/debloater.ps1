@@ -108,8 +108,11 @@ Log "Iniciando debloat de $($found.Count) apps"
 # Eliminar apps
 $removed = 0
 $failed = 0
+$total = $found.Count
 
 foreach ($pkg in $found) {
+    $pct = [math]::Round((($removed + $failed) / $total) * 100, 0)
+    Write-Progress -Activity "Eliminando bloatware" -Status "$($removed+$failed)/$total — $($pkg.Name)" -PercentComplete $pct
     Write-Host "  Eliminando: $($pkg.Name)... " -NoNewline
     try {
         if ($Global:DryRun) {
@@ -138,6 +141,7 @@ foreach ($pkg in $found) {
     }
 }
 
+Write-Progress -Activity "Eliminando bloatware" -Completed
 Write-Host ""
 Write-Success "Completado: $removed eliminadas, $failed errores"
 Write-Info "Las apps se pueden restaurar desde Microsoft Store si las necesitás."

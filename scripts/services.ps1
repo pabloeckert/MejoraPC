@@ -22,7 +22,12 @@ $alreadyOk = 0
 $failed = 0
 
 # Poner en Manual (lista centralizada en config.ps1)
+$totalSvc = $Global:ServicesToManual.Count + $Global:ServicesToDisable.Count
+$processed = 0
+
 foreach ($svcInfo in $Global:ServicesToManual) {
+    $processed++
+    Write-Progress -Activity "Optimizando servicios" -Status "$processed/$totalSvc — $($svcInfo.Desc)" -PercentComplete ([math]::Round(($processed/$totalSvc)*100,0))
     $svc = Get-Service -Name $svcInfo.Name -ErrorAction SilentlyContinue
     if ($svc -and $svc.StartType -eq "Automatic") {
         Write-Host "  📋 $($svcInfo.Desc)... " -NoNewline
@@ -49,6 +54,8 @@ foreach ($svcInfo in $Global:ServicesToManual) {
 
 # Desactivar (lista centralizada en config.ps1)
 foreach ($svcInfo in $Global:ServicesToDisable) {
+    $processed++
+    Write-Progress -Activity "Optimizando servicios" -Status "$processed/$totalSvc — $($svcInfo.Desc)" -PercentComplete ([math]::Round(($processed/$totalSvc)*100,0))
     # En HDD, no desactivar SysMain
     if ($svcInfo.Name -eq "SysMain" -and !$Global:IsSSD) {
         Write-Info "SysMain mantenido (HDD detectado)"
@@ -80,6 +87,7 @@ foreach ($svcInfo in $Global:ServicesToDisable) {
     }
 }
 
+Write-Progress -Activity "Optimizando servicios" -Completed
 Write-Host ""
 Write-Success "Servicios optimizados: $optimized"
 if ($failed -gt 0) { Write-Warn "Con errores: $failed" }

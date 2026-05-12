@@ -83,6 +83,7 @@ function Activate-Turbo {
                      $Global:TurboExtraServices
     
     foreach ($svcName in $turboServices) {
+        Write-Progress -Activity "Turbo Boost — Deteniendo servicios" -Status "$($servicesStopped.Count) detenidos — $svcName" -PercentComplete ([math]::Min(($servicesStopped.Count / $turboServices.Count) * 100, 100))
         $svc = Get-Service -Name $svcName -ErrorAction SilentlyContinue
         if ($svc -and $svc.Status -eq "Running") {
             try {
@@ -91,6 +92,7 @@ function Activate-Turbo {
             } catch {}
         }
     }
+    Write-Progress -Activity "Turbo Boost — Deteniendo servicios" -Completed
     Write-Success "$($servicesStopped.Count) servicios detenidos"
     
     # 3. MATAR PROCESOS NO ESENCIALES

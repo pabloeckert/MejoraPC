@@ -162,20 +162,9 @@ function Activate-Gaming {
     
     # 7. CERRAR PROCESOS QUE INTERFIEREN (pero NO audio/red)
     Write-Step 7 "Cerrando procesos innecesarios..."
-    $gamingProcesses = @(
-        "OneDrive", "FileSyncHelper",
-        "MicrosoftEdge*", "msedge",
-        "Widgets", "WidgetService",
-        "YourPhone", "PhoneExperienceHost",
-        "Cortana", "SearchApp", "SearchUI",
-        "SecurityHealthSystray",
-        "Teams", "MSTeams",
-        "AdobeARM", "AdobeUpdate",
-        "GoogleUpdate", "BraveUpdate",
-        "CCXProcess", "AGSService",
-        "IntelDriverSupportAssistant",
-        "Copilot", "WindowsCopilot"
-    )
+    # Usar lista centralizada de config.ps1, excluyendo audio/red
+    $keepAlive = @("Spotify", "Discord")  # Mantener si están corriendo (audio/chat)
+    $gamingProcesses = $Global:TurboProcesses | Where-Object { $_ -notin $keepAlive }
     
     foreach ($procPattern in $gamingProcesses) {
         Get-Process -Name $procPattern -ErrorAction SilentlyContinue | ForEach-Object {
