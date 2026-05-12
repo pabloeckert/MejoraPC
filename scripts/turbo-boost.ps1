@@ -5,13 +5,14 @@
 #     máximo rendimiento (edición de video, compilación, etc.)
 #     Usá "revert" para volver a la normalidad.
 # ============================================================
-. "$PSScriptRoot\config.ps1"
-Assert-Admin
 
 param(
     [ValidateSet("activate", "revert", "status")]
     [string]$Action = "activate"
 )
+
+. "$PSScriptRoot\config.ps1"
+Assert-Admin
 
 $TurboStateFile = Join-Path $RescueDir "turbo_state.json"
 
@@ -47,7 +48,8 @@ function Activate-Turbo {
     
     $servicesStopped = @()
     $processesKilled = @()
-    $originalPlan = (powercfg /getactivescheme) -match '([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})' | Out-Null; $Matches[1]
+    $null = (powercfg /getactivescheme) -match '([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})'
+    $originalPlan = $Matches[1]
     
     # 1. PLAN DE ENERGÍA MÁXIMO
     Write-Step 1 "Activando plan de energía ULTIMATE PERFORMANCE..."
@@ -75,44 +77,10 @@ function Activate-Turbo {
     
     # 2. DESACTIVAR SERVICIOS NO ESENCIALES
     Write-Step 2 "Deteniendo servicios no esenciales..."
-    $turboServices = @(
-        "DiagTrack",           # Telemetría
-        "SysMain",             # Superfetch
-        "WSearch",             # Indexación
-        "BITS",                # Background transfers
-        "DoSvc",               # Delivery Optimization
-        "MapsBroker",          # Mapas
-        "lfsvc",               # Geolocalización
-        "WerSvc",              # Error Reporting
-        "XblAuthManager",      # Xbox
-        "XblGameSave",         # Xbox
-        "XboxGipSvc",          # Xbox
-        "XboxNetApiSvc",       # Xbox
-        "PhoneSvc",            # Teléfono
-        "MessagingService",    # Mensajería
-        "PimIndexMaintenanceSvc", # Contactos
-        "BcastDVRUserService", # Game DVR
-        "wisvc",               # Insider
-        "dmwappushservice",    # WAP Push
-        "RetailDemo",          # Demo
-        "AdobeARMservice",     # Adobe Update
-        "brave",               # Brave Update
-        "edgeupdate",          # Edge Update
-        "gupdate",             # Google Update
-        "CapCutServiceLS",     # CapCut
-        "DFWSIDService",       # Wondershare
-        "DSAService",          # Intel Driver Assistant
-        "DSAUpdateService",    # Intel Driver Assistant Updater
-        "AeLookupSvc",         # Application Experience
-        "WpcMonSvc",           # Parental Controls
-        "SCardSvr",            # Smart Card
-        "ScDeviceEnum",        # Smart Card Device
-        "SharedAccess",        # ICS
-        "RemoteRegistry",      # Remote Registry
-        "TrkWks",              # Distributed Link Tracking
-        "WMPNetworkSvc",       # WMP Sharing
-        "RetailDemo"           # Retail Demo
-    )
+    # Combinar listas centralizadas de config.ps1
+    $turboServices = ($Global:ServicesToManual | ForEach-Object { $_.Name }) + 
+                     ($Global:ServicesToDisable | ForEach-Object { $_.Name }) + 
+                     $Global:TurboExtraServices
     
     foreach ($svcName in $turboServices) {
         $svc = Get-Service -Name $svcName -ErrorAction SilentlyContinue
@@ -127,26 +95,8 @@ function Activate-Turbo {
     
     # 3. MATAR PROCESOS NO ESENCIALES
     Write-Step 3 "Cerrando procesos no esenciales..."
-    $turboProcesses = @(
-        "OneDrive", "FileSyncHelper",
-        "MicrosoftEdge*", "msedge",
-        "Widgets", "WidgetService",
-        "YourPhone", "PhoneExperienceHost",
-        "Cortana", "SearchApp", "SearchUI",
-        "SecurityHealthSystray",
-        "Spotify", "Discord",
-        "Teams", "MSTeams",
-        "AdobeARM", "AdobeUpdate",
-        "GoogleUpdate", "BraveUpdate",
-        "Steam", "EpicGamesLauncher",
-        "CCXProcess", "AGSService",
-        "IntelDriverSupportAssistant",
-        "Copilot", "WindowsCopilot",
-        "TabTip", "tabtip32",
-        "ctfmon"
-    )
     
-    foreach ($procPattern in $turboProcesses) {
+    foreach ($procPattern in $Global:TurboProcesses) {
         Get-Process -Name $procPattern -ErrorAction SilentlyContinue | ForEach-Object {
             try {
                 $_ | Stop-Process -Force -ErrorAction SilentlyContinue

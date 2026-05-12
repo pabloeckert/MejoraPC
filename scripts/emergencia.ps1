@@ -32,23 +32,18 @@ Write-Success "Plan equilibrado activado"
 
 # 2. Reactivar servicios
 Write-Step 2 "Reactivando servicios..."
-$servicesToRestore = @(
-    "DiagTrack", "SysMain", "WSearch", "BITS", "DoSvc",
-    "MapsBroker", "lfsvc", "WerSvc", "XblAuthManager",
-    "XblGameSave", "XboxGipSvc", "XboxNetApiSvc",
-    "PhoneSvc", "MessagingService", "PimIndexMaintenanceSvc",
-    "BcastDVRUserService", "wisvc", "dmwappushservice",
-    "RetailDemo", "AdobeARMservice", "brave", "edgeupdate",
-    "gupdate", "CapCutServiceLS", "DFWSIDService",
-    "DSAService", "DSAUpdateService", "AeLookupSvc",
-    "WpcMonSvc", "SCardSvr", "ScDeviceEnum", "SharedAccess",
-    "RemoteRegistry", "TrkWks", "WMPNetworkSvc"
-)
+# Usar lista centralizada de config.ps1
+$servicesToRestore = ($Global:ServicesToManual | ForEach-Object { $_.Name }) + 
+                     ($Global:ServicesToDisable | ForEach-Object { $_.Name })
+
+# Servicios que siempre van a Manual (nunca Automatic)
+$manualServices = @("SysMain", "WSearch")
 
 $restored = 0
 foreach ($svcName in $servicesToRestore) {
     try {
-        Set-Service -Name $svcName -StartupType Automatic -ErrorAction SilentlyContinue
+        $targetStartType = if ($svcName -in $manualServices) { "Manual" } else { "Automatic" }
+        Set-Service -Name $svcName -StartupType $targetStartType -ErrorAction SilentlyContinue
         Start-Service -Name $svcName -ErrorAction SilentlyContinue
         $restored++
     } catch {}

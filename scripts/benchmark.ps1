@@ -1,12 +1,13 @@
 # ============================================================
 # BENCHMARK - Diagnóstico completo del sistema
 # ============================================================
-. "$PSScriptRoot\config.ps1"
 
 param(
     [ValidateSet("antes", "despues", "rapido")]
     [string]$Mode = "rapido"
 )
+
+. "$PSScriptRoot\config.ps1"
 
 Write-Header "🔍 DIAGNÓSTICO DEL SISTEMA"
 

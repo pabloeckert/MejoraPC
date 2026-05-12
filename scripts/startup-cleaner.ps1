@@ -160,7 +160,9 @@ foreach ($item in $toDisable) {
     try {
         switch ($item.Type) {
             "File" {
-                Rename-Item $item.Path "$($item.Path).disabled" -ErrorAction Stop
+                $backupDir = Join-Path (Split-Path $item.Path) ".disabled"
+                if (!(Test-Path $backupDir)) { New-Item -ItemType Directory -Path $backupDir -Force | Out-Null }
+                Move-Item $item.Path (Join-Path $backupDir (Split-Path $item.Path -Leaf)) -ErrorAction Stop
             }
             "Registry" {
                 $regKey = if ($item.Source -match "HKCU") { "HKCU:\Software\Microsoft\Windows\CurrentVersion\Run" } else { "HKLM:\Software\Microsoft\Windows\CurrentVersion\Run" }

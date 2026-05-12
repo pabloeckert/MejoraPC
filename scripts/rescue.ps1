@@ -1,6 +1,12 @@
 # ============================================================
 # RESCUE POINT - Sistema de respaldo y restauración
 # ============================================================
+
+param(
+    [string]$Action = "create",
+    [string]$Name = "manual"
+)
+
 . "$PSScriptRoot\config.ps1"
 Assert-Admin
 
@@ -163,11 +169,6 @@ function Restore-RescuePoint {
 }
 
 # Ejecutar
-param(
-    [string]$Action = "create",
-    [string]$Name = "manual"
-)
-
 switch ($Action) {
     "create"  { Create-RescuePoint -Name $Name }
     "restore" { Restore-RescuePoint }
