@@ -1,4 +1,4 @@
-# 🔥 MejoraNotebook — Win Optimizer v2.2.0
+# 🔥 MejoraNotebook — Win Optimizer v3.0.0
 
 **Optimizador de Windows 11 para notebooks. Sin romper nada, todo reversible.**
 
@@ -14,6 +14,38 @@ cd MejoraNotebook
 ```
 
 Después: click derecho en `INICIAR.bat` → **Ejecutar como administrador**
+
+## 🖥️ Nuevo menú v3.0.0
+
+El menú se rediseñó desde cero con una experiencia guiada e intuitiva:
+
+```
+  ┌─── ESTADO DEL SISTEMA ──────────────────────────────┐
+  │  🟢 CPU   12%  [██░░░░░░░░░░░░░░░░░░]   12%        │
+  │  🟡 RAM   71%  [██████████████░░░░░░]   71%         │
+  │       2.3 GB libre de 8 GB                          │
+  │  🟢 Disco  58% [████████████░░░░░░░░]   58%         │
+  │       95 GB libre de 238 GB                         │
+  │  ⚙️  Servicios: 87 activos de 230                   │
+  │  🚀 Inicio:     8 programas                         │
+  │  📊 Procesos:   142                                 │
+  └───────────────────────────────────────────────────────┘
+
+  ¿Qué necesitás hacer?
+
+  [1] 🔍  Diagnóstico          — Ver cómo está tu notebook ahora
+  [2] 🚀  Optimizar            — Limpiar, acelerar y liberar recursos
+  [3] ⚡  Modos especiales     — Turbo Boost, Gaming Mode, Red
+  [4] 🛡️  Seguridad y respaldo — Rescue points, perfiles, emergencia
+  [5] 🧰  Herramientas         — Drivers, apps, reportes, actualizaciones
+```
+
+**Cambios clave:**
+- Dashboard en vivo con estado del sistema (CPU, RAM, Disco, Servicios)
+- 5 categorías claras en vez de 30+ opciones planas
+- Submenús contextuales con descripciones de cada función
+- Wizard accesible desde "Optimizar" para principiantes
+- Progresión natural: diagnosticar → optimizar → proteger
 
 ## 🎯 ¿Qué hace?
 
@@ -58,7 +90,7 @@ Cuando necesitás máximo rendimiento para trabajo intenso:
 - Background tasks desactivados
 - Prioridad CPU máxima para apps activas
 
-Activar: opción `[T]` | Revertir: opción `[R]`
+Desde el menú: **[3] Modos especiales** → [1] Activar | [2] Revertir
 
 ## 🎮 Gaming Mode
 
@@ -70,7 +102,7 @@ Optimizado para jugar (diferente a Turbo Boost):
 - Servicios de audio/red **activos** (a diferencia de Turbo)
 - Telemetría de fondo detenida
 
-Activar: opción `[G]` | Revertir: opción `[H]`
+Desde el menú: **[3] Modos especiales** → [4] Activar | [5] Revertir
 
 ## 🧹 Disk Cleanup
 
@@ -110,7 +142,7 @@ Guardá y cargá configuraciones completas del sistema:
 - **Gaming:** Gaming Mode activo, Game DVR off
 - **Default:** configuración de fábrica de Windows
 
-Desde el menú: `[P]` → guardar, cargar, listar o eliminar perfiles.
+Desde el menú: **[4] Seguridad y respaldo** → [3] Perfiles.
 
 ## 🔒 Windows Update Blocker
 
@@ -121,7 +153,7 @@ Pausá Windows Update cuando necesitás toda la RAM:
 - Bloquea reinicios automáticos
 - Todo reversible con un click
 
-Desde el menú: `[W]` → bloquear, desbloquear o ver status.
+Desde el menú: **[3] Modos especiales** → [7] Bloquear | [8] Desbloquear.
 
 ## 🛡️ Seguridad
 

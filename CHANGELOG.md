@@ -1,5 +1,29 @@
 # 📋 CHANGELOG
 
+## v3.0.0 — 2026-05-13
+
+### Rediseño UX completo
+- **Dashboard en vivo** — Estado del sistema visible al abrir (CPU, RAM, Disco, Servicios, Procesos, Startup)
+  - Progress bars visuales con colores dinámicos (verde/amarillo/rojo)
+  - ASCII art banner con nombre del producto
+- **Navegación por categorías** — 5 secciones claras en vez de 30+ opciones planas
+  - [1] Diagnóstico — Benchmark, Health Check, Comparar, Dashboard web, Exportar
+  - [2] Optimizar — Wizard, Debloater, Startup, Services, Performance, Memory, Disk, Network
+  - [3] Modos especiales — Turbo Boost, Gaming Mode, Windows Update
+  - [4] Seguridad y respaldo — Rescue Points, Perfiles, Emergencia, Daemon
+  - [5] Herramientas — Drivers, Reportes, Scheduler, App Store, Offline, Updater, Desinstalador
+- **Submenús contextuales** — Cada categoría tiene su propia pantalla con descripciones
+- **Componentes de UI reutilizables** — Draw-Box, Draw-Separator, Draw-StatusBar, Draw-MenuItem
+- **Paleta de diseño centralizada** — Colores consistentes en toda la app
+- **Flujo progresivo** — Wizard accesible desde Optimizar para principiantes
+- **Despedida con contexto** — Mensaje de salida que recuerda reiniciar si se optimizó
+
+### Menú
+- `win-optimizer.ps1` completamente reescrito
+- `INICIAR.bat` actualizado con ASCII art v3.0.0
+
+---
+
 ## v2.2.0 — 2026-05-13
 
 ### Nuevos módulos

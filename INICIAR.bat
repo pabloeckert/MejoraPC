@@ -1,11 +1,18 @@
 @echo off
-:: Win Optimizer - Launcher
+:: Win Optimizer v3.0.0 - Launcher
 :: Click derecho -> Ejecutar como administrador
 
 echo.
 echo  ╔═══════════════════════════════════════════════════════╗
-echo  ║           WIN OPTIMIZER v2.2.0                       ║
-echo  ║           Windows 11 Optimizer                       ║
+echo  ║                                                       ║
+echo  ║   ██╗   ██╗██╗███╗   ██╗     ██████╗ ██████╗████████╗║
+echo  ║   ██║   ██║██║████╗  ██║    ██╔════╝██╔══██╚══██╔══╝║
+echo  ║   ██║   ██║██║██╔██╗ ██║    ██║     ██████╔╝  ██║   ║
+echo  ║   ╚██╗ ██╔╝██║██║╚██╗██║    ██║     ██╔══██╗  ██║   ║
+echo  ║    ╚████╔╝ ██║██║ ╚████║    ╚██████╗██║  ██║  ██║   ║
+echo  ║     ╚═══╝  ╚═╝╚═╝  ╚═══╝     ╚═════╝╚═╝  ╚═╝  ╚═╝   ║
+echo  ║                                                       ║
+echo  ║          O P T I M I Z E R   v3.0.0                  ║
 echo  ╚═══════════════════════════════════════════════════════╝
 echo.
 
