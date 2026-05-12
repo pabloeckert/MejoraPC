@@ -1,4 +1,4 @@
-# 🔥 MejoraNotebook — Win Optimizer v2.1.0
+# 🔥 MejoraNotebook — Win Optimizer v2.2.0
 
 **Optimizador de Windows 11 para notebooks. Sin romper nada, todo reversible.**
 
@@ -43,6 +43,7 @@ Después: click derecho en `INICIAR.bat` → **Ejecutar como administrador**
 | 📤 Share Benchmark | Comparar benchmarks entre PCs | 🔥 |
 | 🌐 Dashboard | Monitoreo web en tiempo real | 🔥🔥🔥 |
 | 🔔 Notifications | Notificaciones toast para Windows | 🔥 |
+| 🤖 Daemon | Monitoreo silencioso + aprendizaje automático | 🔥🔥🔥🔥 |
 | 🔥🔥🔥 TURBO BOOST | Modo máximo rendimiento | 🔥🔥🔥🔥🔥 |
 | 🚨 Emergencia | Restaurar TODO si algo sale mal | 🛡️ |
 

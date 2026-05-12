@@ -1,5 +1,20 @@
 # 📋 CHANGELOG
 
+## v2.2.0 — 2026-05-13
+
+### Nuevos módulos
+- **Daemon** (`scripts/daemon.ps1`) — monitoreo silencioso en segundo plano con aprendizaje automático.
+  - Aprende patrones: horas activas/inactivas, procesos frecuentes, uso de RAM/CPU
+  - Acciones automáticas: limpiar RAM, cerrar procesos seguros, matar zombies
+  - Protecciones: no mata procesos del sistema, navegadores, IDEs, comunicación
+  - Configurable: umbrales, intervalos, notificaciones, modo silencioso
+  - Log persistente con historial de acciones
+
+### Menú
+- Submenú `[8]` — Daemon (start/stop/status/logs) + Rescue Point
+
+---
+
 ## v2.1.0 — 2026-05-13
 
 ### Nuevos módulos

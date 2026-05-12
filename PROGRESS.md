@@ -9,45 +9,33 @@
 
 | Campo | Valor |
 |-------|-------|
-| **Versión** | v2.1.0 |
-| **Módulos** | 28 scripts PowerShell |
+| **Versión** | v2.2.0 |
+| **Módulos** | 29 scripts PowerShell |
 | **Branch** | main |
 | **Repo** | https://github.com/pabloeckert/MejoraNotebook |
-| **Último commit** | `66d1d5a` — feat: Notificaciones toast |
-| **Commits totales** | 23 |
+| **Último commit** | `5b140f8` — feat: Daemon de monitoreo silencioso |
+| **Commits totales** | 25 |
 | **Estado** | ✅ Todo subido a GitHub |
 
 ---
 
 ## Resumen de sesiones
 
-### Sesión 1 (05:31 - 05:50) — Auditoría + nuevos módulos
-- Auditoría, bugs, uninstall tool, network optimizer, health check, git config
+### Sesión 1-5 (05:31 - 06:15) — Módulos base
+- Auditoría, bugs, uninstall, network, health check, compare, offline, app store, share, dashboard, notifications
 
-### Sesión 2 (05:51 - 05:55) — Driver Updater + Auto-updater + Wizard
-- Driver Updater, Auto-updater, Wizard para principiantes
-
-### Sesión 3 (05:59 - 06:05) — Compare + Offline
-- Benchmark Compare, Offline Pack
-
-### Sesión 4 (06:03 - 06:10) — App Store + Share Benchmark
-- App Store, Share Benchmark
-
-### Sesión 5 (06:06 - 06:15) — Dashboard web
-- Dashboard web local con gráficos en tiempo real
-
-### Sesión 6 (06:09 - 06:20) — Notificaciones toast
-- Notificaciones toast para Windows 10/11
-- Integración en turbo boost, gaming mode, benchmark, network, WU
+### Sesión 6 (06:18 - 06:25) — Daemon de monitoreo
+- Daemon de monitoreo silencioso con aprendizaje automático
+- Aprende patrones de uso y optimiza automáticamente
 
 ---
 
-## Módulos actuales (28 scripts)
+## Módulos actuales (29 scripts)
 
 | # | Script | Menú | Descripción |
 |---|--------|------|-------------|
 | 1 | `benchmark.ps1` | [1] | Diagnóstico completo + CSV + HTML |
-| 2 | `rescue.ps1` | [2] | Crear/restaurar rescue points |
+| 2 | `rescue.ps1` | [2]/[8] | Crear/restaurar rescue points |
 | 3 | `debloater.ps1` | [3] | Eliminar ~30 apps bloatware |
 | 4 | `startup-cleaner.ps1` | [4] | Limpiar programas de inicio |
 | 5 | `services.ps1` | [5] | Optimizar servicios |
@@ -73,7 +61,8 @@
 | 25 | `share-benchmark.ps1` | [E]/[B] | Exportar/importar entre PCs |
 | 26 | `dashboard.ps1` | [X] | Dashboard web en tiempo real |
 | 27 | `notifications.ps1` | — | Notificaciones toast |
-| 28 | `config.ps1` | — | Configuración compartida |
+| 28 | `daemon.ps1` | [8] | Monitoreo silencioso + aprendizaje |
+| 29 | `config.ps1` | — | Configuración compartida |
 
 ---
 
@@ -81,7 +70,6 @@
 
 - [ ] Testing real en Windows (auditado en Linux)
 - [ ] Revisar issues en GitHub si los hay
-- [ ] Posible: Integración con Chocolatey/winget
 
 ---
 
@@ -92,4 +80,4 @@ Push: `git push origin main` o `./push.sh "mensaje"`.
 
 ---
 
-*Última actualización: 2026-05-13 06:20 UTC+8*
+*Última actualización: 2026-05-13 06:25 UTC+8*
