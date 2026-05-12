@@ -16,7 +16,9 @@
 12. [Modo Silencioso](#12-modo-silencioso)
 13. [Profiles](#13-profiles)
 14. [Windows Update Blocker](#14-windows-update-blocker)
-15. [Archivos del sistema](#15-archivos-del-sistema)
+15. [HTML Report](#15-html-report)
+16. [Scheduler](#16-scheduler)
+17. [Archivos del sistema](#17-archivos-del-sistema)
 
 ---
 
@@ -474,7 +476,82 @@ Pausa o reanuda completamente Windows Update. Útil cuando necesitás toda la RA
 
 ---
 
-## 15. Archivos del sistema
+## 15. HTML Report
+
+**Script:** `scripts/html-report.ps1`
+**Opción del menú:** `[I]`
+
+### ¿Qué hace?
+
+Genera un reporte visual del benchmark en formato HTML con:
+
+- Información del sistema (CPU, RAM, GPU, modelo)
+- Barras de progreso con colores de estado (verde/amarillo/rojo)
+- Top 5 procesos por RAM
+- Diagnóstico de problemas
+- Comparación con benchmarks anteriores
+
+### Uso desde menú
+
+```
+[I] → Genera reporte del último benchmark
+```
+
+### Uso desde CLI
+
+```powershell
+# Generar del último benchmark
+.\html-report.ps1
+
+# Generar de un archivo específico
+.\html-report.ps1 -InputFile "logs\benchmark_antes_2026-05-13.json"
+
+# Especificar archivo de salida
+.\html-report.ps1 -OutputFile "mi-reporte.html"
+```
+
+### ¿Dónde se guarda?
+
+En `logs/report_YYYY-MM-DD_HH-mm.html`. Abrir en cualquier navegador.
+
+---
+
+## 16. Scheduler
+
+**Script:** `scripts/scheduler.ps1`
+**Opción del menú:** `[K]`
+
+### ¿Qué hace?
+
+Crea una tarea de Windows Task Scheduler que ejecuta el benchmark automáticamente cada semana. Útil para detectar degradación del sistema con el tiempo.
+
+### Acciones
+
+| Acción | Qué hace |
+|--------|----------|
+| `install` | Crea tarea: benchmark cada lunes a las 10:00 AM |
+| `uninstall` | Elimina la tarea |
+| `status` | Muestra estado, última ejecución, reportes generados |
+
+### Uso desde menú
+
+```
+[K] → [1] Ver status
+[K] → [2] Instalar
+[K] → [3] Eliminar
+```
+
+### Detalles de la tarea
+
+- **Frecuencia:** Cada lunes a las 10:00 AM
+- **Modo:** Solo cuando estás logueado (no en background oculto)
+- **Batería:** Se ejecuta incluso en batería
+- **Disponibilidad:** Si no estabas, corre cuando te logueás
+- **Reportes:** Se guardan en `logs/benchmark_antes_*.json`
+
+---
+
+## 17. Archivos del sistema
 
 ### Estructura
 
@@ -502,6 +579,8 @@ MejoraNotebook/
 │   ├── turbo-boost.ps1      # Turbo Boost
 │   ├── profiles.ps1         # Guardar/cargar perfiles
 │   ├── wu-blocker.ps1       # Windows Update Blocker
+│   ├── html-report.ps1      # Reporte HTML del benchmark
+│   ├── scheduler.ps1        # Optimización programada
 │   └── emergencia.ps1       # Restaurar todo
 ├── logs/                    # Logs automáticos
 │   ├── optimizer_*.log

@@ -259,6 +259,34 @@ Seleccioná: [W] 🔒 Windows Update Blocker
 
 ---
 
+## Reporte HTML (opcional)
+
+Generá un reporte visual del estado de tu sistema:
+
+```
+Seleccioná: [I] 📊 Generar reporte HTML
+```
+
+Abrilo en tu navegador para ver:
+- Estado de RAM, CPU y disco con barras de colores
+- Top 5 procesos que más RAM consumen
+- Diagnóstico de problemas
+- Comparación con benchmarks anteriores
+
+---
+
+## Optimización programada (opcional)
+
+Programá un benchmark automático cada semana para detectar si tu sistema se degrada:
+
+```
+Seleccioná: [K] ⏰ Optimización programada → [2] Instalar
+```
+
+Cada lunes a las 10 AM ejecuta el benchmark y guarda el reporte. Después podés comparar con `[I]` para ver si algo cambió.
+
+---
+
 ## ¿Algo salió mal?
 
 ### Problema: "No se ejecuta como administrador"

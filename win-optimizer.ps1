@@ -73,6 +73,8 @@ function Show-Menu {
     Write-Host "  [W] 🔒  Windows Update Blocker (pausar/reanudar)" -ForegroundColor Cyan
     Write-Host ""
     Write-Host "  ─── EXTRAS ────────────────────────────────────────────" -ForegroundColor Gray
+    Write-Host "  [I] 📊  Generar reporte HTML" -ForegroundColor Cyan
+    Write-Host "  [K] ⏰  Optimización programada (benchmark semanal)" -ForegroundColor Cyan
     Write-Host "  [D] 🧪  Toggle Dry-RUN $(if($Global:DryRun){'(ACTIVO ✅)'}else{'(off)'})" -ForegroundColor $(if($Global:DryRun){"Yellow"}else{"Gray"})
     Write-Host "  [L] 📄  Ver log de esta sesión" -ForegroundColor Gray
     Write-Host ""
@@ -252,6 +254,22 @@ do {
             Start-Sleep -Seconds 2
         }
         "L" { Show-RecentLogs -Lines 30; pause }
+        "I" { & "$ScriptsDir\html-report.ps1"; pause }
+        "K" {
+            Write-Host ""
+            Write-Host "  [1] Ver status" -ForegroundColor Cyan
+            Write-Host "  [2] Instalar (benchmark cada lunes)" -ForegroundColor Green
+            Write-Host "  [3] Eliminar" -ForegroundColor Red
+            Write-Host "  [0] Volver" -ForegroundColor Gray
+            Write-Host ""
+            $kChoice = Read-Host "  Opción"
+            switch ($kChoice) {
+                "1" { & "$ScriptsDir\scheduler.ps1" -Action status }
+                "2" { & "$ScriptsDir\scheduler.ps1" -Action install }
+                "3" { & "$ScriptsDir\scheduler.ps1" -Action uninstall }
+            }
+            pause
+        }
         "0" { 
             Write-Host ""
             Write-Host "  ¡Chau! 👋" -ForegroundColor Cyan

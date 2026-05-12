@@ -29,6 +29,8 @@ Después: click derecho en `INICIAR.bat` → **Ejecutar como administrador**
 | 🎮 Gaming Mode | Game DVR off, GPU prioridad, baja latencia | 🔥🔥🔥 |
 | 📂 Profiles | Guardar/cargar configuraciones | 🔥🔥 |
 | 🔒 WU Blocker | Pausar/reanudar Windows Update | 🔥🔥 |
+| 📊 Reporte HTML | Benchmark visual exportado a HTML | 🔥 |
+| ⏰ Scheduler | Benchmark semanal automático | 🔥 |
 | 🔥🔥🔥 TURBO BOOST | Modo máximo rendimiento | 🔥🔥🔥🔥🔥 |
 | 🚨 Emergencia | Restaurar TODO si algo sale mal | 🛡️ |
 

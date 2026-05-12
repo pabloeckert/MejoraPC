@@ -1,5 +1,17 @@
 # 📋 CHANGELOG
 
+## v1.4.0 — 2026-05-13
+
+### Nuevos módulos
+- **HTML Report** (`scripts/html-report.ps1`) — genera reporte visual del benchmark en HTML con barras de progreso, colores de estado, diagnóstico y comparación con benchmarks anteriores
+- **Scheduler** (`scripts/scheduler.ps1`) — programa benchmark semanal via Windows Task Scheduler para detectar degradación del sistema
+
+### Menú
+- Opción `[I]` — generar reporte HTML del último benchmark
+- Opción `[K]` — submenú de optimización programada (status, instalar, eliminar)
+
+---
+
 ## v1.3.0 — 2026-05-13
 
 ### Nuevos módulos
