@@ -198,7 +198,7 @@ function Show-Dashboard {
     Write-Host "  ║    ╚████╔╝ ██║██║ ╚████║    ╚██████╗██║  ██║  ██║   ║" -ForegroundColor $C.Header
     Write-Host "  ║     ╚═══╝  ╚═╝╚═╝  ╚═══╝     ╚═════╝╚═╝  ╚═╝  ╚═╝   ║" -ForegroundColor $C.Header
     Write-Host "  ║                                                       ║" -ForegroundColor $C.Header
-    Write-Host "  ║          O P T I M I Z E R   v3.0.0                  ║" -ForegroundColor $C.Header
+    Write-Host "  ║          O P T I M I Z E R   v$($Global:AppVersion)                  ║" -ForegroundColor $C.Header
     Write-Host "  ╚═══════════════════════════════════════════════════════╝" -ForegroundColor $C.Header
     Write-Host ""
 

@@ -40,10 +40,29 @@ function Save-TurboState {
 # ACTIVAR TURBO BOOST
 # ============================================================
 function Activate-Turbo {
-    Write-Header "🔥🔥🔥 TURBO BOOST ACTIVADO 🔥🔥🔥"
+    Write-Header "🔥🔥🔥 TURBO BOOST — MÁXIMO RENDIMIENTO 🔥🔥🔥"
     Write-Host ""
     Write-Host "  ⚡ Modo máximo rendimiento para trabajo intenso" -ForegroundColor Yellow
-    Write-Host "  ⚠️  Usá 'revert' cuando terminés para volver a la normalidad" -ForegroundColor DarkYellow
+    Write-Host ""
+    Write-Host "  Esto va a:" -ForegroundColor White
+    Write-Host "    • CPU al 100% siempre" -ForegroundColor Gray
+    Write-Host "    • Detener +40 servicios no esenciales" -ForegroundColor Gray
+    Write-Host "    • Cerrar +20 procesos en segundo plano" -ForegroundColor Gray
+    Write-Host "    • Desactivar TODOS los efectos visuales" -ForegroundColor Gray
+    Write-Host "    • Desactivar tareas en segundo plano" -ForegroundColor Gray
+    Write-Host ""
+    Write-Warn "⚠️  Todo es reversible con 'revert' o con [9] EMERGENCIA."
+    Write-Host ""
+    $confirm = Read-Host "  Escribí SI para activar Turbo Boost"
+    if ($confirm -ne "SI") {
+        Write-Info "Cancelado."
+        return
+    }
+    Write-Host ""
+    
+    # Auto rescue point
+    Write-Info "Creando rescue point de seguridad..."
+    & "$PSScriptRoot\rescue.ps1" -Action create -Name "pre-turbo" | Out-Null
     Write-Host ""
     
     $servicesStopped = @()
@@ -111,18 +130,18 @@ function Activate-Turbo {
     # 4. DESACTIVAR EFECTOS VISUALES COMPLETAMENTE
     Write-Step 4 "Desactivando TODOS los efectos visuales..."
     try {
-        Set-ItemProperty "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\VisualEffects" `
+        Set-RegProperty "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\VisualEffects" `
             -Name "VisualFXSetting" -Value 2 -ErrorAction SilentlyContinue
         
         $deskPath = "HKCU:\Control Panel\Desktop"
-        Set-ItemProperty $deskPath -Name "UserPreferencesMask" -Value ([byte[]](0x90,0x12,0x03,0x80,0x10,0x00,0x00,0x00)) -ErrorAction SilentlyContinue
-        Set-ItemProperty $deskPath -Name "MenuShowDelay" -Value "0" -ErrorAction SilentlyContinue
-        Set-ItemProperty $deskPath -Name "DragFullWindows" -Value "0" -ErrorAction SilentlyContinue
+        Set-RegProperty $deskPath -Name "UserPreferencesMask" -Value ([byte[]](0x90,0x12,0x03,0x80,0x10,0x00,0x00,0x00)) -ErrorAction SilentlyContinue
+        Set-RegProperty $deskPath -Name "MenuShowDelay" -Value "0" -ErrorAction SilentlyContinue
+        Set-RegProperty $deskPath -Name "DragFullWindows" -Value "0" -ErrorAction SilentlyContinue
         
-        Set-ItemProperty "HKCU:\Software\Microsoft\Windows\CurrentVersion\Themes\Personalize" `
+        Set-RegProperty "HKCU:\Software\Microsoft\Windows\CurrentVersion\Themes\Personalize" `
             -Name "EnableTransparency" -Value 0 -ErrorAction SilentlyContinue
         
-        Set-ItemProperty "HKCU:\Software\Microsoft\Windows\DWM" `
+        Set-RegProperty "HKCU:\Software\Microsoft\Windows\DWM" `
             -Name "EnableAeroPeek" -Value 0 -ErrorAction SilentlyContinue
         
         Write-Success "Todos los efectos visuales desactivados"
@@ -134,12 +153,12 @@ function Activate-Turbo {
     Write-Step 5 "Configurando prioridad CPU para foreground..."
     try {
         $path = "HKLM:\SYSTEM\CurrentControlSet\Control\PriorityControl"
-        Set-ItemProperty $path -Name "Win32PrioritySeparation" -Value 38 -ErrorAction SilentlyContinue
+        Set-RegProperty $path -Name "Win32PrioritySeparation" -Value 38 -ErrorAction SilentlyContinue
         
         # Desactivar core parking (todos los núcleos activos)
         $path2 = "HKLM:\SYSTEM\CurrentControlSet\Control\Power\PowerSettings\54533251-82be-4824-96c1-47b60b740d00\0cc5b647-c1df-4637-891a-dec35c318583"
         if (Test-Path $path2) {
-            Set-ItemProperty $path2 -Name "Attributes" -Value 0 -ErrorAction SilentlyContinue
+            Set-RegProperty $path2 -Name "Attributes" -Value 0 -ErrorAction SilentlyContinue
         }
         
         Write-Success "CPU configurado para máximo rendimiento"
@@ -150,13 +169,13 @@ function Activate-Turbo {
     # 6. DESACTIVAR BACKGROUND TASKS
     Write-Step 6 "Desactivando tareas en segundo plano..."
     try {
-        Set-ItemProperty "HKCU:\Software\Microsoft\Windows\CurrentVersion\BackgroundAccessApplications" `
+        Set-RegProperty "HKCU:\Software\Microsoft\Windows\CurrentVersion\BackgroundAccessApplications" `
             -Name "GlobalUserDisabled" -Value 1 -ErrorAction SilentlyContinue
         
         # Desactivar actualizaciones automáticas temporalmente
         $wuPath = "HKLM:\SOFTWARE\Policies\Microsoft\Windows\WindowsUpdate\AU"
         if (!(Test-Path $wuPath)) { New-Item -Path $wuPath -Force | Out-Null }
-        Set-ItemProperty $wuPath -Name "NoAutoUpdate" -Value 1 -ErrorAction SilentlyContinue
+        Set-RegProperty $wuPath -Name "NoAutoUpdate" -Value 1 -ErrorAction SilentlyContinue
         
         Write-Success "Background tasks desactivados"
     } catch {
@@ -263,10 +282,10 @@ function Revert-Turbo {
     # 4. Restaurar efectos visuales (modo equilibrado)
     Write-Step 4 "Restaurando efectos visuales..."
     try {
-        Set-ItemProperty "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\VisualEffects" `
+        Set-RegProperty "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\VisualEffects" `
             -Name "VisualFXSetting" -Value 0 -ErrorAction SilentlyContinue
-        Set-ItemProperty "HKCU:\Control Panel\Desktop" -Name "MenuShowDelay" -Value "400" -ErrorAction SilentlyContinue
-        Set-ItemProperty "HKCU:\Software\Microsoft\Windows\CurrentVersion\Themes\Personalize" `
+        Set-RegProperty "HKCU:\Control Panel\Desktop" -Name "MenuShowDelay" -Value "400" -ErrorAction SilentlyContinue
+        Set-RegProperty "HKCU:\Software\Microsoft\Windows\CurrentVersion\Themes\Personalize" `
             -Name "EnableTransparency" -Value 1 -ErrorAction SilentlyContinue
         Write-Success "Efectos visuales restaurados"
     } catch {

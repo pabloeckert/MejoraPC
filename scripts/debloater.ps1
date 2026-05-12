@@ -6,68 +6,8 @@ Assert-Admin
 
 Write-Header "🗑️ DEBLOATER - ELIMINAR APPS BASURA"
 
-# Lista de apps bloatware seguro de eliminar
-$Bloatware = @(
-    # Juegos y entretenimiento
-    "king.CandyCrushSaga"
-    "king.CandyCrushSodaSaga"
-    "SpotifyAB.SpotifyMusic"
-    "Disney.37853FC22B2CE"
-    "Netflix"
-    "BytedancePte.Ltd.TikTok"
-    # Apps de Microsoft innecesarias
-    "Microsoft.3DBuilder"
-    "Microsoft.BingNews"
-    "Microsoft.BingWeather"
-    "Microsoft.GetHelp"
-    "Microsoft.Getstarted"
-    "Microsoft.MicrosoftSolitaireCollection"
-    "Microsoft.People"
-    "Microsoft.PowerAutomateDesktop"
-    "Microsoft.Todos"
-    "Microsoft.WindowsAlarms"
-    "Microsoft.WindowsFeedbackHub"
-    "Microsoft.WindowsMaps"
-    "Microsoft.YourPhone"
-    "Microsoft.ZuneMusic"
-    "Microsoft.ZuneVideo"
-    "Microsoft.MicrosoftOfficeHub"
-    "Microsoft.SkypeApp"
-    "Microsoft.MixedReality.Portal"
-    "MicrosoftTeams"
-    "Microsoft.Teams.Free"
-    "MSTeams"
-    
-    # Bloatware de fabricantes
-    "Disney.37853FC22B2CE"
-    "EclipseManager"
-    "PandoraMediaInc"
-    "ActiproSoftwareLLC"
-    "ClearChannelRadioDigital"
-    "SpotifyAB.SpotifyMusic"
-    "Fitbit.FitbitCoach"
-    "Flipboard.Flipboard"
-    "TheNewYorkTimes.NYTCrossword"
-    "ThumbmunkeysLtd.PhototasticCollage"
-    "TuneIn.TuneInRadio"
-    "WinZipComputing.WinZipUniversal"
-    "XINGAG.XING"
-    "king.com.*"
-    "ShazamEntertainmentLtd.Shazam"
-    "Duolingo-LearnLanguagesforFree"
-    "PandoraMediaInc.29680B314EFC2"
-    "C27EB4BA.DropboxOEM"
-    "Clipchamp.Clipchamp"
-    
-    # Widgets y extras
-    "Microsoft.Windows.DevHome"
-    "Microsoft.BingSearch"
-    "Microsoft.Copilot"
-    "Microsoft.Windows.Ai.Copilot.Provider"
-    "Microsoft.OutlookForWindows"
-    "Microsoft.MicrosoftStickyNotes"
-    "Microsoft.549981C3F5F10"  # Cortana
-)
+# Usar lista centralizada de config.ps1
+$Bloatware = $Global:BloatwareApps
 
 # Mostrar qué se va a eliminar
 Write-Host "  Apps bloatware detectadas:" -ForegroundColor White

@@ -31,6 +31,17 @@ $DaemonPIDFile = Join-Path $DaemonDir "daemon.pid"
 # Crear directorio si no existe
 if (!(Test-Path $DaemonDir)) { New-Item -ItemType Directory -Path $DaemonDir -Force | Out-Null }
 
+# Declarar tipo C# una sola vez (evita re-declaración en cada ciclo)
+$MemType = @"
+using System;
+using System.Runtime.InteropServices;
+public class Memory {
+    [DllImport("psapi.dll")]
+    public static extern int EmptyWorkingSet(IntPtr hwProc);
+}
+"@
+try { Add-Type -TypeDefinition $MemType -ErrorAction SilentlyContinue } catch {}
+
 # ============================================================
 # CONFIGURACIÓN POR DEFECTO
 # ============================================================
@@ -111,6 +122,12 @@ function Save-DaemonConfig {
 # ============================================================
 function Write-DaemonLog {
     param([string]$Message, [string]$Level = "INFO")
+    # Rotación: si el log supera 1MB, mover a .old
+    if ((Test-Path $DaemonLogFile) -and (Get-Item $DaemonLogFile).Length -gt 1MB) {
+        $oldLog = "$DaemonLogFile.old"
+        if (Test-Path $oldLog) { Remove-Item $oldLog -Force }
+        Move-Item $DaemonLogFile $oldLog -Force -ErrorAction SilentlyContinue
+    }
     $entry = "[$(Get-Date -Format 'yyyy-MM-dd HH:mm:ss')] [$Level] $Message"
     Add-Content -Path $DaemonLogFile -Value $entry -ErrorAction SilentlyContinue
 }
@@ -296,16 +313,7 @@ function Start-Monitoring {
             [System.GC]::Collect()
             [System.GC]::WaitForPendingFinalizers()
             
-            # EmptyWorkingSet
-            $signature = @"
-using System;
-using System.Runtime.InteropServices;
-public class Memory {
-    [DllImport("psapi.dll")]
-    public static extern int EmptyWorkingSet(IntPtr hwProc);
-}
-"@
-            Add-Type -TypeDefinition $signature -ErrorAction SilentlyContinue
+            # EmptyWorkingSet (tipo declarado al inicio del script)
             Get-Process | Where-Object { $_.WorkingSet64 -gt 50MB -and $_.Name -notin $config.ProtectedProcesses } | ForEach-Object {
                 try { [Memory]::EmptyWorkingSet($_.Handle) | Out-Null } catch {}
             }

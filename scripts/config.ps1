@@ -2,8 +2,13 @@
 # CONFIGURACIÓN COMPARTIDA - Win Optimizer
 # ============================================================
 
+#Requires -Version 5.1
+
 $ErrorActionPreference = "SilentlyContinue"
 $ProgressPreference = "SilentlyContinue"
+
+# Versión centralizada
+$Global:AppVersion = "3.0.0"
 
 # Paths
 $ScriptRoot = Split-Path -Parent $PSScriptRoot
@@ -156,6 +161,91 @@ $Global:TurboProcesses = @(
     "TabTip", "tabtip32",
     "ctfmon"
 )
+
+# ============================================================
+# LISTA CENTRALIZADA DE BLOATWARE
+# ============================================================
+$Global:BloatwareApps = @(
+    # Juegos y entretenimiento
+    "king.CandyCrushSaga"
+    "king.CandyCrushSodaSaga"
+    "SpotifyAB.SpotifyMusic"
+    "Disney.37853FC22B2CE"
+    "Netflix"
+    "BytedancePte.Ltd.TikTok"
+    # Apps de Microsoft innecesarias
+    "Microsoft.3DBuilder"
+    "Microsoft.BingNews"
+    "Microsoft.BingWeather"
+    "Microsoft.GetHelp"
+    "Microsoft.Getstarted"
+    "Microsoft.MicrosoftSolitaireCollection"
+    "Microsoft.People"
+    "Microsoft.PowerAutomateDesktop"
+    "Microsoft.Todos"
+    "Microsoft.WindowsAlarms"
+    "Microsoft.WindowsFeedbackHub"
+    "Microsoft.WindowsMaps"
+    "Microsoft.YourPhone"
+    "Microsoft.ZuneMusic"
+    "Microsoft.ZuneVideo"
+    "Microsoft.MicrosoftOfficeHub"
+    "Microsoft.SkypeApp"
+    "Microsoft.MixedReality.Portal"
+    "MicrosoftTeams"
+    "Microsoft.Teams.Free"
+    "MSTeams"
+    # Bloatware de fabricantes
+    "EclipseManager"
+    "PandoraMediaInc"
+    "ActiproSoftwareLLC"
+    "ClearChannelRadioDigital"
+    "Fitbit.FitbitCoach"
+    "Flipboard.Flipboard"
+    "TheNewYorkTimes.NYTCrossword"
+    "ThumbmunkeysLtd.PhototasticCollage"
+    "TuneIn.TuneInRadio"
+    "WinZipComputing.WinZipUniversal"
+    "XINGAG.XING"
+    "king.com.*"
+    "ShazamEntertainmentLtd.Shazam"
+    "Duolingo-LearnLanguagesforFree"
+    "PandoraMediaInc.29680B314EFC2"
+    "C27EB4BA.DropboxOEM"
+    "Clipchamp.Clipchamp"
+    # Widgets y extras
+    "Microsoft.Windows.DevHome"
+    "Microsoft.BingSearch"
+    "Microsoft.Copilot"
+    "Microsoft.Windows.Ai.Copilot.Provider"
+    "Microsoft.OutlookForWindows"
+    "Microsoft.MicrosoftStickyNotes"
+    "Microsoft.549981C3F5F10"  # Cortana
+)
+
+# Descripciones amigables de apps (para App Store)
+$Global:AppDescriptions = @{
+    "SpotifyAB.SpotifyMusic" = "Spotify — Música"
+    "Netflix" = "Netflix — Streaming"
+    "Clipchamp.Clipchamp" = "Clipchamp — Editor de video"
+    "Microsoft.BingNews" = "Bing News — Noticias"
+    "Microsoft.BingWeather" = "Bing Weather — Clima"
+    "Microsoft.MicrosoftSolitaireCollection" = "Solitaire — Juegos"
+    "Microsoft.People" = "People — Contactos"
+    "Microsoft.Todos" = "Microsoft To Do — Tareas"
+    "Microsoft.YourPhone" = "Phone Link — Conexión con celular"
+    "Microsoft.ZuneMusic" = "Groove Music — Música"
+    "Microsoft.ZuneVideo" = "Films & TV — Películas"
+    "Microsoft.MicrosoftOfficeHub" = "Office Hub — Microsoft 365"
+    "Microsoft.SkypeApp" = "Skype — Videollamadas"
+    "MicrosoftTeams" = "Microsoft Teams"
+    "Microsoft.BingSearch" = "Bing Search — Búsqueda"
+    "Microsoft.Copilot" = "Copilot — IA"
+    "Microsoft.OutlookForWindows" = "Outlook — Email"
+    "Duolingo-LearnLanguagesforFree" = "Duolingo — Aprender idiomas"
+    "king.CandyCrushSaga" = "Candy Crush — Juego"
+    "BytedancePte.Ltd.TikTok" = "TikTok — Red social"
+}
 
 # ============================================================
 # DRY-RUN MODE

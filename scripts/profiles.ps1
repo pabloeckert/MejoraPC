@@ -1,14 +1,15 @@
 # ============================================================
 # PROFILES - Guardar/cargar perfiles de optimización
 # ============================================================
-. "$PSScriptRoot\config.ps1"
-Assert-Admin
 
 param(
     [ValidateSet("save", "load", "list", "delete")]
     [string]$Action = "save",
     [string]$Name = ""
 )
+
+. "$PSScriptRoot\config.ps1"
+Assert-Admin
 
 $ProfilesDir = Join-Path $ScriptRoot "profiles"
 

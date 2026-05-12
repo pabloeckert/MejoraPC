@@ -38,14 +38,29 @@ function Save-GamingState {
 # ACTIVAR GAMING MODE
 # ============================================================
 function Activate-Gaming {
-    Write-Header "🎮 GAMING MODE ACTIVADO"
+    Write-Header "🎮 GAMING MODE — OPTIMIZADO PARA JUGAR"
     Write-Host ""
-    Write-Host "  Optimizado para gaming:" -ForegroundColor Yellow
+    Write-Host "  Esto va a:" -ForegroundColor White
+    Write-Host "    • Desactivar Game DVR (mayor killer de FPS)" -ForegroundColor Gray
     Write-Host "    • GPU prioridad máxima" -ForegroundColor Gray
-    Write-Host "    • Game DVR desactivado" -ForegroundColor Gray
-    Write-Host "    • Latencia de input reducida" -ForegroundColor Gray
-    Write-Host "    • Servicios de audio/red activos" -ForegroundColor Gray
-    Write-Host "    • Telemetría de fondo detenida" -ForegroundColor Gray
+    Write-Host "    • Red optimizada para baja latencia" -ForegroundColor Gray
+    Write-Host "    • Detener servicios de fondo (mantiene audio/chat)" -ForegroundColor Gray
+    Write-Host "    • Reducir efectos visuales" -ForegroundColor Gray
+    Write-Host ""
+    Write-Host "  ✅ Se mantiene: Spotify, Discord, audio, red" -ForegroundColor Green
+    Write-Host ""
+    Write-Warn "⚠️  Todo es reversible con 'revert' o con [9] EMERGENCIA."
+    Write-Host ""
+    $confirm = Read-Host "  Escribí SI para activar Gaming Mode"
+    if ($confirm -ne "SI") {
+        Write-Info "Cancelado."
+        return
+    }
+    Write-Host ""
+    
+    # Auto rescue point
+    Write-Info "Creando rescue point de seguridad..."
+    & "$PSScriptRoot\rescue.ps1" -Action create -Name "pre-gaming" | Out-Null
     Write-Host ""
     
     $servicesStopped = @()

@@ -44,6 +44,9 @@ function Optimize-Network {
     Write-Host "    • Mejor gaming online" -ForegroundColor Gray
     Write-Host "    • Videoconferencia más estable" -ForegroundColor Gray
     Write-Host ""
+    Write-Warn "⚠️  DNS se cambiará a Cloudflare (1.1.1.1) + Google (8.8.8.8)."
+    Write-Warn "   Si estás en red corporativa, podés perder acceso a recursos internos."
+    Write-Host ""
 
     $originalValues = @{}
     $optimized = 0

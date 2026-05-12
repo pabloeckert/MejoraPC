@@ -1,5 +1,30 @@
 # 📋 CHANGELOG
 
+## v3.0.1 — 2026-05-13
+
+### Bugs corregidos
+- **rescue.ps1**: `$rescueDirs[$i]` → `$rescueDirs[$idx]` — mostraba nombre incorrecto al restaurar
+- **profiles.ps1**: `param()` movido antes de `. config.ps1` — los parámetros `-Action` y `-Name` no funcionaban
+- **startup-cleaner.ps1**: detectar HKCU vs HKLM correctamente al desactivar items de registry
+- **html-report.ps1**: versión actualizada de v2.2.0 a v3.0.0
+- **debloater.ps1**: eliminados duplicados (Disney, Spotify aparecían dos veces)
+- **services.ps1**: ahora incluye servicios con "Automatic (Delayed Start)" además de "Automatic"
+- **turbo-boost.ps1**: reemplazados `Set-ItemProperty` por `Set-RegProperty` — respeta DryRun
+- **gaming-mode.ps1**: mismo fix de DryRun consistency
+- **daemon.ps1**: `Add-Type` movido al inicio del script — evita re-declaración cada 60s
+
+### Mejoras de seguridad
+- **Auto rescue point** en `services.ps1`, `performance.ps1`, `turbo-boost.ps1`, `gaming-mode.ps1` — ya no depende del usuario para crear respaldo
+- **Confirmación explícita** en Turbo Boost y Gaming Mode — pide "SI" antes de activar
+- **Advertencia DNS** en Network Optimizer — avisa que DNS cambiará a 1.1.1.1/8.8.8.8
+- **`#Requires -Version 5.1`** en `config.ps1` — falla rápido si PowerShell no es compatible
+
+### Mejoras de arquitectura
+- **Lista centralizada de bloatware** en `config.ps1` (`$Global:BloatwareApps`) — eliminada duplicación entre `debloater.ps1` y `app-store.ps1`
+- **Descripciones centralizadas** en `config.ps1` (`$Global:AppDescriptions`)
+- **Versión centralizada** en `config.ps1` (`$Global:AppVersion = "3.0.0"`) — `win-optimizer.ps1` la usa automáticamente
+- **Rotación de logs** en daemon — max 1MB, mantiene `.old`
+
 ## v3.0.0 — 2026-05-13
 
 ### Rediseño UX completo

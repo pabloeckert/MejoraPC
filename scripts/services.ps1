@@ -6,6 +6,11 @@ Assert-Admin
 
 Write-Header "🔧 SERVICES OPTIMIZER"
 
+# Auto rescue point
+Write-Info "Creando rescue point de seguridad..."
+& "$PSScriptRoot\rescue.ps1" -Action create -Name "pre-services" | Out-Null
+Write-Host ""
+
 # Info de tipo de disco
 if ($Global:IsSSD) {
     Write-Info "SSD detectado — Superfetch e Indexación se desactivarán."
@@ -29,7 +34,7 @@ foreach ($svcInfo in $Global:ServicesToManual) {
     $processed++
     Write-Progress -Activity "Optimizando servicios" -Status "$processed/$totalSvc — $($svcInfo.Desc)" -PercentComplete ([math]::Round(($processed/$totalSvc)*100,0))
     $svc = Get-Service -Name $svcInfo.Name -ErrorAction SilentlyContinue
-    if ($svc -and $svc.StartType -eq "Automatic") {
+    if ($svc -and ($svc.StartType -eq "Automatic" -or $svc.StartType -eq "Automatic (Delayed Start)")) {
         Write-Host "  📋 $($svcInfo.Desc)... " -NoNewline
         try {
             Set-ServiceState -Name $svcInfo.Name -StartupType Manual -Stop ($svc.Status -eq "Running")

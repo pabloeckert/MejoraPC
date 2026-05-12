@@ -9,7 +9,7 @@
 
 | Campo | Valor |
 |-------|-------|
-| **Versión** | v3.0.0 |
+| **Versión** | v3.0.1 |
 | **Módulos** | 29 scripts PowerShell + menú rediseñado |
 | **Branch** | main |
 | **Repo** | https://github.com/pabloeckert/MejoraNotebook |
@@ -40,6 +40,16 @@
 - Menú de perfiles integrado en Seguridad
 - Daemon integrado en Seguridad
 - Toggle Dry-Run visible en Herramientas
+
+### Sesión 8 (07:00 - 07:15) — Auditoría profunda + fixes
+- **v3.0.1**: Auditoría de 29 scripts (~8200 líneas)
+- 9 bugs corregidos (rescue, profiles, startup-cleaner, html-report, debloater, services, turbo-boost, gaming-mode, daemon)
+- 12 mejoras de seguridad y arquitectura
+- Listas centralizadas en config.ps1 (bloatware, descripciones, versión)
+- Auto rescue point en scripts que modifican el sistema
+- Confirmaciones explícitas en operaciones destructivas
+- #Requires -Version 5.1 para fail-fast
+- Rotación de logs en daemon
 
 ---
 

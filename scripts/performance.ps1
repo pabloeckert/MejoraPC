@@ -6,6 +6,11 @@ Assert-Admin
 
 Write-Header "🚀 PERFORMANCE TWEAKS"
 
+# Auto rescue point
+Write-Info "Creando rescue point de seguridad..."
+& "$PSScriptRoot\rescue.ps1" -Action create -Name "pre-performance" | Out-Null
+Write-Host ""
+
 $tweaks = 0
 $errors = 0
 

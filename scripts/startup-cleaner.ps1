@@ -167,7 +167,13 @@ foreach ($item in $toDisable) {
                 Move-Item $item.Path (Join-Path $backupDir (Split-Path $item.Path -Leaf)) -ErrorAction Stop
             }
             "Registry" {
-                $regKey = if ($item.Source -match "HKCU") { "HKCU:\Software\Microsoft\Windows\CurrentVersion\Run" } else { "HKLM:\Software\Microsoft\Windows\CurrentVersion\Run" }
+                # Detectar ruta correcta desde Source
+                if ($item.Source -match "(HKCU|HKLM):") {
+                    $regBase = $Matches[1]
+                    $regKey = "${regBase}:\Software\Microsoft\Windows\CurrentVersion\Run"
+                } else {
+                    $regKey = "HKCU:\Software\Microsoft\Windows\CurrentVersion\Run"
+                }
                 Remove-ItemProperty -Path $regKey -Name $item.Name -ErrorAction Stop
             }
             "Task" {

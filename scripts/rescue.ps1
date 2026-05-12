@@ -102,7 +102,7 @@ function Restore-RescuePoint {
     
     $selected = $rescueDirs[$idx].FullName
     Write-Host ""
-    Write-Warn "Esto va a restaurar la configuración de: $($rescueDirs[$i].Name)"
+    Write-Warn "Esto va a restaurar la configuración de: $($rescueDirs[$idx].Name)"
     $confirm = Read-Host "  ¿Confirmar? (SI para confirmar)"
     if ($confirm -ne "SI") {
         Write-Info "Cancelado."
