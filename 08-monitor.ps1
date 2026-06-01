@@ -119,12 +119,14 @@ function Invoke-SmartAnalysis {
         'audiodg','RuntimeBroker','ShellExperienceHost','StartMenuExperienceHost',
         'explorer','conhost','taskhostw','sihost','ctfmon','TextInputHost')
 
+    # Contar en cuántas muestras distintas aparece cada proceso (no total de ocurrencias)
     $freq = @{}
     foreach ($s in $allSamples) {
-        foreach ($p in $s.processes) {
-            if ($p.name -notin $sysProcs) {
-                if (-not $freq[$p.name]) { $freq[$p.name] = 0 }
-                $freq[$p.name]++
+        $uniqueInSample = @($s.processes | Select-Object -ExpandProperty name | Sort-Object -Unique)
+        foreach ($name in $uniqueInSample) {
+            if ($name -notin $sysProcs) {
+                if (-not $freq[$name]) { $freq[$name] = 0 }
+                $freq[$name]++
             }
         }
     }
@@ -149,9 +151,10 @@ function Invoke-SmartAnalysis {
     # ── Horas pico de CPU ──
     $hourCpu = @{}
     foreach ($s in $allSamples) {
-        $h = if ($s.time) { $s.time.Split(':')[0].TrimStart('0'); if (-not $h) { '0' } } else { '0' }
-        if (-not $hourCpu[$h]) { $hourCpu[$h] = [System.Collections.ArrayList]@() }
-        $null = $hourCpu[$h].Add($s.cpuPct)
+        $h = if ($s.time) { $s.time.Split(':')[0].TrimStart('0') } else { '0' }
+        if (-not $h) { $h = '0' }
+        if (-not $hourCpu.ContainsKey($h)) { $hourCpu[$h] = @() }
+        $hourCpu[$h] += $s.cpuPct
     }
 
     $peakHours = @()
