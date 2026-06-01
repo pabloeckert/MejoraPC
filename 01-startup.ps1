@@ -1,5 +1,4 @@
-#Requires -RunAsAdministrator
-[CmdletBinding()]
+﻿[CmdletBinding()]
 param([object]$AutoApply = $null)
 
 $scriptRoot = $PSScriptRoot

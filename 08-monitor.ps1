@@ -1,5 +1,4 @@
-#Requires -RunAsAdministrator
-[CmdletBinding()]
+﻿[CmdletBinding()]
 param(
     [switch]$Install,
     [switch]$Uninstall,
@@ -261,21 +260,28 @@ function Invoke-SmartAnalysis {
 function Install-MonitorTasks {
     param([switch]$EnableAutoTune)
 
-    $psExe   = "$PSHOME\powershell.exe"
-    $script  = $PSCommandPath
+    $psExe  = "$PSHOME\powershell.exe"
+    $script = $PSCommandPath
 
-    $principal = New-ScheduledTaskPrincipal -UserId 'SYSTEM' -RunLevel Highest
+    # Usar usuario actual si no hay admin (no requiere elevación)
+    $isAdmin = ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
+    $principal = if ($isAdmin) {
+        New-ScheduledTaskPrincipal -UserId 'SYSTEM' -RunLevel Highest
+    } else {
+        New-ScheduledTaskPrincipal -UserId "$env:USERDOMAIN\$env:USERNAME" -RunLevel Limited
+    }
+
+    $settings = New-ScheduledTaskSettingsSet -StartWhenAvailable -RunOnlyIfNetworkAvailable:$false
 
     # Tarea de recolección: cada 15 minutos
-    $action   = New-ScheduledTaskAction -Execute $psExe -Argument "-NonInteractive -WindowStyle Hidden -File `"$script`" -Collect"
-    $trigger  = New-ScheduledTaskTrigger -RepetitionInterval (New-TimeSpan -Minutes 15) -Once -At '00:00'
-    $settings = New-ScheduledTaskSettingsSet -StartWhenAvailable -RunOnlyIfNetworkAvailable:$false
+    $action  = New-ScheduledTaskAction -Execute $psExe -Argument "-NonInteractive -WindowStyle Hidden -ExecutionPolicy Bypass -File `"$script`" -Collect"
+    $trigger = New-ScheduledTaskTrigger -RepetitionInterval (New-TimeSpan -Minutes 15) -Once -At (Get-Date).ToString('HH:mm')
     Register-ScheduledTask -TaskName $taskMonitor -Action $action -Trigger $trigger `
         -Settings $settings -Principal $principal -Force | Out-Null
     Write-Host "  [+] '$taskMonitor' instalada (cada 15 min)" -ForegroundColor Green
 
     # Tarea de análisis semanal: domingos 03:00
-    $action2  = New-ScheduledTaskAction -Execute $psExe -Argument "-NonInteractive -WindowStyle Hidden -File `"$script`" -Analyze"
+    $action2  = New-ScheduledTaskAction -Execute $psExe -Argument "-NonInteractive -WindowStyle Hidden -ExecutionPolicy Bypass -File `"$script`" -Analyze"
     $trigger2 = New-ScheduledTaskTrigger -Weekly -DaysOfWeek Sunday -At '03:00'
     Register-ScheduledTask -TaskName $taskAnalysis -Action $action2 -Trigger $trigger2 `
         -Settings $settings -Principal $principal -Force | Out-Null
@@ -283,7 +289,7 @@ function Install-MonitorTasks {
 
     # AutoTune opcional: domingos 03:30
     if ($EnableAutoTune) {
-        $action3 = New-ScheduledTaskAction -Execute $psExe -Argument "-NonInteractive -WindowStyle Hidden -File `"$script`" -Analyze -EnableAutoTune"
+        $action3  = New-ScheduledTaskAction -Execute $psExe -Argument "-NonInteractive -WindowStyle Hidden -ExecutionPolicy Bypass -File `"$script`" -Analyze -EnableAutoTune"
         $trigger3 = New-ScheduledTaskTrigger -Weekly -DaysOfWeek Sunday -At '03:30'
         Register-ScheduledTask -TaskName $taskAutoTune -Action $action3 -Trigger $trigger3 `
             -Settings $settings -Principal $principal -Force | Out-Null

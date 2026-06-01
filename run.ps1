@@ -1,8 +1,16 @@
-#Requires -RunAsAdministrator
-[CmdletBinding()]
+﻿[CmdletBinding()]
 param()
 
 $ErrorActionPreference = 'Continue'
+
+# Advertir si no es admin (algunos módulos lo necesitan)
+if (-not ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)) {
+    Write-Host ""
+    Write-Host "  [!] No sos administrador. Algunos módulos pueden fallar." -ForegroundColor Yellow
+    Write-Host "  Para funcionalidad completa, abrí PowerShell como Administrador." -ForegroundColor DarkGray
+    Write-Host ""
+    Start-Sleep -Seconds 2
+}
 $scriptRoot = $PSScriptRoot
 . "$scriptRoot\lib\helpers.ps1"
 

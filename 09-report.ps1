@@ -1,5 +1,4 @@
-#Requires -RunAsAdministrator
-[CmdletBinding()]
+﻿[CmdletBinding()]
 param()
 
 $scriptRoot    = $PSScriptRoot

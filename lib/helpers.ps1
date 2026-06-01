@@ -1,4 +1,4 @@
-# Funciones compartidas para todos los módulos de MejoraPC
+﻿# Funciones compartidas para todos los módulos de MejoraPC
 
 function Write-Status {
     param(

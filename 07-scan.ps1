@@ -1,5 +1,4 @@
-#Requires -RunAsAdministrator
-[CmdletBinding()]
+﻿[CmdletBinding()]
 param()
 
 $scriptRoot = $PSScriptRoot
@@ -213,11 +212,24 @@ function Get-NetworkInfo {
             'WiFi'
         } else { 'Ethernet' }
 
+        # LinkSpeed puede ser uint64 (bits/s) o string como "433.3 Mbps"
+        $speedMbps = 0
+        $rawSpeed  = $a.LinkSpeed
+        if ($rawSpeed -is [string] -and $rawSpeed -match '([\d.]+)\s*(Gbps|Mbps|Kbps)') {
+            $speedMbps = switch ($Matches[2]) {
+                'Gbps' { [int]([double]$Matches[1] * 1000) }
+                'Mbps' { [int][double]$Matches[1] }
+                'Kbps' { [int]([double]$Matches[1] / 1000) }
+            }
+        } elseif ($rawSpeed -is [uint64] -and $rawSpeed -gt 0) {
+            $speedMbps = [int][math]::Round($rawSpeed / 1000000, 0)
+        }
+
         $result += [ordered]@{
             name      = $a.Name
             interface = $a.InterfaceDescription
             mac       = $a.MacAddress
-            speedMbps = if ($a.LinkSpeed -gt 0) { [math]::Round($a.LinkSpeed / 1000000, 0) } else { 0 }
+            speedMbps = $speedMbps
             ip        = $ip
             type      = $type
             status    = $a.Status.ToString()
@@ -428,9 +440,9 @@ $profile = [ordered]@{
     timestamp   = (Get-Date -Format 'o')
     cpu         = (Get-CpuInfo)
     ram         = (Get-RamInfo)
-    gpu         = (Get-GpuInfo)
-    storage     = (Get-StorageInfo)
-    network     = (Get-NetworkInfo)
+    gpu         = @(Get-GpuInfo)
+    storage     = @(Get-StorageInfo)
+    network     = @(Get-NetworkInfo)
     motherboard = (Get-MotherboardInfo)
 }
 
