@@ -1,0 +1,5 @@
+logs/usage/*.json
+logs/scan-*.json
+data/hardware-profile.json
+data/recommendations.json
+data/smart-recommendations.json
