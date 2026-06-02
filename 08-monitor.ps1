@@ -37,12 +37,20 @@ function Invoke-MetricCollection {
     $ramFree  = $os.FreePhysicalMemory
     $ramPct   = [math]::Round((($ramTotal - $ramFree) / $ramTotal) * 100, 1)
 
-    # Disco I/O %
-    $diskIO = 0
-    try {
-        $c = Get-Counter '\PhysicalDisk(_Total)\% Disk Time' -SampleInterval 1 -MaxSamples 1 -ErrorAction Stop
-        $diskIO = [math]::Round($c.CounterSamples[0].CookedValue, 1)
-    } catch { }
+    # Disco I/O % — los contadores de rendimiento requieren admin; usar null si no disponible
+    $diskIO = $null
+    $diskCounters = @(
+        '\PhysicalDisk(_Total)\% Disk Time',
+        '\LogicalDisk(_Total)\% Disk Time',
+        '\LogicalDisk(C:)\% Disk Time'
+    )
+    foreach ($counter in $diskCounters) {
+        try {
+            $c = Get-Counter $counter -SampleInterval 1 -MaxSamples 1 -ErrorAction Stop
+            $val = [math]::Round($c.CounterSamples[0].CookedValue, 1)
+            if ($val -ge 0) { $diskIO = $val; break }
+        } catch { }
+    }
 
     # Top 10 procesos por CPU acumulado
     $topProcs = @(Get-Process -ErrorAction SilentlyContinue |
@@ -111,44 +119,69 @@ function Invoke-SmartAnalysis {
     $total = $allSamples.Count
     if ($total -eq 0) { return $null }
 
+    # Preservar estado applied de ejecuciones anteriores
+    $prevApplied = @{}
+    if (Test-Path $smartRecoPath) {
+        try {
+            $prev = Get-Content $smartRecoPath -Raw | ConvertFrom-Json
+            foreach ($item in $prev.items) {
+                if ($item.applied) { $prevApplied[$item.id] = $true }
+            }
+        } catch { }
+    }
+
     $recommendations = [System.Collections.ArrayList]@()
 
-    # ── Procesos siempre presentes no del sistema ──
+    # Apps del sistema — no sugerir deshabilitar
     $sysProcs = @('System','Registry','smss','csrss','wininit','services','lsass','svchost',
         'dwm','fontdrvhost','WmiPrvSE','MsMpEng','SearchIndexer','WUDFHost','spoolsv',
         'audiodg','RuntimeBroker','ShellExperienceHost','StartMenuExperienceHost',
-        'explorer','conhost','taskhostw','sihost','ctfmon','TextInputHost')
+        'explorer','conhost','taskhostw','sihost','ctfmon','TextInputHost','SearchHost',
+        'SecurityHealthService','SecurityHealthSystray','NisSrv','SgrmBroker')
 
-    # Contar en cuántas muestras distintas aparece cada proceso (no total de ocurrencias)
-    $freq = @{}
+    # Apps activas del usuario — tampoco sugerir deshabilitar (solo monitorear RAM)
+    $knownUserApps = @('chrome','firefox','msedge','opera','brave','vivaldi',
+        'spotify','discord','slack','teams','zoom','telegram','whatsapp',
+        'code','devenv','notepad++','idea64','rider64','webstorm64','cursor','windsurf',
+        'vlc','obs64','obs32','streamlabs','gimp','photoshop','figma',
+        'claude','ollama','docker','git','node','python','powershell',
+        'WindowsTerminal','wt','cmd')
+
+    # ── Procesos de fondo siempre activos (no son apps del usuario ni del sistema) ──
+    $procData = @{}
     foreach ($s in $allSamples) {
-        $uniqueInSample = @($s.processes | Select-Object -ExpandProperty name | Sort-Object -Unique)
-        foreach ($name in $uniqueInSample) {
-            if ($name -notin $sysProcs) {
-                if (-not $freq[$name]) { $freq[$name] = 0 }
-                $freq[$name]++
+        $seenInSample = @{}
+        foreach ($p in $s.processes) {
+            if ($seenInSample[$p.name]) { continue }
+            $seenInSample[$p.name] = $true
+            if ($p.name -notin $sysProcs -and $p.name -notin $knownUserApps) {
+                if (-not $procData[$p.name]) { $procData[$p.name] = @{count=0; totalRam=0} }
+                $procData[$p.name].count++
+                $procData[$p.name].totalRam += $p.ramMB
             }
         }
     }
 
-    $alwaysOn = $freq.GetEnumerator() |
-        Where-Object { $_.Value -gt ($total * 0.85) } |
-        Sort-Object Value -Descending | Select-Object -First 5
+    $suspectBg = $procData.GetEnumerator() |
+        Where-Object { $_.Value.count -gt ($total * 0.85) } |
+        Sort-Object { $_.Value.totalRam } -Descending | Select-Object -First 5
 
-    foreach ($proc in $alwaysOn) {
+    foreach ($proc in $suspectBg) {
+        $avgRam = [math]::Round($proc.Value.totalRam / $proc.Value.count, 0)
+        $id     = "bg-proc-$($proc.Key)"
         $null = $recommendations.Add([ordered]@{
-            id          = "always-on-$($proc.Key)"
-            applied     = $false
-            priority    = 'Media'
-            category    = 'Procesos'
-            title       = "Proceso '$($proc.Key)' siempre activo"
-            description = "Aparece en $($proc.Value)/$total muestras. Si no lo usás, considerá deshabilitarlo."
-            impact      = 'Bajo'
+            id          = $id
+            applied     = if ($prevApplied[$id]) { $true } else { $false }
+            priority    = if ($avgRam -gt 200) { 'Alta' } else { 'Media' }
+            category    = 'Procesos background'
+            title       = "Proceso background '$($proc.Key)' siempre activo"
+            description = "Activo en $($proc.Value.count)/$total muestras usando ~$($avgRam) MB. No es una app directa del usuario — considerá deshabilitarlo."
+            impact      = if ($avgRam -gt 200) { 'Alto' } else { 'Medio' }
             module      = '01'
         })
     }
 
-    # ── Horas pico de CPU ──
+    # ── Horas pico de CPU (umbral bajado a 50% según datos reales) ──
     $hourCpu = @{}
     foreach ($s in $allSamples) {
         $h = if ($s.time) { $s.time.Split(':')[0].TrimStart('0') } else { '0' }
@@ -158,65 +191,101 @@ function Invoke-SmartAnalysis {
     }
 
     $peakHours = @()
+    $peakAvgs  = @{}
     foreach ($h in $hourCpu.Keys) {
         $avg = [math]::Round(($hourCpu[$h] | Measure-Object -Average).Average, 1)
-        if ($avg -gt 70) { $peakHours += "${h}h" }
+        $peakAvgs[$h] = $avg
+        if ($avg -gt 50) { $peakHours += "${h}h ($avg%)" }
     }
 
     if ($peakHours.Count -gt 0) {
+        $id = 'peak-hours-powerplan'
         $null = $recommendations.Add([ordered]@{
-            id          = 'peak-hours-powerplan'
-            applied     = $false
+            id          = $id
+            applied     = if ($prevApplied[$id]) { $true } else { $false }
             priority    = 'Media'
             category    = 'Energía'
-            title       = 'Ajustar plan de energía por horas pico'
-            description = "CPU supera 70% en: $($peakHours -join ', '). Activar Alto Rendimiento en esos horarios."
+            title       = 'Horas pico de CPU detectadas'
+            description = "CPU supera 50% en: $($peakHours -join ', '). Activar plan Alto Rendimiento en esos horarios."
             impact      = 'Medio'
             module      = '04'
         })
     }
 
-    # ── RAM consistentemente > 85% ──
-    $highRam    = @($allSamples | Where-Object { $_.ramPct -gt 85 })
-    $highRamPct = if ($total -gt 0) { [math]::Round(($highRam.Count / $total) * 100, 0) } else { 0 }
-    if ($highRamPct -gt 30) {
+    # ── RAM alta sostenida (umbral bajado a 80% según datos reales) ──
+    $ramAvgGlobal = [math]::Round(($allSamples | Measure-Object -Property ramPct -Average).Average, 1)
+    $highRam      = @($allSamples | Where-Object { $_.ramPct -gt 80 })
+    $highRamPct   = if ($total -gt 0) { [math]::Round(($highRam.Count / $total) * 100, 0) } else { 0 }
+
+    if ($highRamPct -gt 40) {
+        $id = 'ram-high-usage'
         $null = $recommendations.Add([ordered]@{
-            id          = 'ram-high-usage'
-            applied     = $false
-            priority    = 'Alta'
+            id          = $id
+            applied     = if ($prevApplied[$id]) { $true } else { $false }
+            priority    = if ($ramAvgGlobal -gt 85) { 'Alta' } else { 'Media' }
             category    = 'RAM'
-            title       = 'RAM consistentemente por encima del 85%'
-            description = "RAM > 85% en el $highRamPct% de las muestras. Cerrar apps innecesarias o ampliar la RAM virtual."
+            title       = "RAM elevada sostenida (promedio $ramAvgGlobal%)"
+            description = "RAM supera el 80% en el $highRamPct% de las muestras. Promedio global: $ramAvgGlobal%. Cerrar apps en segundo plano o ampliar RAM virtual."
             impact      = 'Alto'
             module      = '01'
         })
     }
 
     # ── Disco I/O alto ──
-    $highDisk = @($allSamples | Where-Object { $_.diskIOPct -gt 80 })
-    if ($highDisk.Count -gt 5) {
+    $highDisk = @($allSamples | Where-Object { $_.diskIOPct -gt 60 })
+    if ($highDisk.Count -gt 3) {
         $peakDiskHours = @($highDisk | ForEach-Object {
             if ($_.time) { $_.time.Split(':')[0] } else { '00' }
         } | Group-Object | Sort-Object Count -Descending | Select-Object -First 3 -ExpandProperty Name)
 
+        $id = 'disk-io-high'
         $null = $recommendations.Add([ordered]@{
-            id          = 'disk-io-high'
-            applied     = $false
+            id          = $id
+            applied     = if ($prevApplied[$id]) { $true } else { $false }
             priority    = 'Media'
             category    = 'Almacenamiento'
             title       = 'I/O de disco elevado detectado'
-            description = "Disco al >80% en $($highDisk.Count) muestras. Horas pico: $($peakDiskHours -join ', ')h. Probablemente indexación o antivirus — reprogramar a horario nocturno."
+            description = "Disco al >60% en $($highDisk.Count) muestras. Horas pico: $($peakDiskHours -join ', ')h. Revisar indexación o antivirus en esos horarios."
             impact      = 'Medio'
             module      = '07'
         })
     }
 
-    # ── Startup no usado en las primeras 2 horas ──
+    # ── Apps de startup no usadas en las primeras 2 horas ──
     try {
-        $startupApps = @(Get-CimInstance -ClassName Win32_StartupCommand -ErrorAction Stop |
+        $allStartup = @(Get-CimInstance -ClassName Win32_StartupCommand -ErrorAction Stop |
             Select-Object -ExpandProperty Name)
 
-        if ($startupApps.Count -gt 0) {
+        # Leer items ya deshabilitados via StartupApproved (Task Manager style)
+        $alreadyDisabled = @()
+        foreach ($regKey in @(
+            'HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\StartupApproved\Run',
+            'HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\StartupApproved\StartupFolder',
+            'HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\StartupApproved\Run'
+        )) {
+            if (Test-Path $regKey) {
+                Get-ItemProperty -Path $regKey -ErrorAction SilentlyContinue |
+                    Get-Member -MemberType NoteProperty |
+                    Where-Object { $_.Name -notmatch '^PS' } |
+                    ForEach-Object {
+                        $val = (Get-ItemProperty -Path $regKey -ErrorAction SilentlyContinue).$($_.Name)
+                        # byte[0] = 3 significa deshabilitado
+                        if ($val -and $val[0] -eq 3) {
+                            $cleanName = $_.Name -replace '\.lnk$',''
+                            $alreadyDisabled += $cleanName
+                        }
+                    }
+            }
+        }
+
+        # Solo reportar los que están habilitados Y no aparecen en uso temprano
+        $enabledStartup = @($allStartup | Where-Object {
+            $name = $_
+            $nameNoExt = $name -replace '\.lnk$',''
+            $alreadyDisabled -notcontains $name -and $alreadyDisabled -notcontains $nameNoExt
+        })
+
+        if ($enabledStartup.Count -gt 0) {
             $earlySamples = @($allSamples | Where-Object {
                 $h = if ($_.time) { [int]($_.time.Split(':')[0]) } else { 12 }
                 $h -ge 7 -and $h -le 10
@@ -228,14 +297,15 @@ function Invoke-SmartAnalysis {
             }
             $earlyProcs = $earlyProcs | Sort-Object -Unique
 
-            $unusedStartup = @($startupApps | Where-Object {
+            $unusedStartup = @($enabledStartup | Where-Object {
                 $app = $_; $earlyProcs -notcontains $app
             })
 
             if ($unusedStartup.Count -gt 0) {
+                $id = 'startup-unused'
                 $null = $recommendations.Add([ordered]@{
-                    id          = 'startup-unused'
-                    applied     = $false
+                    id          = $id
+                    applied     = if ($prevApplied[$id]) { $true } else { $false }
                     priority    = 'Alta'
                     category    = 'Startup'
                     title       = 'Apps de inicio no utilizadas detectadas'
@@ -247,7 +317,7 @@ function Invoke-SmartAnalysis {
         }
     } catch { }
 
-    # Guardar
+    # Guardar preservando applied de items anteriores
     $smartReco = [ordered]@{
         generated = (Get-Date -Format 'o')
         analyzed  = $total
