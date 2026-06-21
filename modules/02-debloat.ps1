@@ -34,20 +34,58 @@ if (-not (Test-Path $dataFile)) {
 }
 $bloat = Get-Content $dataFile -Raw -Encoding UTF8 | ConvertFrom-Json
 
-# ── Desinstalación: detectar el método correcto ANTES de intentar ──
-# La mayoría de los IDs son apps winget (no MSIX/Appx). Aplicar
-# Remove-AppxPackage a ciegas falla; primero clasificamos el ID.
-function Get-UninstallMethod {
+# ── Desinstalación: Get-Package (PackageManagement) como fuente de verdad ──
+# Los IDs de winget casi nunca coinciden con cómo el sistema registra la app
+# (ProviderName Programs/msi). Mapeamos cada ID a su nombre real de Get-Package
+# y desinstalamos por InputObject / UninstallString del registry. winget queda
+# como último recurso; MSIX (Store) sigue por Remove-AppxPackage.
+$pkgNameMap = @{
+    'BlueStack.BlueStacks'               = 'BlueStacks*'
+    'LDPlayer9'                          = 'LDPlayer*'
+    'Ollama.Ollama'                      = '*Ollama*'
+    'TheBrowserCompany.Arc'              = '*Arc*'
+    'Waterfox.Waterfox'                  = 'Waterfox*'
+    'KDE.Kdenlive'                       = 'kdenlive*'
+    'OBSProject.OBSStudio'               = 'OBS Studio*'
+    'SmartSoft.SmartFTP'                 = 'SmartFTP Client*'
+    'OpenMedia.4KVideoDownloaderPlus'    = '4K Video Downloader*'
+    'Insecure.Nmap'                      = 'Nmap*'
+    'Famatech.AdvancedIPScanner'         = 'Advanced IP Scanner*'
+    'PuTTY.PuTTY'                        = 'PuTTY*'
+    'RevoUninstaller.RevoUninstallerPro' = 'Revo Uninstaller Pro*'
+    'WinDirStat.WinDirStat'              = 'WinDirStat*'
+    'Stremio'                            = 'Stremio*'
+    'Alibaba.Qwen'                       = 'Qwen*'
+    'Flywheel.Local'                     = 'Local*'
+    'Google.Antigravity'                 = 'Antigravity*'
+    'ARP AnyEnhancer'                    = 'AnyEnhancer*'
+    'UltraBot'                           = 'UltraBot*'
+    'RaiDrive Mount'                     = 'RaiDrive*'
+    'WhatsApp Beta'                      = '*WhatsApp*'
+    'Microsoft.VCRedist.2012'            = 'Microsoft Visual C++ 2012*'
+    'Microsoft.VCRedist.2013'            = 'Microsoft Visual C++ 2013*'
+    'BusinessFollowssrl.FileZillaPro'    = 'FileZilla Pro*'
+    'Npcap'                              = 'Npcap*'
+    'OpenAI.Codex'                       = 'Codex*'
+}
+
+# Devuelve el patrón de nombre para Get-Package: del mapa o derivado del ID.
+function Resolve-PackageName {
     param([string]$Id)
-    if ($Id -match '^MSIX\\')  { return 'appx' }         # MSIX\... ruta completa de paquete
-    if ($Id -match '^ARP\\')   { return 'winget-name' }  # ARP\User\X64\Opera GX → por nombre
-    # Microsoft.* / MicrosoftCorporationII.* SOLO si hay un Appx instalado real.
+    if ($pkgNameMap.ContainsKey($Id)) { return $pkgNameMap[$Id] }
+    $name = $Id
+    if ($name -match '\\') { $name = ($name -split '\\')[-1] }              # ARP\..\X → X
+    if ($name -match '^[^\s\\]+\.[^\s\\]+$') { $name = ($name -split '\.')[-1] }  # Pub.Pkg → Pkg
+    return "*$name*"
+}
+
+# ¿Es realmente un MSIX/Appx instalado? (Store apps, Microsoft.*).
+function Test-IsMsix {
+    param([string]$Id)
+    if ($Id -match '^MSIX\\') { return $true }
     if (($Id -like 'Microsoft.*' -or $Id -like 'MicrosoftCorporationII.*' -or $Id -like 'MicrosoftWindows.*') -and
-        (Get-AppxPackage -Name "*$Id*" -ErrorAction SilentlyContinue)) {
-        return 'appx'
-    }
-    if ($Id -match '^[^\s\\]+\.[^\s\\]+$') { return 'winget-id' }  # Publisher.Package (Ollama.Ollama)
-    return 'winget-name'                                          # nombre visible con espacios
+        (Get-AppxPackage -Name "*$Id*" -ErrorAction SilentlyContinue)) { return $true }
+    return $false
 }
 
 # Desinstala vía winget eligiendo --id (exacto) o --name (nombre visible/ARP).
@@ -92,15 +130,78 @@ function Remove-AppxById {
     return (Invoke-WingetUninstall -Id $Id)   # no era MSIX real → último intento con winget
 }
 
-# Dispatcher: clasifica el ID y delega al ejecutor correcto.
+# Busca la entrada de Uninstall en el registry por DisplayName y la ejecuta en silencio.
+function Invoke-RegistryUninstall {
+    param([string]$Pattern)
+    $keys = @(
+        'HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\*',
+        'HKLM:\SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall\*',
+        'HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\*'
+    )
+    $entry = $null
+    foreach ($k in $keys) {
+        $entry = Get-ItemProperty $k -ErrorAction SilentlyContinue |
+            Where-Object { $_.DisplayName -like $Pattern -and ($_.UninstallString -or $_.QuietUninstallString) } |
+            Select-Object -First 1
+        if ($entry) { break }
+    }
+    if (-not $entry) { return $false }
+
+    $quiet = [bool]$entry.QuietUninstallString
+    $cmd   = if ($quiet) { $entry.QuietUninstallString } else { $entry.UninstallString }
+    try {
+        # msiexec → desinstalación por product code, siempre silenciosa.
+        if ($cmd -match 'msiexec' -and $cmd -match '(\{[0-9A-Fa-f\-]+\})') {
+            $p = Start-Process 'msiexec.exe' -ArgumentList "/x $($matches[1]) /quiet /norestart" -Wait -PassThru -ErrorAction Stop
+            return ($p.ExitCode -in 0, 3010, 1605)
+        }
+        # exe (entre comillas o no) + argumentos.
+        if     ($cmd -match '^\s*"([^"]+)"\s*(.*)$')   { $exe = $matches[1]; $argStr = $matches[2].Trim() }
+        elseif ($cmd -match '^\s*(.+?\.exe)\s*(.*)$')  { $exe = $matches[1]; $argStr = $matches[2].Trim() }
+        else                                           { $exe = $cmd;        $argStr = '' }
+        # Sin QuietUninstallString, agregamos switches silenciosos comunes (NSIS/Inno/etc.).
+        if (-not $quiet) {
+            foreach ($flag in '/S', '/silent', '/quiet') {
+                if ($argStr -notmatch [regex]::Escape($flag)) { $argStr = "$argStr $flag".Trim() }
+            }
+        }
+        $p = if ([string]::IsNullOrWhiteSpace($argStr)) {
+            Start-Process -FilePath $exe -Wait -PassThru -ErrorAction Stop
+        } else {
+            Start-Process -FilePath $exe -ArgumentList $argStr -Wait -PassThru -ErrorAction Stop
+        }
+        return ($p.ExitCode -in 0, 3010)
+    } catch { return $false }
+}
+
+# Dispatcher: Get-Package como fuente de verdad; winget como fallback.
 function Remove-Package {
     param([string]$Id)
-    switch (Get-UninstallMethod -Id $Id) {
-        'appx'        { return (Remove-AppxById -Id $Id) }
-        'winget-id'   { return (Invoke-WingetUninstall -Id $Id) }
-        'winget-name' { return (Invoke-WingetUninstall -Id $Id -ByName) }
-        default       { return (Invoke-WingetUninstall -Id $Id -ByName) }
+
+    # MSIX/Store primero — no aparece en Get-Package como desinstalable normal.
+    if (Test-IsMsix -Id $Id) { return (Remove-AppxById -Id $Id) }
+
+    $pattern = Resolve-PackageName -Id $Id
+    $pkg     = Get-Package -Name $pattern -ErrorAction SilentlyContinue | Select-Object -First 1
+
+    if ($pkg) {
+        try {
+            if ($pkg.ProviderName -eq 'msi') {
+                Uninstall-Package -InputObject $pkg -Force -AdditionalArguments '/quiet /norestart' -ErrorAction Stop | Out-Null
+                if (-not (Get-Package -Name $pattern -ErrorAction SilentlyContinue)) { return 'OK (msi)' }
+            } else {
+                Uninstall-Package -InputObject $pkg -Force -ErrorAction Stop | Out-Null
+                if (-not (Get-Package -Name $pattern -ErrorAction SilentlyContinue)) { return 'OK (Programs)' }
+            }
+        } catch { }
     }
+
+    # Get-Package no pudo (o no lo lista): UninstallString del registry.
+    if (Invoke-RegistryUninstall -Pattern $pattern) { return 'OK (registry)' }
+
+    # Último recurso: winget por --id (Publisher.Package) o --name (ARP/espacios).
+    $byName = ($Id -match '\\') -or ($Id -notmatch '^[^\s\\]+\.[^\s\\]+$')
+    return (Invoke-WingetUninstall -Id $Id -ByName:$byName)
 }
 
 # Lee el último debloat-*.log y devuelve los IDs marcados FAIL en su última corrida.
