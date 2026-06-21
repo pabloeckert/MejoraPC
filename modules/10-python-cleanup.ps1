@@ -56,20 +56,48 @@ if (Test-Path $claudeCfg) { Write-Host "  Config Claude detectada en $claudeCfg"
 $pathPy = (Get-Command python -ErrorAction SilentlyContinue).Source
 if ($pathPy) { Write-Host "  python en PATH -> $pathPy" -ForegroundColor DarkGray }
 
-# ── 3. Escanear dependencias de proyectos ──────────────────────────
-$pinned = [System.Collections.ArrayList]@()
-$ghRoot = 'C:\Github\'
-if (Test-Path $ghRoot) {
-    Get-ChildItem -Path $ghRoot -Recurse -Include '.python-version','pyproject.toml','runtime.txt' -ErrorAction SilentlyContinue -Force |
-        ForEach-Object {
-            $c = Get-Content $_.FullName -Raw -ErrorAction SilentlyContinue
-            foreach ($m in [regex]::Matches($c, '3\.(\d+)')) {
-                $v = "3.$($m.Groups[1].Value)"
-                if ($pinned -notcontains $v) { $null = $pinned.Add($v) }
+# ── 3. Escanear dependencias de proyectos (rápido, con timeout) ────
+# Mismo enfoque que 02-debloat.ps1: todo el escaneo corre en un job con
+# corte duro a los 10s. Solo primer nivel de C:\Github\ (no recursivo) y
+# solo archivos en la raíz de cada proyecto. Si se cuelga, se asume que no
+# hay dependencias específicas y se continúa.
+$pinned   = [System.Collections.ArrayList]@()
+$ghRoot   = 'C:\Github\'
+$timedOut = $false
+
+$scanBlock = {
+    param($root)
+    $versions = @()
+    if (Test-Path $root) {
+        foreach ($proj in (Get-ChildItem -Path $root -Directory -ErrorAction SilentlyContinue)) {
+            foreach ($file in '.python-version', 'pyproject.toml', 'requirements.txt') {
+                $f = Join-Path $proj.FullName $file
+                if (Test-Path $f) {
+                    $c = Get-Content $f -Raw -ErrorAction SilentlyContinue
+                    foreach ($m in [regex]::Matches($c, '3\.(\d+)')) {
+                        $versions += "3.$($m.Groups[1].Value)"
+                    }
+                }
             }
         }
+    }
+    ,($versions | Select-Object -Unique)
 }
-if ($pinned.Count -gt 0) {
+
+$job = Start-Job -ScriptBlock $scanBlock -ArgumentList $ghRoot
+if (Wait-Job $job -Timeout 10) {
+    foreach ($v in (Receive-Job $job)) {
+        if ($pinned -notcontains $v) { $null = $pinned.Add($v) }
+    }
+} else {
+    $timedOut = $true
+    Stop-Job $job -ErrorAction SilentlyContinue
+}
+Remove-Job $job -Force -ErrorAction SilentlyContinue
+
+if ($timedOut) {
+    Write-Host "  Escaneo de proyectos excedió 10s — se asume sin dependencias específicas." -ForegroundColor DarkYellow
+} elseif ($pinned.Count -gt 0) {
     Write-Host "  Versiones referenciadas en proyectos: $($pinned -join ', ')" -ForegroundColor Yellow
 }
 Write-Host ""
