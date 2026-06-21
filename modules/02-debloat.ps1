@@ -88,6 +88,43 @@ function Test-IsMsix {
     return $false
 }
 
+# ¿El paquete está REALMENTE instalado? La mayoría de los FAIL del log son apps
+# que ya no están: verificamos antes de intentar desinstalar para no ensuciar el
+# log. Devuelve $true si CUALQUIER método lo encuentra (corta apenas hay un hit).
+function Test-PackageInstalled {
+    param([string]$Id)
+
+    # MSIX/Appx (Store).
+    if (Test-IsMsix -Id $Id) {
+        $name = $Id
+        if ($name -match '^MSIX\\') { $name = ($name -split '\\')[-1] }
+        if (Get-AppxPackage -Name "*$name*" -ErrorAction SilentlyContinue) { return $true }
+        if (Get-AppxPackage -AllUsers -Name "*$name*" -ErrorAction SilentlyContinue) { return $true }
+        return $false
+    }
+
+    $pattern = Resolve-PackageName -Id $Id
+
+    # Programs / MSI (Get-Package).
+    if (Get-Package -Name $pattern -ErrorAction SilentlyContinue) { return $true }
+
+    # Registry: DisplayName en las claves Uninstall.
+    $keys = @(
+        'HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\*',
+        'HKLM:\SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall\*',
+        'HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\*'
+    )
+    foreach ($k in $keys) {
+        if (Get-ItemProperty $k -ErrorAction SilentlyContinue | Where-Object { $_.DisplayName -like $pattern }) { return $true }
+    }
+
+    # winget por --id exacto: exit 0 = instalado (último porque es el más lento).
+    winget list --id $Id --exact 2>$null | Out-Null
+    if ($LASTEXITCODE -eq 0) { return $true }
+
+    return $false
+}
+
 # Desinstala vía winget eligiendo --id (exacto) o --name (nombre visible/ARP).
 function Invoke-WingetUninstall {
     param([string]$Id, [switch]$ByName)
@@ -190,6 +227,10 @@ function Invoke-RegistryUninstall {
 function Remove-Package {
     param([string]$Id)
 
+    # Verificación previa: si ya no está instalado, no intentamos nada y lo
+    # marcamos SKIP (no instalado) — no es un fallo real.
+    if (-not (Test-PackageInstalled -Id $Id)) { return 'SKIP (no instalado)' }
+
     # MSIX/Store primero — no aparece en Get-Package como desinstalable normal.
     if (Test-IsMsix -Id $Id) { return (Remove-AppxById -Id $Id) }
 
@@ -232,7 +273,7 @@ function Get-LastFailedPackages {
 # Reintenta una lista de IDs con el método correcto; loguea y devuelve conteos.
 function Invoke-RetryList {
     param([string[]]$Ids)
-    $okR = 0; $failR = 0
+    $okR = 0; $failR = 0; $skipR = 0
     Write-Log "=== REINTENTO FAILs ($($Ids.Count)) ==="
     foreach ($id in $Ids) {
         Write-Host "  Reintentando $id ... " -NoNewline -ForegroundColor Gray
@@ -240,15 +281,18 @@ function Invoke-RetryList {
         if ($res -like 'OK*') {
             Write-Host $res -ForegroundColor Green; Write-Log "RETRY OK    $id  ->  $res"
             Add-Content -Path $removedFile -Value $id -Encoding UTF8; $okR++
+        } elseif ($res -like 'SKIP*') {
+            Write-Host $res -ForegroundColor DarkGray; Write-Log "RETRY SKIP  $id  ->  $res"; $skipR++
         } else {
-            Write-Host $res -ForegroundColor DarkYellow; Write-Log "RETRY FAIL  $id"; $failR++
+            Write-Host $res -ForegroundColor Red; Write-Log "RETRY FAIL  $id"; $failR++
         }
     }
-    Write-Log "=== FIN REINTENTO: OK=$okR FAIL=$failR ==="
+    Write-Log "=== FIN REINTENTO: OK=$okR SKIP=$skipR FAIL=$failR ==="
     Write-Host ""
     Write-Host "  ── RESUMEN REINTENTO ─────────────────────────────" -ForegroundColor Cyan
     Write-Host "  Recuperados OK : $okR" -ForegroundColor Green
-    Write-Host "  Siguen fallando: $failR" -ForegroundColor Yellow
+    Write-Host "  No instalados  : $skipR" -ForegroundColor DarkGray
+    Write-Host "  Siguen fallando: $failR" -ForegroundColor Red
     Write-Host ""
 }
 
@@ -394,6 +438,7 @@ if (-not $Yes) {
 # (las funciones de desinstalación se definen arriba, antes del menú)
 $okCount   = 0
 $failCount = 0
+$skipCount = 0
 $failedIds = [System.Collections.ArrayList]@()
 "# Debloat $date — paquetes eliminados" | Set-Content -Path $removedFile -Encoding UTF8
 Write-Log "=== INICIO DEBLOAT (needsNative=$needsNative) ==="
@@ -408,22 +453,27 @@ foreach ($id in $all) {
         Write-Log "OK    $id  ->  $res"
         Add-Content -Path $removedFile -Value $id -Encoding UTF8
         $okCount++
+    } elseif ($res -like 'SKIP*') {
+        Write-Host $res -ForegroundColor DarkGray
+        Write-Log "SKIP  $id  ->  $res"
+        $skipCount++
     } else {
-        Write-Host $res -ForegroundColor DarkYellow
+        Write-Host $res -ForegroundColor Red
         Write-Log "FAIL  $id"
         $null = $failedIds.Add($id)
         $failCount++
     }
 }
-Write-Log "=== FIN: OK=$okCount FAIL=$failCount ==="
+Write-Log "=== FIN: OK=$okCount SKIP=$skipCount FAIL=$failCount ==="
 
 # ── 9. Resumen ─────────────────────────────────────────────────────
 Write-Host ""
 Write-Host "  ── RESUMEN ───────────────────────────────────────" -ForegroundColor Cyan
-Write-Host "  Eliminados OK : $okCount" -ForegroundColor Green
-Write-Host "  Fallidos      : $failCount" -ForegroundColor Yellow
-Write-Host "  Log           : $logFile" -ForegroundColor DarkGray
-Write-Host "  Backup IDs    : $removedFile" -ForegroundColor DarkGray
+Write-Host "  Eliminados OK  : $okCount" -ForegroundColor Green
+Write-Host "  No instalados  : $skipCount  (ya no estaban — normal)" -ForegroundColor DarkGray
+Write-Host "  Fallidos reales: $failCount  (estaban pero no se pudieron eliminar — requieren atención)" -ForegroundColor Red
+Write-Host "  Log            : $logFile" -ForegroundColor DarkGray
+Write-Host "  Backup IDs     : $removedFile" -ForegroundColor DarkGray
 Write-Host ""
 Write-Host "  RAM/espacio estimado liberado: depende de los paquetes activos." -ForegroundColor DarkGray
 Write-Host ""
