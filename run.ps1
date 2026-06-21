@@ -87,7 +87,7 @@ function Show-Banner {
 function Show-Menu {
     Write-Host "  ── OPTIMIZACIÓN ────────────────────────────────────────────" -ForegroundColor DarkGray
     Write-Host "   1  Backup" -ForegroundColor White
-    Write-Host "   2  Debloat" -ForegroundColor White
+    Write-Host "   2  Debloat (política permanente + remoción inmediata)" -ForegroundColor White
     Write-Host "  2r  Reintentar fallidos del último debloat" -ForegroundColor White
     Write-Host "   3  Performance + tweaks" -ForegroundColor White
     Write-Host "   4  Estética" -ForegroundColor White
@@ -103,6 +103,7 @@ function Show-Menu {
     Write-Host "  10  Python cleanup" -ForegroundColor White
     Write-Host "  11  Workflow optimizer (sesión dev)" -ForegroundColor White
     Write-Host "  12  Instalar monitor background" -ForegroundColor Magenta
+    Write-Host "  13  Verificación real del sistema" -ForegroundColor Green
     Write-Host ""
     Write-Host "   0  Salir" -ForegroundColor DarkGray
     Write-Host ""
@@ -139,6 +140,7 @@ do {
             Invoke-Py "monitor\analyze.py" @('--install')
             Write-Host "  ENTER para volver..." -ForegroundColor DarkGray; $null = Read-Host
         }
+        '13' { Invoke-Module "modules\13-verify.ps1" }
         '0'  { Write-Host "`n  Hasta luego.`n" -ForegroundColor Cyan; break }
         default { Write-Host "`n  Opción no válida." -ForegroundColor Red; Start-Sleep -Seconds 1 }
     }

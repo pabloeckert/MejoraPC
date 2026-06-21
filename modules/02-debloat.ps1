@@ -6,9 +6,18 @@ param(
 )
 
 # ── MejoraPC — modules/02-debloat.ps1 ──────────────────────────────
-# Un solo perfil de debloat para el perfil definitivo de Pablo.
-# Bloque A: sin confirmación. Bloque B: una sola confirmación global
-# tras análisis automático de dependencias de desarrollo.
+# Debloat de dos capas para el perfil definitivo de Pablo.
+#
+#   CAPA 1 — POLÍTICA PERMANENTE (HKLM\...\RemoveDefaultMicrosoftStorePackages):
+#            Windows elimina la app en cada login y BLOQUEA la reinstalación.
+#            Sobrevive updates y reboots. Reemplaza al viejo Remove-AppxPackage
+#            que Windows 11 revertía silenciosamente.
+#   CAPA 2 — REMOCIÓN INMEDIATA (Appx) para que el cambio se vea en la sesión
+#            actual. Si falla, la CAPA 1 lo elimina en el próximo login.
+#   CAPA 3 — APPS NO-MSIX (winget / Programs / MSI): UninstallString del
+#            registry y winget como último recurso. Mantiene el flujo
+#            Bloque A (sin confirmar) / Bloque B (una confirmación tras
+#            análisis automático de dependencias de desarrollo).
 
 $scriptRoot = Split-Path -Parent $PSScriptRoot
 . "$scriptRoot\lib\helpers.ps1"
@@ -34,11 +43,65 @@ if (-not (Test-Path $dataFile)) {
 }
 $bloat = Get-Content $dataFile -Raw -Encoding UTF8 | ConvertFrom-Json
 
-# ── Desinstalación: Get-Package (PackageManagement) como fuente de verdad ──
+# ═══════════════════════════════════════════════════════════════════
+# CAPA 1 + CAPA 2 — política permanente y remoción inmediata (MSIX)
+# ═══════════════════════════════════════════════════════════════════
+
+# CAPA 1: escribe la política que Windows lee nativamente. Para cada
+# PackageFamilyName crea una subkey con RemovedPackage=1.
+function Set-RemovePolicy {
+    param([string]$PolicyBase, [string[]]$Pfns)
+    try {
+        if (-not (Test-Path $PolicyBase)) { New-Item -Path $PolicyBase -Force | Out-Null }
+        # La clave maestra habilita el mecanismo de remoción por política.
+        Set-ItemProperty -Path $PolicyBase -Name 'Enabled' -Value 1 -Type DWord -Force
+        foreach ($pfn in $Pfns) {
+            $subkey = Join-Path $PolicyBase $pfn
+            if (-not (Test-Path $subkey)) { New-Item -Path $subkey -Force | Out-Null }
+            Set-ItemProperty -Path $subkey -Name 'RemovedPackage' -Value 1 -Type DWord -Force
+        }
+        return $true
+    } catch {
+        Write-Log "POLICY FAIL  $PolicyBase  ->  $_"
+        return $false
+    }
+}
+
+# CAPA 2: fuerza la remoción inmediata del Appx para el usuario actual,
+# todos los usuarios y la imagen provisionada (evita reinstall a perfiles nuevos).
+# El nombre de paquete es la parte previa al primer '_' del PackageFamilyName.
+# Devuelve OK (se quitó ahora) | AUSENTE (ya no estaba) | PARCIAL (no se pudo,
+# queda para que la política lo elimine en el próximo login).
+function Remove-AppxByFamilyName {
+    param([string]$Pfn)
+    $name    = ($Pfn -split '_')[0]
+    $removed = $false
+    try {
+        foreach ($p in (Get-AppxPackage -Name $name -ErrorAction SilentlyContinue)) {
+            Remove-AppxPackage -Package $p.PackageFullName -ErrorAction SilentlyContinue; $removed = $true
+        }
+        foreach ($p in (Get-AppxPackage -AllUsers -Name $name -ErrorAction SilentlyContinue)) {
+            Remove-AppxPackage -AllUsers -Package $p.PackageFullName -ErrorAction SilentlyContinue; $removed = $true
+        }
+    } catch { }
+    try {
+        Get-AppxProvisionedPackage -Online -ErrorAction SilentlyContinue |
+            Where-Object { $_.PackageName -like "$name`_*" -or $_.DisplayName -eq $name } |
+            ForEach-Object { $null = Remove-AppxProvisionedPackage -Online -PackageName $_.PackageName -ErrorAction SilentlyContinue; $removed = $true }
+    } catch { }
+    # Verificación real en vez de confiar en el exit code.
+    if (Get-AppxPackage -Name $name -ErrorAction SilentlyContinue) { return 'PARCIAL' }
+    if ($removed) { return 'OK' }
+    return 'AUSENTE'
+}
+
+# ═══════════════════════════════════════════════════════════════════
+# CAPA 3 — desinstalación de apps NO-MSIX (winget / Programs / MSI)
+# ═══════════════════════════════════════════════════════════════════
 # Los IDs de winget casi nunca coinciden con cómo el sistema registra la app
 # (ProviderName Programs/msi). Mapeamos cada ID a su nombre real de Get-Package
 # y desinstalamos por InputObject / UninstallString del registry. winget queda
-# como último recurso; MSIX (Store) sigue por Remove-AppxPackage.
+# como último recurso.
 $pkgNameMap = @{
     'BlueStack.BlueStacks'               = 'BlueStacks*'
     'LDPlayer9'                          = 'LDPlayer*'
@@ -326,7 +389,55 @@ Write-Host "  ║         02 - DEBLOAT (perfil definitivo)         ║" -Foregro
 Write-Host "  ╚══════════════════════════════════════════════════╝" -ForegroundColor Cyan
 Write-Host ""
 
-# ── 1. Mostrar Bloque A agrupado ───────────────────────────────────
+if (-not ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)) {
+    Write-Host "  [!] No sos administrador: la política (CAPA 1) y varias remociones fallarán." -ForegroundColor Yellow
+    Write-Host "      Cerrá y abrí PowerShell como Administrador para el debloat completo." -ForegroundColor DarkGray
+    Write-Host ""
+}
+
+"# Debloat $date — paquetes eliminados" | Set-Content -Path $removedFile -Encoding UTF8
+Write-Log "=== INICIO DEBLOAT ==="
+
+# ═══════════════════════════════════════════════════════════════════
+# CAPA 1 — POLÍTICA PERMANENTE (sin confirmación: MS bloat de bajo riesgo)
+# ═══════════════════════════════════════════════════════════════════
+Write-Host "  CAPA 1 — política permanente (sobrevive updates y reboots)" -ForegroundColor Yellow
+Write-Host ""
+$policyBase = $bloat.policy_msix.policy_base
+$pfns       = @($bloat.policy_msix.package_family_names)
+if (Set-RemovePolicy -PolicyBase $policyBase -Pfns $pfns) {
+    Write-Status "RemoveDefaultMicrosoftStorePackages" "$($pfns.Count) paquetes en la política" 'OK'
+    Write-Log "POLICY OK  $($pfns.Count) PFNs en $policyBase"
+} else {
+    Write-Status "RemoveDefaultMicrosoftStorePackages" "no se pudo escribir (requiere admin)" 'ERROR'
+}
+Write-Host ""
+
+# ═══════════════════════════════════════════════════════════════════
+# CAPA 2 — REMOCIÓN INMEDIATA (Appx) de los mismos PackageFamilyNames
+# ═══════════════════════════════════════════════════════════════════
+Write-Host "  CAPA 2 — remoción inmediata para la sesión actual" -ForegroundColor Yellow
+Write-Host ""
+$capa2Ok = 0; $capa2Ausente = 0; $capa2Parcial = 0
+foreach ($pfn in $pfns) {
+    $r = Remove-AppxByFamilyName -Pfn $pfn
+    switch ($r) {
+        'OK'      { Write-Status $pfn "eliminado ahora" 'OK';   Write-Log "APPX OK       $pfn"; $capa2Ok++ }
+        'AUSENTE' { Write-Status $pfn "ya no estaba — la política lo bloquea" 'INFO'; Write-Log "APPX AUSENTE  $pfn"; $capa2Ausente++ }
+        'PARCIAL' { Write-Status $pfn "no removible ahora — se elimina en el próximo login" 'WARN'; Write-Log "APPX PARCIAL  $pfn"; $capa2Parcial++ }
+    }
+}
+Write-Host ""
+Write-Host "  CAPA 2: $capa2Ok eliminados ahora · $capa2Ausente ya ausentes · $capa2Parcial pendientes de login" -ForegroundColor DarkGray
+Write-Host ""
+
+# ═══════════════════════════════════════════════════════════════════
+# CAPA 3 — apps NO-MSIX. Bloque A sin confirmar, Bloque B con una confirmación.
+# ═══════════════════════════════════════════════════════════════════
+Write-Host "  CAPA 3 — apps no-MSIX (winget / Programs / MSI)" -ForegroundColor Yellow
+Write-Host ""
+
+# ── Bloque A agrupado ──────────────────────────────────────────────
 Write-Host "  BLOQUE A — se elimina sin confirmación:" -ForegroundColor Yellow
 Write-Host ""
 $blockAList = [System.Collections.ArrayList]@()
@@ -342,7 +453,7 @@ Write-Host ""
 Write-Host "  Total Bloque A: $($blockAList.Count) paquetes" -ForegroundColor White
 Write-Host ""
 
-# ── 2. Análisis automático VS / Build Tools / .NET (rápido, con timeout) ──
+# ── Análisis automático VS / Build Tools / .NET (rápido, con timeout) ──
 Write-Host "  Analizando dependencias de desarrollo en C:\Github\ ..." -ForegroundColor DarkGray
 $scanRoot    = $bloat.blockB.dev_scan.scan_root
 $needsNative = $false
@@ -408,7 +519,7 @@ if ($needsNative) {
 }
 Write-Host ""
 
-# ── 3. Mostrar Bloque B ────────────────────────────────────────────
+# ── Bloque B ───────────────────────────────────────────────────────
 Write-Host "  BLOQUE B — riesgo medio (solo si confirmás):" -ForegroundColor Yellow
 $blockBList = [System.Collections.ArrayList]@()
 if (-not $needsNative) {
@@ -424,61 +535,72 @@ Write-Host ""
 Write-Host "  Total Bloque B: $($blockBList.Count) paquetes" -ForegroundColor White
 Write-Host ""
 
-# ── 4. Una confirmación global ─────────────────────────────────────
-if (-not $Yes) {
-    Write-Host "  ¿Aplicar debloat completo (Bloque A + Bloque B)? [Y/N]: " -NoNewline -ForegroundColor White
-    $ans = Read-Host
-    if ($ans -notmatch '^[Yy]') {
-        Write-Host "`n  Cancelado. No se eliminó nada.`n" -ForegroundColor Yellow
-        return
-    }
-}
-
-# ── 5/7/8. Ejecutar A luego B, loguear ─────────────────────────────
-# (las funciones de desinstalación se definen arriba, antes del menú)
+# ── Ejecutar Bloque A SIEMPRE (sin confirmar, según perfil definitivo) ─
 $okCount   = 0
 $failCount = 0
 $skipCount = 0
 $failedIds = [System.Collections.ArrayList]@()
-"# Debloat $date — paquetes eliminados" | Set-Content -Path $removedFile -Encoding UTF8
-Write-Log "=== INICIO DEBLOAT (needsNative=$needsNative) ==="
 
-$all = @($blockAList) + @($blockBList)
-Write-Host ""
-foreach ($id in $all) {
-    Write-Host "  Quitando $id ... " -NoNewline -ForegroundColor Gray
-    $res = Remove-Package -Id $id
-    if ($res -like 'OK*') {
-        Write-Host $res -ForegroundColor Green
-        Write-Log "OK    $id  ->  $res"
-        Add-Content -Path $removedFile -Value $id -Encoding UTF8
-        $okCount++
-    } elseif ($res -like 'SKIP*') {
-        Write-Host $res -ForegroundColor DarkGray
-        Write-Log "SKIP  $id  ->  $res"
-        $skipCount++
-    } else {
-        Write-Host $res -ForegroundColor Red
-        Write-Log "FAIL  $id"
-        $null = $failedIds.Add($id)
-        $failCount++
+function Invoke-RemovalList {
+    param([System.Collections.ArrayList]$Ids)
+    foreach ($id in $Ids) {
+        Write-Host "  Quitando $id ... " -NoNewline -ForegroundColor Gray
+        $res = Remove-Package -Id $id
+        if ($res -like 'OK*') {
+            Write-Host $res -ForegroundColor Green
+            Write-Log "OK    $id  ->  $res"
+            Add-Content -Path $removedFile -Value $id -Encoding UTF8
+            $script:okCount++
+        } elseif ($res -like 'SKIP*') {
+            Write-Host $res -ForegroundColor DarkGray
+            Write-Log "SKIP  $id  ->  $res"
+            $script:skipCount++
+        } else {
+            Write-Host $res -ForegroundColor Red
+            Write-Log "FAIL  $id"
+            $null = $script:failedIds.Add($id)
+            $script:failCount++
+        }
     }
 }
-Write-Log "=== FIN: OK=$okCount SKIP=$skipCount FAIL=$failCount ==="
 
-# ── 9. Resumen ─────────────────────────────────────────────────────
+Write-Host ""
+Write-Host "  Ejecutando Bloque A ..." -ForegroundColor DarkCyan
+Invoke-RemovalList -Ids $blockAList
+
+# ── Bloque B: una sola confirmación global ─────────────────────────
+$doBlockB = $Yes
+if (-not $Yes -and $blockBList.Count -gt 0) {
+    Write-Host ""
+    Write-Host "  ¿Aplicar también Bloque B ($($blockBList.Count) paquetes de riesgo medio)? [Y/N]: " -NoNewline -ForegroundColor White
+    $doBlockB = (Read-Host) -match '^[Yy]'
+}
+if ($doBlockB -and $blockBList.Count -gt 0) {
+    Write-Host ""
+    Write-Host "  Ejecutando Bloque B ..." -ForegroundColor DarkCyan
+    Invoke-RemovalList -Ids $blockBList
+} elseif ($blockBList.Count -gt 0) {
+    Write-Host "`n  Bloque B omitido." -ForegroundColor Yellow
+}
+
+Write-Log "=== FIN: OK=$okCount SKIP=$skipCount FAIL=$failCount (CAPA2 ok=$capa2Ok ausente=$capa2Ausente parcial=$capa2Parcial) ==="
+
+# ── Resumen ────────────────────────────────────────────────────────
 Write-Host ""
 Write-Host "  ── RESUMEN ───────────────────────────────────────" -ForegroundColor Cyan
-Write-Host "  Eliminados OK  : $okCount" -ForegroundColor Green
-Write-Host "  No instalados  : $skipCount  (ya no estaban — normal)" -ForegroundColor DarkGray
-Write-Host "  Fallidos reales: $failCount  (estaban pero no se pudieron eliminar — requieren atención)" -ForegroundColor Red
-Write-Host "  Log            : $logFile" -ForegroundColor DarkGray
-Write-Host "  Backup IDs     : $removedFile" -ForegroundColor DarkGray
+Write-Host "  CAPA 1 política  : $($pfns.Count) PackageFamilyNames bloqueados (permanente)" -ForegroundColor Green
+Write-Host "  CAPA 2 inmediata : $capa2Ok eliminados · $capa2Parcial al próximo login" -ForegroundColor Green
+Write-Host "  CAPA 3 no-MSIX   :" -ForegroundColor White
+Write-Host "    Eliminados OK  : $okCount" -ForegroundColor Green
+Write-Host "    No instalados  : $skipCount  (ya no estaban — normal)" -ForegroundColor DarkGray
+Write-Host "    Fallidos reales: $failCount  (estaban pero no se pudieron eliminar)" -ForegroundColor Red
+Write-Host "  Log              : $logFile" -ForegroundColor DarkGray
+Write-Host "  Backup IDs       : $removedFile" -ForegroundColor DarkGray
 Write-Host ""
-Write-Host "  RAM/espacio estimado liberado: depende de los paquetes activos." -ForegroundColor DarkGray
+Write-Host "  Verificá el resultado real en disco con la opción [13] del menú." -ForegroundColor DarkGray
 Write-Host ""
 
-# ── 10. Ofrecer reintento inmediato de los FAIL de esta corrida ─────
+# ── Ofrecer reintento inmediato de los FAIL de esta corrida ────────
 if ($failedIds.Count -gt 0) {
     $doRetry = $Yes
     if (-not $Yes) {
