@@ -1,0 +1,161 @@
+{
+  "_meta": {
+    "profile": "Pablo — definitivo",
+    "ram_gb": 8,
+    "notes": "Un solo perfil de debloat. Bloque A sin confirmación. Bloque B con UNA confirmación global tras análisis automático de dependencias de desarrollo.",
+    "updated": "2026-06-20"
+  },
+  "blockA": {
+    "_desc": "Bajo riesgo, cero valor. Se eliminan sin confirmación.",
+    "groups": {
+      "xbox_gaming": [
+        "Microsoft.GamingApp",
+        "Microsoft.GamingServices",
+        "Microsoft.XboxGamingOverlay",
+        "Microsoft.Xbox.TCUI",
+        "Microsoft.XboxIdentityProvider",
+        "Microsoft.Edge.GameAssist"
+      ],
+      "microsoft_bloat": [
+        "Microsoft.BingNews",
+        "Microsoft.BingSearch",
+        "Microsoft.BingWeather",
+        "Microsoft.Copilot",
+        "Microsoft.MicrosoftDynamicsBusinessAnalyzer",
+        "Microsoft.Paint3DCreatures",
+        "Microsoft.WindowsFeedbackHub",
+        "Microsoft.GetHelp",
+        "Microsoft.Messaging",
+        "Microsoft.YourPhone",
+        "MicrosoftCorporationII.MicrosoftFamily",
+        "MicrosoftCorporationII.QuickAssist",
+        "Microsoft.StartExperiencesApp",
+        "Microsoft.WidgetsPlatformRuntime",
+        "Microsoft.Windows.DevHome",
+        "MicrosoftWindows.Client.WebExperience",
+        "Microsoft.MicrosoftForms",
+        "Microsoft.PowerAutomateDesktop",
+        "Microsoft.MicrosoftStickyNotes",
+        "Microsoft.Todos"
+      ],
+      "office_residuos": [
+        "Microsoft.Office.OneNoteVirtualPrinter",
+        "Microsoft.OfficePushNotificationUtility",
+        "Microsoft.Office.ActionsServer"
+      ],
+      "emuladores": [
+        "BlueStack.BlueStacks",
+        "BlueStacksServices",
+        "LDPlayer9"
+      ],
+      "browsers_sin_uso": [
+        "TheBrowserCompany.Arc",
+        "Waterfox.Waterfox",
+        "ARP\\User\\X64\\Opera GX",
+        "ARP\\User\\X64\\Vivaldi"
+      ],
+      "video_edicion": [
+        "KDE.Kdenlive",
+        "OBSProject.OBSStudio"
+      ],
+      "ftp_solapados": [
+        "SmartSoft.SmartFTP",
+        "BusinessFollowssrl.FileZillaPro"
+      ],
+      "descargas_solapadas": [
+        "OpenMedia.4KVideoDownloaderPlus"
+      ],
+      "redes_sin_uso": [
+        "Insecure.Nmap",
+        "Famatech.AdvancedIPScanner",
+        "Npcap"
+      ],
+      "ia_local": [
+        "Ollama.Ollama",
+        "Flywheel.Local",
+        "Alibaba.Qwen",
+        "Google.Antigravity",
+        "OpenAI.Codex"
+      ],
+      "sin_uso_confirmado": [
+        "ARP AnyEnhancer",
+        "UltraBot",
+        "RaiDrive Mount",
+        "WhatsApp Beta",
+        "PuTTY.PuTTY",
+        "RevoUninstaller Pro",
+        "WinDirStat",
+        "Stremio"
+      ]
+    }
+  },
+  "blockB": {
+    "_desc": "Riesgo medio. Una sola confirmación Y/N global tras análisis de dependencias de desarrollo en C:\\Github\\.",
+    "dev_scan": {
+      "scan_root": "C:\\Github\\",
+      "detect": [
+        "node_modules con módulos nativos (*.node)",
+        "Electron en package.json",
+        "pyproject.toml o setup.py con extensiones C",
+        "*.csproj / proyectos .NET"
+      ],
+      "policy": "Si hay dependencia: conservar versión mínima necesaria y marcar el resto. Si no hay dependencia: proponer eliminar todo VS Community + Build Tools 2022/2026."
+    },
+    "candidates": {
+      "visual_studio": [
+        "Microsoft.VisualStudio.2022.Community",
+        "Microsoft.VisualStudio.2026.Community",
+        "Microsoft.VisualStudio.2022.BuildTools",
+        "Microsoft.VisualStudio.2026.BuildTools"
+      ],
+      "vcredist": {
+        "remove": [
+          "Microsoft.VCRedist.2012",
+          "Microsoft.VCRedist.2013"
+        ],
+        "keep_always": [
+          "Microsoft.VCRedist.2015+.x64",
+          "Microsoft.VCRedist.2015+.x86"
+        ]
+      },
+      "dotnet_sdks": {
+        "policy": "Conservar solo el SDK detectado como necesario; eliminar el resto."
+      }
+    }
+  },
+  "keep_always": [
+    "Microsoft.VisualStudioCode",
+    "Git.Git",
+    "GitHub.cli",
+    "OpenJS.NodeJS",
+    "Oven-sh.Bun",
+    "Rustlang.Rust",
+    "Python.Python.3.14",
+    "Google.AndroidSDKPlatformTools",
+    "Oracle.JDK.17",
+    "CorelDRAW",
+    "Audacity.Audacity",
+    "SubtitleEdit",
+    "CapCut",
+    "Microsoft.Office",
+    "RARLab.WinRAR",
+    "Ghisler.TotalCommander",
+    "WinSCP.WinSCP",
+    "AppWork.JDownloader",
+    "VideoLAN.VLC",
+    "Spotify.Spotify",
+    "Anthropic.Claude",
+    "Microsoft.OneDrive",
+    "Canonical.Ubuntu.2204",
+    "WSL",
+    "Microsoft.WindowsTerminal",
+    "Google.Chrome",
+    "Brave.Brave",
+    "Microsoft.Edge",
+    "Roblox.Roblox",
+    "Intel drivers / Bluetooth / Chipset",
+    "Microsoft.AppInstaller",
+    "Twinkle Tray",
+    "CLEVOCO Fan Speed Setting / Control Center"
+  ]
+}

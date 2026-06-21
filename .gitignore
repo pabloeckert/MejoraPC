@@ -1,6 +1,15 @@
 # Logs
 logs/
 
+# Datos de runtime / usuario (la DB es la fuente de verdad local)
+data/mejorapc.db
+data/status.json
+data/monitor.log
+
+# Backups generados (contienen info del sistema del usuario)
+backups/
+reporte_limpieza_resultado.*
+
 # Rescue points (contienen info del sistema del usuario)
 rescue/
 
@@ -16,3 +25,6 @@ profiles/
 # Windows
 Thumbs.db
 Desktop.ini
+
+# Claude Code local state
+.claude/
