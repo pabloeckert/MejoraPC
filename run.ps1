@@ -88,6 +88,7 @@ function Show-Menu {
     Write-Host "  ── OPTIMIZACIÓN ────────────────────────────────────────────" -ForegroundColor DarkGray
     Write-Host "   1  Backup" -ForegroundColor White
     Write-Host "   2  Debloat" -ForegroundColor White
+    Write-Host "  2r  Reintentar fallidos del último debloat" -ForegroundColor White
     Write-Host "   3  Performance + tweaks" -ForegroundColor White
     Write-Host "   4  Estética" -ForegroundColor White
     Write-Host "   5  Rescate / Restaurar" -ForegroundColor White
@@ -123,6 +124,7 @@ do {
     switch ($choice) {
         '1'  { Invoke-Module "modules\01-backup.ps1" }
         '2'  { Invoke-Module "modules\02-debloat.ps1" }
+        '2r' { & (Join-Path $scriptRoot "modules\02-debloat.ps1") -RetryFailed }
         '3'  { Invoke-Module "modules\03-performance.ps1" }
         '4'  { Invoke-Module "modules\04-estetica.ps1" }
         '5'  { Invoke-Module "modules\05-rescate.ps1" }
