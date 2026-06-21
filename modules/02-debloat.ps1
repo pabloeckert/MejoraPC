@@ -1,5 +1,9 @@
 ﻿[CmdletBinding()]
-param([switch]$Yes)
+param(
+    [switch]$Yes,
+    # Lee el último log de debloat y reintenta SOLO los FAIL con el método correcto.
+    [switch]$RetryFailed
+)
 
 # ── MejoraPC — modules/02-debloat.ps1 ──────────────────────────────
 # Un solo perfil de debloat para el perfil definitivo de Pablo.
@@ -29,6 +33,134 @@ if (-not (Test-Path $dataFile)) {
     return
 }
 $bloat = Get-Content $dataFile -Raw -Encoding UTF8 | ConvertFrom-Json
+
+# ── Desinstalación: detectar el método correcto ANTES de intentar ──
+# La mayoría de los IDs son apps winget (no MSIX/Appx). Aplicar
+# Remove-AppxPackage a ciegas falla; primero clasificamos el ID.
+function Get-UninstallMethod {
+    param([string]$Id)
+    if ($Id -match '^MSIX\\')  { return 'appx' }         # MSIX\... ruta completa de paquete
+    if ($Id -match '^ARP\\')   { return 'winget-name' }  # ARP\User\X64\Opera GX → por nombre
+    # Microsoft.* / MicrosoftCorporationII.* SOLO si hay un Appx instalado real.
+    if (($Id -like 'Microsoft.*' -or $Id -like 'MicrosoftCorporationII.*' -or $Id -like 'MicrosoftWindows.*') -and
+        (Get-AppxPackage -Name "*$Id*" -ErrorAction SilentlyContinue)) {
+        return 'appx'
+    }
+    if ($Id -match '^[^\s\\]+\.[^\s\\]+$') { return 'winget-id' }  # Publisher.Package (Ollama.Ollama)
+    return 'winget-name'                                          # nombre visible con espacios
+}
+
+# Desinstala vía winget eligiendo --id (exacto) o --name (nombre visible/ARP).
+function Invoke-WingetUninstall {
+    param([string]$Id, [switch]$ByName)
+    $wargs = @('uninstall','--silent','--accept-source-agreements','--disable-interactivity','--force')
+    if ($ByName) {
+        $name = $Id
+        if ($name -match '^ARP\\') { $name = ($name -split '\\')[-1] }  # último segmento = nombre real
+        $wargs += @('--name', $name)
+    } else {
+        $wargs += @('--id', $Id, '--exact')
+    }
+    try {
+        $out  = & winget @wargs 2>&1 | Out-String
+        $code = $LASTEXITCODE
+    } catch { return 'FAIL' }
+    if ($code -eq 0 -or $out -match 'Successfully uninstalled|desinstalad')  { return 'OK (winget)' }
+    if ($out -match 'No installed package found|No se encontró|0x8a15002b')  { return 'OK (no instalado)' }
+    return 'FAIL'
+}
+
+# Quita un MSIX/Appx para el usuario actual, todos los usuarios y provisioned.
+function Remove-AppxById {
+    param([string]$Id)
+    $name = $Id
+    if ($name -match '^MSIX\\') { $name = ($name -split '\\')[-1] }
+    $done = $false
+    try {
+        foreach ($p in (Get-AppxPackage -Name "*$name*" -ErrorAction SilentlyContinue)) {
+            Remove-AppxPackage -Package $p.PackageFullName -ErrorAction SilentlyContinue; $done = $true
+        }
+        foreach ($p in (Get-AppxPackage -AllUsers -Name "*$name*" -ErrorAction SilentlyContinue)) {
+            Remove-AppxPackage -AllUsers -Package $p.PackageFullName -ErrorAction SilentlyContinue; $done = $true
+        }
+    } catch { }
+    try {
+        $prov = Get-AppxProvisionedPackage -Online -ErrorAction SilentlyContinue | Where-Object { $_.DisplayName -like "*$name*" }
+        foreach ($pp in $prov) { $null = Remove-AppxProvisionedPackage -Online -PackageName $pp.PackageName -ErrorAction SilentlyContinue; $done = $true }
+    } catch { }
+    if ($done) { return 'OK (Appx)' }
+    return (Invoke-WingetUninstall -Id $Id)   # no era MSIX real → último intento con winget
+}
+
+# Dispatcher: clasifica el ID y delega al ejecutor correcto.
+function Remove-Package {
+    param([string]$Id)
+    switch (Get-UninstallMethod -Id $Id) {
+        'appx'        { return (Remove-AppxById -Id $Id) }
+        'winget-id'   { return (Invoke-WingetUninstall -Id $Id) }
+        'winget-name' { return (Invoke-WingetUninstall -Id $Id -ByName) }
+        default       { return (Invoke-WingetUninstall -Id $Id -ByName) }
+    }
+}
+
+# Lee el último debloat-*.log y devuelve los IDs marcados FAIL en su última corrida.
+function Get-LastFailedPackages {
+    $log = Get-ChildItem -Path $logDir -Filter 'debloat-*.log' -ErrorAction SilentlyContinue |
+        Sort-Object LastWriteTime -Descending | Select-Object -First 1
+    if (-not $log) { return @() }
+    $lines  = @(Get-Content $log.FullName)
+    $starts = @($lines | Select-String -SimpleMatch '=== INICIO DEBLOAT')
+    $from   = if ($starts) { $starts[-1].LineNumber - 1 } else { 0 }
+    $block  = $lines[$from..($lines.Count - 1)]
+    $fails  = foreach ($l in $block) { if ($l -match '\bFAIL\s+(.+?)\s*$') { $matches[1].Trim() } }
+    @($fails | Where-Object { $_ } | Select-Object -Unique)
+}
+
+# Reintenta una lista de IDs con el método correcto; loguea y devuelve conteos.
+function Invoke-RetryList {
+    param([string[]]$Ids)
+    $okR = 0; $failR = 0
+    Write-Log "=== REINTENTO FAILs ($($Ids.Count)) ==="
+    foreach ($id in $Ids) {
+        Write-Host "  Reintentando $id ... " -NoNewline -ForegroundColor Gray
+        $res = Remove-Package -Id $id
+        if ($res -like 'OK*') {
+            Write-Host $res -ForegroundColor Green; Write-Log "RETRY OK    $id  ->  $res"
+            Add-Content -Path $removedFile -Value $id -Encoding UTF8; $okR++
+        } else {
+            Write-Host $res -ForegroundColor DarkYellow; Write-Log "RETRY FAIL  $id"; $failR++
+        }
+    }
+    Write-Log "=== FIN REINTENTO: OK=$okR FAIL=$failR ==="
+    Write-Host ""
+    Write-Host "  ── RESUMEN REINTENTO ─────────────────────────────" -ForegroundColor Cyan
+    Write-Host "  Recuperados OK : $okR" -ForegroundColor Green
+    Write-Host "  Siguen fallando: $failR" -ForegroundColor Yellow
+    Write-Host ""
+}
+
+# ── Modo reintento standalone: lee el log y reprocesa solo los FAIL ─
+if ($RetryFailed) {
+    Clear-Host
+    Write-Host ""
+    Write-Host "  ╔══════════════════════════════════════════════════╗" -ForegroundColor Cyan
+    Write-Host "  ║     02 - REINTENTO DE FALLIDOS (último debloat)   ║" -ForegroundColor Cyan
+    Write-Host "  ╚══════════════════════════════════════════════════╝" -ForegroundColor Cyan
+    Write-Host ""
+    $failed = Get-LastFailedPackages
+    if (-not $failed -or $failed.Count -eq 0) {
+        Write-Host "  No hay paquetes FAIL en el último log de debloat." -ForegroundColor Green
+        Write-Host ""
+    } else {
+        Write-Host "  Reintentando $($failed.Count) paquete(s) con el método correcto:" -ForegroundColor Yellow
+        Write-Host ""
+        Invoke-RetryList -Ids $failed
+    }
+    if ($Host.Name -eq 'ConsoleHost' -and -not $Yes) {
+        Write-Host "  Presioná ENTER para volver..." -ForegroundColor DarkGray; $null = Read-Host
+    }
+    return
+}
 
 Clear-Host
 Write-Host ""
@@ -145,36 +277,11 @@ if (-not $Yes) {
     }
 }
 
-# ── 6. Función de desinstalación multi-método ──────────────────────
-function Remove-Package {
-    param([string]$Id)
-    # a. Remove-AppxPackage (MSIX por nombre)
-    try {
-        $pkgs = Get-AppxPackage -Name "*$Id*" -ErrorAction SilentlyContinue
-        if ($pkgs) {
-            foreach ($p in $pkgs) { Remove-AppxPackage -Package $p.PackageFullName -ErrorAction Stop }
-            return 'OK (Appx)'
-        }
-    } catch { }
-    # b. winget uninstall
-    try {
-        $out = winget uninstall --id $Id --silent --accept-source-agreements --disable-interactivity 2>&1 | Out-String
-        if ($out -match 'Successfully uninstalled|desinstalad') { return 'OK (winget)' }
-    } catch { }
-    # c. Provisioned package (para todos los usuarios)
-    try {
-        $prov = Get-AppxProvisionedPackage -Online -ErrorAction SilentlyContinue | Where-Object { $_.DisplayName -like "*$Id*" }
-        if ($prov) {
-            foreach ($pp in $prov) { Remove-AppxProvisionedPackage -Online -PackageName $pp.PackageName -ErrorAction Stop | Out-Null }
-            return 'OK (Provisioned)'
-        }
-    } catch { }
-    return 'FAIL'
-}
-
 # ── 5/7/8. Ejecutar A luego B, loguear ─────────────────────────────
+# (las funciones de desinstalación se definen arriba, antes del menú)
 $okCount   = 0
 $failCount = 0
+$failedIds = [System.Collections.ArrayList]@()
 "# Debloat $date — paquetes eliminados" | Set-Content -Path $removedFile -Encoding UTF8
 Write-Log "=== INICIO DEBLOAT (needsNative=$needsNative) ==="
 
@@ -191,6 +298,7 @@ foreach ($id in $all) {
     } else {
         Write-Host $res -ForegroundColor DarkYellow
         Write-Log "FAIL  $id"
+        $null = $failedIds.Add($id)
         $failCount++
     }
 }
@@ -206,6 +314,20 @@ Write-Host "  Backup IDs    : $removedFile" -ForegroundColor DarkGray
 Write-Host ""
 Write-Host "  RAM/espacio estimado liberado: depende de los paquetes activos." -ForegroundColor DarkGray
 Write-Host ""
+
+# ── 10. Ofrecer reintento inmediato de los FAIL de esta corrida ─────
+if ($failedIds.Count -gt 0) {
+    $doRetry = $Yes
+    if (-not $Yes) {
+        Write-Host "  ¿Reintentar los $($failedIds.Count) fallidos con el método correcto ahora? [Y/N]: " -NoNewline -ForegroundColor White
+        $doRetry = (Read-Host) -match '^[Yy]'
+    }
+    if ($doRetry) {
+        Write-Host ""
+        Invoke-RetryList -Ids @($failedIds)
+    }
+}
+
 if ($Host.Name -eq 'ConsoleHost' -and -not $Yes) {
     Write-Host "  Presioná ENTER para volver..." -ForegroundColor DarkGray
     $null = Read-Host
