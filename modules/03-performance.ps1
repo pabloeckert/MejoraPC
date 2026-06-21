@@ -144,21 +144,53 @@ try {
 } catch { Write-Status "Pagefile" "error: $_" 'ERROR' }
 
 # ── Ultimate Performance ───────────────────────────────────────────
+# GUID fijo de "Máximo rendimiento" en este equipo. Si no existe el plan,
+# se duplica desde la plantilla oficial de Microsoft y se guarda el GUID
+# generado en data/status.json bajo "power_plan_guid".
 try {
-    $guidTpl = $tweaks.power.ultimate_performance.template_guid
-    $plans = powercfg /list 2>&1 | Out-String
-    if ($plans -notmatch 'Ultimate Performance|Rendimiento máximo') {
-        powercfg -duplicatescheme $guidTpl 2>&1 | Out-Null
-        $plans = powercfg /list 2>&1 | Out-String
+    $ultGuid = 'e5062635-e13c-4eac-a7e9-ec5a6fb7d65b'
+    $tplGuid = 'e9a42b02-d5df-448d-aa00-03f14749eb61'
+
+    # 1) Intentar activar directamente el GUID conocido.
+    powercfg /setactive $ultGuid 2>&1 | Out-Null
+    if ($LASTEXITCODE -ne 0) {
+        # 2) El plan no existe: duplicar la plantilla y capturar el GUID nuevo.
+        Write-Log "POWER  plan $ultGuid no existe, duplicando plantilla $tplGuid"
+        $dupOut = powercfg -duplicatescheme $tplGuid 2>&1 | Out-String
+        $m = [regex]::Match($dupOut, '([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})')
+        if ($m.Success) {
+            $newGuid = $m.Groups[1].Value
+            powercfg /setactive $newGuid 2>&1 | Out-Null
+            Write-Log "POWER  plan duplicado y activado ($newGuid)"
+
+            # Guardar el GUID nuevo en data/status.json.
+            $statusFile = "$scriptRoot\data\status.json"
+            try {
+                if (Test-Path $statusFile) {
+                    $status = Get-Content $statusFile -Raw -Encoding UTF8 | ConvertFrom-Json
+                } else {
+                    $status = [PSCustomObject]@{}
+                }
+                if ($status.PSObject.Properties['power_plan_guid']) {
+                    $status.power_plan_guid = $newGuid
+                } else {
+                    $status | Add-Member -NotePropertyName 'power_plan_guid' -NotePropertyValue $newGuid -Force
+                }
+                $status | ConvertTo-Json -Depth 10 | Set-Content -Path $statusFile -Encoding UTF8
+                Write-Log "POWER  power_plan_guid guardado en status.json ($newGuid)"
+            } catch {
+                Write-Log "POWER  FAIL al guardar power_plan_guid en status.json: $_"
+            }
+        } else {
+            Write-Log "POWER  FAIL no se pudo capturar el GUID duplicado: $dupOut"
+            Write-Status "Power plan" "no se pudo crear el plan" 'WARN'
+        }
     }
-    $m = [regex]::Match($plans, '([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})\s+\((Ultimate Performance|Rendimiento máximo)')
-    if ($m.Success) {
-        powercfg /setactive $m.Groups[1].Value 2>&1 | Out-Null
-        Write-Log "POWER  ultimate performance activo ($($m.Groups[1].Value))"
-        Write-Status "Power plan" "Ultimate Performance activo" 'OK'
-    } else {
-        Write-Status "Power plan" "no se encontró el plan" 'WARN'
-    }
+
+    # 3) Verificar el plan activo y loguear el resultado.
+    $active = powercfg /getactivescheme 2>&1 | Out-String
+    Write-Log "POWER  getactivescheme -> $($active.Trim())"
+    Write-Status "Power plan" "activo: $($active.Trim())" 'OK'
 } catch { Write-Status "Power plan" "error: $_" 'ERROR' }
 
 Write-Log "=== FIN PERFORMANCE ==="
