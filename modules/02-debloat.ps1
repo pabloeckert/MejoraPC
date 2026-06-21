@@ -131,6 +131,8 @@ function Remove-AppxById {
 }
 
 # Busca la entrada de Uninstall en el registry por DisplayName y la ejecuta en silencio.
+# Devuelve $true SOLO si tras correr ya no queda ninguna entrada que matchee el patrón
+# (no confiamos en el exit code: muchos uninstallers mienten o forkean).
 function Invoke-RegistryUninstall {
     param([string]$Pattern)
     $keys = @(
@@ -138,40 +140,50 @@ function Invoke-RegistryUninstall {
         'HKLM:\SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall\*',
         'HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\*'
     )
-    $entry = $null
-    foreach ($k in $keys) {
-        $entry = Get-ItemProperty $k -ErrorAction SilentlyContinue |
-            Where-Object { $_.DisplayName -like $Pattern -and ($_.UninstallString -or $_.QuietUninstallString) } |
-            Select-Object -First 1
-        if ($entry) { break }
-    }
-    if (-not $entry) { return $false }
+    $cands = @(foreach ($k in $keys) {
+        Get-ItemProperty $k -ErrorAction SilentlyContinue |
+            Where-Object { $_.DisplayName -like $Pattern -and ($_.UninstallString -or $_.QuietUninstallString) }
+    })
+    if (-not $cands) { return $false }
+
+    # Preferir el desinstalador del bundle: 1) QuietUninstallString, 2) exe que no sea msiexec
+    # (en VCRedist el wrapper vcredist_x64.exe /uninstall borra TODOS los sub-componentes),
+    # 3) lo que haya. Así evitamos quitar un solo runtime y dejar el resto.
+    $entry =  $cands | Where-Object QuietUninstallString | Select-Object -First 1
+    if (-not $entry) { $entry = $cands | Where-Object { $_.UninstallString -notmatch '(?i)^\s*"?\s*msiexec' } | Select-Object -First 1 }
+    if (-not $entry) { $entry = $cands[0] }
 
     $quiet = [bool]$entry.QuietUninstallString
     $cmd   = if ($quiet) { $entry.QuietUninstallString } else { $entry.UninstallString }
     try {
-        # msiexec → desinstalación por product code, siempre silenciosa.
-        if ($cmd -match 'msiexec' -and $cmd -match '(\{[0-9A-Fa-f\-]+\})') {
-            $p = Start-Process 'msiexec.exe' -ArgumentList "/x $($matches[1]) /quiet /norestart" -Wait -PassThru -ErrorAction Stop
-            return ($p.ExitCode -in 0, 3010, 1605)
-        }
-        # exe (entre comillas o no) + argumentos.
-        if     ($cmd -match '^\s*"([^"]+)"\s*(.*)$')   { $exe = $matches[1]; $argStr = $matches[2].Trim() }
-        elseif ($cmd -match '^\s*(.+?\.exe)\s*(.*)$')  { $exe = $matches[1]; $argStr = $matches[2].Trim() }
-        else                                           { $exe = $cmd;        $argStr = '' }
-        # Sin QuietUninstallString, agregamos switches silenciosos comunes (NSIS/Inno/etc.).
-        if (-not $quiet) {
-            foreach ($flag in '/S', '/silent', '/quiet') {
-                if ($argStr -notmatch [regex]::Escape($flag)) { $argStr = "$argStr $flag".Trim() }
+        # msiexec real: el comando ES msiexec y el GUID va tras /X o /I (no un GUID suelto en un path).
+        if ($cmd -match '(?i)msiexec.*?/[xi]\s*(\{[0-9A-Fa-f-]+\})') {
+            Start-Process 'msiexec.exe' -ArgumentList "/x $($matches[1]) /quiet /norestart" -Wait -ErrorAction Stop | Out-Null
+        } else {
+            # exe (entre comillas o no) + argumentos.
+            if     ($cmd -match '^\s*"([^"]+)"\s*(.*)$')   { $exe = $matches[1]; $argStr = $matches[2].Trim() }
+            elseif ($cmd -match '^\s*(.+?\.exe)\s*(.*)$')  { $exe = $matches[1]; $argStr = $matches[2].Trim() }
+            else                                           { $exe = $cmd;        $argStr = '' }
+            # Sin QuietUninstallString, agregamos switches silenciosos comunes (NSIS/Inno/vcredist/etc.).
+            if (-not $quiet) {
+                foreach ($flag in '/S', '/silent', '/quiet') {
+                    if ($argStr -notmatch [regex]::Escape($flag)) { $argStr = "$argStr $flag".Trim() }
+                }
+            }
+            if ([string]::IsNullOrWhiteSpace($argStr)) {
+                Start-Process -FilePath $exe -Wait -ErrorAction Stop | Out-Null
+            } else {
+                Start-Process -FilePath $exe -ArgumentList $argStr -Wait -ErrorAction Stop | Out-Null
             }
         }
-        $p = if ([string]::IsNullOrWhiteSpace($argStr)) {
-            Start-Process -FilePath $exe -Wait -PassThru -ErrorAction Stop
-        } else {
-            Start-Process -FilePath $exe -ArgumentList $argStr -Wait -PassThru -ErrorAction Stop
-        }
-        return ($p.ExitCode -in 0, 3010)
     } catch { return $false }
+
+    # Verificación real: ya no debe quedar ninguna entrada que matchee el patrón.
+    Start-Sleep -Milliseconds 500
+    $remain = @(foreach ($k in $keys) {
+        Get-ItemProperty $k -ErrorAction SilentlyContinue | Where-Object DisplayName -like $Pattern
+    })
+    return ($remain.Count -eq 0)
 }
 
 # Dispatcher: Get-Package como fuente de verdad; winget como fallback.
