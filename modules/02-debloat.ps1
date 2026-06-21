@@ -53,41 +53,69 @@ Write-Host ""
 Write-Host "  Total Bloque A: $($blockAList.Count) paquetes" -ForegroundColor White
 Write-Host ""
 
-# ── 2. Análisis automático VS / Build Tools / .NET ─────────────────
+# ── 2. Análisis automático VS / Build Tools / .NET (rápido, con timeout) ──
 Write-Host "  Analizando dependencias de desarrollo en C:\Github\ ..." -ForegroundColor DarkGray
-$scanRoot   = $bloat.blockB.dev_scan.scan_root
+$scanRoot    = $bloat.blockB.dev_scan.scan_root
 $needsNative = $false
 $reasons     = [System.Collections.ArrayList]@()
-if (Test-Path $scanRoot) {
-    $nodeNative = Get-ChildItem -Path $scanRoot -Recurse -Filter '*.node' -ErrorAction SilentlyContinue -Force | Select-Object -First 1
-    if ($nodeNative) { $needsNative = $true; $null = $reasons.Add("Módulos nativos Node (.node): $($nodeNative.FullName)") }
+$timedOut    = $false
 
-    $electron = Get-ChildItem -Path $scanRoot -Recurse -Filter 'package.json' -ErrorAction SilentlyContinue -Force |
-        Where-Object { $_.FullName -notmatch 'node_modules' } |
-        Where-Object { (Get-Content $_.FullName -Raw -ErrorAction SilentlyContinue) -match '"electron"' } |
-        Select-Object -First 1
-    if ($electron) { $needsNative = $true; $null = $reasons.Add("Electron en: $($electron.FullName)") }
-
-    $pyExt = Get-ChildItem -Path $scanRoot -Recurse -Include 'pyproject.toml','setup.py' -ErrorAction SilentlyContinue -Force |
-        Where-Object { (Get-Content $_.FullName -Raw -ErrorAction SilentlyContinue) -match 'ext_modules|Extension\(|\[build-system\]' } |
-        Select-Object -First 1
-    if ($pyExt) { $needsNative = $true; $null = $reasons.Add("Extensión C Python en: $($pyExt.FullName)") }
-
-    $csproj = Get-ChildItem -Path $scanRoot -Recurse -Filter '*.csproj' -ErrorAction SilentlyContinue -Force | Select-Object -First 1
-    if ($csproj) { $needsNative = $true; $null = $reasons.Add("Proyecto .NET (.csproj): $($csproj.FullName)") }
-} else {
-    $null = $reasons.Add("$scanRoot no existe — no se detectaron dependencias")
+# Todo el análisis corre en un job con corte duro a los 10s: aunque un
+# Get-ChildItem se cuelgue dentro, el Wait-Job -Timeout garantiza continuar.
+$scanBlock = {
+    param($root)
+    $found = @()
+    if (Test-Path $root) {
+        foreach ($proj in (Get-ChildItem -Path $root -Directory -ErrorAction SilentlyContinue)) {
+            # package.json (raíz del proyecto) — "electron" → conservar Build Tools
+            $pkg = Join-Path $proj.FullName 'package.json'
+            if (Test-Path $pkg) {
+                if ((Get-Content $pkg -Raw -ErrorAction SilentlyContinue) -match '"electron"') {
+                    $found += "Electron (package.json) en $($proj.Name)"
+                }
+            }
+            # requirements.txt (raíz) — "pythonnet"/"clr" → conservar .NET
+            $req = Join-Path $proj.FullName 'requirements.txt'
+            if (Test-Path $req) {
+                if ((Get-Content $req -Raw -ErrorAction SilentlyContinue) -match 'pythonnet|clr') {
+                    $found += "pythonnet/.NET (requirements.txt) en $($proj.Name)"
+                }
+            }
+            # pyproject.toml (raíz) — "pythonnet"/"clr" → conservar .NET
+            $pyproj = Join-Path $proj.FullName 'pyproject.toml'
+            if (Test-Path $pyproj) {
+                if ((Get-Content $pyproj -Raw -ErrorAction SilentlyContinue) -match 'pythonnet|clr') {
+                    $found += "pythonnet/.NET (pyproject.toml) en $($proj.Name)"
+                }
+            }
+            # node_modules — extensión .node → conservar Build Tools
+            $nm = Join-Path $proj.FullName 'node_modules'
+            if (Test-Path $nm) {
+                $nodeNative = Get-ChildItem -Path $nm -Recurse -Filter '*.node' -ErrorAction SilentlyContinue -Force | Select-Object -First 1
+                if ($nodeNative) { $found += "Módulos nativos Node (.node) en $($proj.Name)" }
+            }
+        }
+    }
+    ,$found
 }
 
-Write-Host ""
-Write-Host "  ── RESULTADO DEL ANÁLISIS DE DESARROLLO" -ForegroundColor DarkCyan
-if ($needsNative) {
-    Write-Host "  [!] Se detectaron dependencias de toolchain nativo:" -ForegroundColor Yellow
-    foreach ($r in $reasons) { Write-Host "       - $r" -ForegroundColor Gray }
-    Write-Host "  -> Conservar la versión mínima de VS Build Tools necesaria." -ForegroundColor Yellow
+$job = Start-Job -ScriptBlock $scanBlock -ArgumentList $scanRoot
+if (Wait-Job $job -Timeout 10) {
+    foreach ($r in (Receive-Job $job)) { $needsNative = $true; $null = $reasons.Add($r) }
 } else {
-    Write-Host "  [+] No se detectaron dependencias de compilación nativa." -ForegroundColor Green
-    Write-Host "  -> Se puede eliminar todo VS Community + Build Tools 2022/2026." -ForegroundColor Green
+    $timedOut = $true
+    Stop-Job $job -ErrorAction SilentlyContinue
+}
+Remove-Job $job -Force -ErrorAction SilentlyContinue
+
+# ── Resultado en 1 línea ───────────────────────────────────────────
+Write-Host ""
+if ($needsNative) {
+    Write-Host ("  Dependencias detectadas: " + ($reasons -join '; ')) -ForegroundColor Yellow
+} elseif ($timedOut) {
+    Write-Host "  Sin dependencias dev nativas (timeout 10s — se asume sin dependencias)" -ForegroundColor Green
+} else {
+    Write-Host "  Sin dependencias dev nativas" -ForegroundColor Green
 }
 Write-Host ""
 
