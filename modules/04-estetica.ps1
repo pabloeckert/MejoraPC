@@ -23,21 +23,20 @@ Write-Host "  Opción: " -NoNewline
 $opt = Read-Host
 
 $regPath = 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\VisualEffects'
-if (-not (Test-Path $regPath)) { New-Item -Path $regPath -Force | Out-Null }
+
+function Set-VisualFX {
+    param([int]$Value, [string]$Label)
+    try {
+        if (-not (Test-Path $regPath)) { New-Item -Path $regPath -Force -ErrorAction Stop | Out-Null }
+        Set-ItemProperty -Path $regPath -Name 'VisualFXSetting' -Value $Value -Type DWord -ErrorAction Stop
+        Write-Status "Efectos visuales" $Label 'OK'
+    } catch { Write-Status "Efectos visuales" "error: $_" 'ERROR' }
+}
 
 switch ($opt) {
-    '1' {
-        Set-ItemProperty -Path $regPath -Name 'VisualFXSetting' -Value 2
-        Write-Status "Efectos visuales" "Rendimiento" 'OK'
-    }
-    '2' {
-        Set-ItemProperty -Path $regPath -Name 'VisualFXSetting' -Value 3
-        Write-Status "Efectos visuales" "Equilibrado" 'OK'
-    }
-    '3' {
-        Set-ItemProperty -Path $regPath -Name 'VisualFXSetting' -Value 0
-        Write-Status "Efectos visuales" "Por defecto" 'OK'
-    }
+    '1' { Set-VisualFX -Value 2 -Label 'Rendimiento' }
+    '2' { Set-VisualFX -Value 3 -Label 'Equilibrado' }
+    '3' { Set-VisualFX -Value 0 -Label 'Por defecto' }
 }
 
 Write-Host ""

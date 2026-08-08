@@ -41,8 +41,12 @@ $keys = @(
 foreach ($k in $keys) {
     $safe = ($k -replace '[\\: ]', '_')
     $out  = Join-Path $backupDir "$safe-$stamp.reg"
-    reg export $k $out /y 2>&1 | Out-Null
-    if (Test-Path $out) { Write-Status (Split-Path $k -Leaf) "exportado" 'OK' }
+    $regOut = reg export $k $out /y 2>&1
+    if ($LASTEXITCODE -eq 0 -and (Test-Path $out)) {
+        Write-Status (Split-Path $k -Leaf) "exportado" 'OK'
+    } else {
+        Write-Status (Split-Path $k -Leaf) "error: $regOut" 'ERROR'
+    }
 }
 
 Write-Host ""

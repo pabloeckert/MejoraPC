@@ -39,9 +39,11 @@ switch ($opt) {
         Write-Host "`n  Reinstalando $($ids.Count) paquetes via winget...`n" -ForegroundColor DarkGray
         foreach ($id in $ids) {
             Write-Host "  $id ... " -NoNewline -ForegroundColor Gray
-            $out = winget install --id $id --silent --accept-source-agreements --accept-package-agreements 2>&1 | Out-String
-            if ($out -match 'Successfully installed|instalad') { Write-Host "OK" -ForegroundColor Green }
-            else { Write-Host "no disponible (puede ser MSIX de Store)" -ForegroundColor DarkYellow }
+            try {
+                $out = winget install --id $id --silent --accept-source-agreements --accept-package-agreements 2>&1 | Out-String
+                if ($out -match 'Successfully installed|instalad') { Write-Host "OK" -ForegroundColor Green }
+                else { Write-Host "no disponible (puede ser MSIX de Store)" -ForegroundColor DarkYellow }
+            } catch { Write-Host "error: $_" -ForegroundColor Red }
         }
     }
     '2' {
@@ -52,8 +54,12 @@ switch ($opt) {
         Write-Host "`n  Elegí .reg: " -NoNewline; $sel = Read-Host
         $idx = [int]$sel - 1
         if ($idx -lt 0 -or $idx -ge $regs.Count) { Write-Host "  Inválido." -ForegroundColor Red; break }
-        reg import $regs[$idx].FullName
-        Write-Host "  [OK] Registry restaurado." -ForegroundColor Green
+        $regOut = reg import $regs[$idx].FullName 2>&1
+        if ($LASTEXITCODE -eq 0) {
+            Write-Host "  [OK] Registry restaurado." -ForegroundColor Green
+        } else {
+            Write-Host "  [x] Error al restaurar: $regOut" -ForegroundColor Red
+        }
     }
     '3' {
         $logs = @(Get-ChildItem -Path $logDir -Filter 'performance-*.log' -ErrorAction SilentlyContinue | Sort-Object LastWriteTime -Descending)
@@ -72,8 +78,12 @@ switch ($opt) {
         }
     }
     '4' {
-        powercfg /setactive 381b4222-f694-41f0-9685-ff5bb260df2e 2>&1 | Out-Null
-        Write-Host "  [OK] Power plan restaurado a Balanced." -ForegroundColor Green
+        $pcOut = powercfg /setactive 381b4222-f694-41f0-9685-ff5bb260df2e 2>&1
+        if ($LASTEXITCODE -eq 0) {
+            Write-Host "  [OK] Power plan restaurado a Balanced." -ForegroundColor Green
+        } else {
+            Write-Host "  [x] Error al restaurar power plan: $pcOut" -ForegroundColor Red
+        }
     }
 }
 

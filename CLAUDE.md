@@ -72,6 +72,7 @@ que relee el estado del sistema en vez de confiar en el output de otro módulo.
 .\modules\02-debloat.ps1 -RetryFailed       # reintentar solo los FAIL del último debloat
 .\modules\12-workflow-optimizer.ps1 -Restore # revertir sesión dev (reactiva Windows Update)
 .\modules\13-verify.ps1                     # verificación real post-cambio
+.\modules\14-post-reboot-verify.ps1         # verificación post-reinicio
 
 pip install -r monitor/requirements.txt     # psutil, rich, schedule (scan.py autoinstala si faltan)
 python monitor\scan.py                      # manual, output rich
@@ -80,9 +81,9 @@ python monitor\analyze.py --run             # análisis manual (visible)
 python monitor\monitor.py --install|--uninstall|--run   # scheduled tasks invisibles (pythonw.exe)
 ```
 
-## Archivos legado — no tocar ni extender
-Arquitectura anterior, reemplazada por `run.ps1` + `modules/`. Se mantienen en el repo
-pero **no** forman parte del flujo actual: `win-optimizer.ps1`, los scripts numerados de
-la raíz (`01-startup.ps1` … `09-report.ps1`), toda la carpeta `scripts/`, y `GEMINI.md`
-(documenta esa arquitectura vieja, no la de este archivo). Si una tarea parece requerir
-tocar algo ahí, confirmar con Pablo si en realidad corresponde en `modules/`.
+## Arquitectura legado — eliminada
+La arquitectura anterior (`win-optimizer.ps1`, los scripts numerados de la raíz
+`01-startup.ps1` … `09-report.ps1`, la carpeta `scripts/`, y `GEMINI.md`) fue
+**eliminada del repo** (2026-08-08). `run.ps1` + `modules/` es la única arquitectura
+vigente. Si algo referencia esos nombres, es historial viejo (ver tag
+`backup/remote-legacy-20260808`), no código a mantener ni extender.
