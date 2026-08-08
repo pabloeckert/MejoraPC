@@ -76,6 +76,13 @@ def main():
         t.add_row("Último scan", ts[:16].replace("T", " "))
         console.print(t)
 
+        if free < 2.5:
+            console.print(
+                f"\n  [bold red]⚠ MEMORIA CRÍTICA[/] — {free:.2f} GB libres. "
+                f"Correr [bold]run.ps1[/] o [bold].\\modules\\12-workflow-optimizer.ps1[/] "
+                f"(sesión dev) para liberar RAM."
+            )
+
     # ── Última verificación real (13-verify.ps1) ──
     verify_path = os.path.join(DATA, "last-verify.json")
     if os.path.exists(verify_path):

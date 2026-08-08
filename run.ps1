@@ -136,6 +136,18 @@ function Invoke-AutoOptimize {
     Write-Host "  Modo automático — sin menú. Ejecutando pipeline completo." -ForegroundColor DarkGray
     Write-Host ""
 
+    Invoke-AutoStep "Monitor invisible (primera vez)" {
+        $monitorTask = Get-ScheduledTask -TaskName 'MejoraPC-Monitor' -ErrorAction SilentlyContinue
+        $analyzeTask = Get-ScheduledTask -TaskName 'MejoraPC-Analyze' -ErrorAction SilentlyContinue
+        if (-not $monitorTask -or -not $analyzeTask) {
+            Invoke-Py "monitor\monitor.py" @('--install')
+            Invoke-Py "monitor\analyze.py" @('--install')
+            Invoke-Py "monitor\record_run.py" @('--action', 'monitor-install', '--detail', 'scheduled tasks invisibles instaladas')
+        } else {
+            Write-Host "  Ya instalado — sin cambios." -ForegroundColor DarkGray
+        }
+    }
+
     Invoke-AutoStep "Scan hardware (antes)" { Invoke-Py "monitor\scan.py" }
 
     Invoke-AutoStep "01 - Backup" {
