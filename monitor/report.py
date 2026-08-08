@@ -46,11 +46,12 @@ def main():
 
     con = sqlite3.connect(DB)
 
-    # ── 1 + 5. Hardware summary + score ──
-    hw = con.execute(
+    # ── 1 + 5. Hardware summary + score (con delta antes/después) ──
+    hw_rows = con.execute(
         "SELECT timestamp, ram_total_gb, ram_free_gb, cpu_model, score, profile_json "
-        "FROM hardware_profile ORDER BY id DESC LIMIT 1"
-    ).fetchone()
+        "FROM hardware_profile ORDER BY id DESC LIMIT 2"
+    ).fetchall()
+    hw = hw_rows[0] if hw_rows else None
 
     console.print()
     console.print(Panel.fit("[bold cyan]MejoraPC — Dashboard[/]", border_style="cyan"))
@@ -61,10 +62,33 @@ def main():
         ram_color = "red" if free < 2 else "yellow" if free < 3 else "green"
         t = Table(show_header=False, box=None)
         t.add_row("CPU", str(cpu))
-        t.add_row("RAM", f"[{ram_color}]{free:.2f} GB libres[/] / {total:.1f} GB")
+        ram_line = f"[{ram_color}]{free:.2f} GB libres[/] / {total:.1f} GB"
+        if len(hw_rows) > 1:
+            delta = free - hw_rows[1][2]
+            if abs(delta) >= 0.05:
+                d_color = "green" if delta > 0 else "red"
+                d_sign = "+" if delta > 0 else ""
+                ram_line += f"  [{d_color}]({d_sign}{delta:.2f} GB)[/]"
+        t.add_row("RAM", ram_line)
         t.add_row("Score salud", f"[{sc_color}]{score}/100[/]")
         t.add_row("Último scan", ts[:16].replace("T", " "))
         console.print(t)
+
+    # ── Última verificación real (13-verify.ps1) ──
+    verify_path = os.path.join(DATA, "last-verify.json")
+    if os.path.exists(verify_path):
+        try:
+            with open(verify_path, "r", encoding="utf-8") as f:
+                v = json.load(f)
+            vt = str(v.get("timestamp", ""))[:16].replace("T", " ")
+            console.print(
+                f"\n[bold]Última verificación real[/] ({vt}): "
+                f"[green]{v.get('verificado', 0)} verificado[/] · "
+                f"[yellow]{v.get('pendiente', 0)} pendiente[/] · "
+                f"[red]{v.get('fallido', 0)} fallido[/]"
+            )
+        except Exception:
+            pass
 
     # ── 2. Gráfico RAM últimas 24hs por hora ──
     cutoff = (datetime.now() - timedelta(hours=24)).isoformat()

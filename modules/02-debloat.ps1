@@ -504,7 +504,7 @@ $scanBlock = {
 }
 
 $job = Start-Job -ScriptBlock $scanBlock -ArgumentList $scanRoot
-if (Wait-Job $job -Timeout 10) {
+if (Wait-Job $job -Timeout 25) {
     foreach ($r in (Receive-Job $job)) { $needsNative = $true; $null = $reasons.Add($r) }
 } else {
     $timedOut = $true
@@ -517,7 +517,7 @@ Write-Host ""
 if ($needsNative) {
     Write-Host ("  Dependencias detectadas: " + ($reasons -join '; ')) -ForegroundColor Yellow
 } elseif ($timedOut) {
-    Write-Host "  Sin dependencias dev nativas (timeout 10s — se asume sin dependencias)" -ForegroundColor Green
+    Write-Host "  Sin dependencias dev nativas (timeout 25s — se asume sin dependencias)" -ForegroundColor Green
 } else {
     Write-Host "  Sin dependencias dev nativas" -ForegroundColor Green
 }

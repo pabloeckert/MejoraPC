@@ -1,5 +1,5 @@
 ﻿[CmdletBinding()]
-param()
+param([switch]$Menu)
 
 $ErrorActionPreference = 'Continue'
 $scriptRoot = $PSScriptRoot
@@ -112,10 +112,94 @@ function Show-Menu {
 }
 
 function Invoke-Module {
-    param([string]$Path)
+    param([string]$Path, [switch]$Auto)
     $full = Join-Path $scriptRoot $Path
-    if (Test-Path $full) { & $full }
-    else { Write-Host "`n  Módulo no encontrado: $Path" -ForegroundColor Red; Start-Sleep -Seconds 2 }
+    if (-not (Test-Path $full)) { Write-Host "`n  Módulo no encontrado: $Path" -ForegroundColor Red; Start-Sleep -Seconds 2; return }
+    if ($Auto) { & $full -Auto } else { & $full }
+}
+
+function Invoke-AutoStep {
+    param([string]$Label, [scriptblock]$Action)
+    Write-Host "`n  === $Label ===" -ForegroundColor Cyan
+    try { & $Action } catch { Write-Host "  [x] $Label falló: $_" -ForegroundColor Red }
+}
+
+function Get-DebloatLogDetail {
+    $logFile = Join-Path $scriptRoot "logs\debloat-$((Get-Date).ToString('yyyy-MM-dd')).log"
+    if (-not (Test-Path $logFile)) { return "sin log" }
+    $line = Get-Content $logFile -Tail 20 | Where-Object { $_ -match '=== FIN:' } | Select-Object -Last 1
+    if ($line) { return ($line -replace '^\S+\s+', '') } else { return "sin resumen" }
+}
+
+function Invoke-AutoOptimize {
+    Show-Banner
+    Write-Host "  Modo automático — sin menú. Ejecutando pipeline completo." -ForegroundColor DarkGray
+    Write-Host ""
+
+    Invoke-AutoStep "Scan hardware (antes)" { Invoke-Py "monitor\scan.py" }
+
+    Invoke-AutoStep "01 - Backup" {
+        Invoke-Module "modules\01-backup.ps1" -Auto
+        Invoke-Py "monitor\record_run.py" @('--action', '01-backup', '--detail', 'restore point + reg export')
+    }
+
+    Invoke-AutoStep "02 - Debloat" {
+        & (Join-Path $scriptRoot "modules\02-debloat.ps1") -Yes
+        Invoke-Py "monitor\record_run.py" @('--action', '02-debloat', '--detail', (Get-DebloatLogDetail))
+    }
+
+    Invoke-AutoStep "03 - Performance" {
+        Invoke-Module "modules\03-performance.ps1" -Auto
+        Invoke-Py "monitor\record_run.py" @('--action', '03-performance', '--detail', 'tweaks de data/tweaks.json aplicados')
+    }
+
+    Invoke-AutoStep "04 - Estética" {
+        Invoke-Module "modules\04-estetica.ps1" -Auto
+        Invoke-Py "monitor\record_run.py" @('--action', '04-estetica', '--detail', 'Rendimiento')
+    }
+
+    Invoke-AutoStep "06 - Seguridad" {
+        Invoke-Module "modules\06-seguridad.ps1" -Auto
+        Invoke-Py "monitor\record_run.py" @('--action', '06-seguridad', '--detail', 'telemetría + ads + actividad')
+    }
+
+    Invoke-AutoStep "10 - Python cleanup (solo reporte)" {
+        Invoke-Module "modules\10-python-cleanup.ps1" -Auto
+        Invoke-Py "monitor\record_run.py" @('--action', '10-python-cleanup', '--detail', 'solo reporte, sin desinstalar')
+    }
+
+    Invoke-AutoStep "Análisis inteligente" { Invoke-Py "monitor\analyze.py" @('--run') }
+
+    Invoke-AutoStep "13 - Verificación real" {
+        Invoke-Module "modules\13-verify.ps1" -Auto
+        $detail = "sin datos"
+        $verifyPath = Join-Path $scriptRoot "data\last-verify.json"
+        if (Test-Path $verifyPath) {
+            try {
+                $v = Get-Content $verifyPath -Raw | ConvertFrom-Json
+                $detail = "VERIFICADO=$($v.verificado) PENDIENTE=$($v.pendiente) FALLIDO=$($v.fallido)"
+            } catch { }
+        }
+        Invoke-Py "monitor\record_run.py" @('--action', '13-verify', '--detail', $detail)
+    }
+
+    Invoke-AutoStep "Scan hardware (después)" { Invoke-Py "monitor\scan.py" }
+
+    Invoke-AutoStep "Historial" {
+        Invoke-Py "monitor\record_run.py" @('--mark-applied', '02,03,04,06')
+    }
+
+    Write-Host "`n  ═══ INFORME FINAL ═══" -ForegroundColor Cyan
+    Invoke-Py "monitor\report.py"
+
+    Write-Host ""
+    Write-Host "  Listo. Para el menú manual: .\run.ps1 -Menu" -ForegroundColor DarkGray
+    Write-Host ""
+}
+
+if (-not $Menu) {
+    Invoke-AutoOptimize
+    return
 }
 
 do {

@@ -1,5 +1,5 @@
 ﻿[CmdletBinding()]
-param()
+param([switch]$Auto)
 
 # ── MejoraPC — modules/10-python-cleanup.ps1 ───────────────────────
 # Detecta versiones de Python, conserva 3.14, ofrece eliminar el resto
@@ -128,6 +128,10 @@ if ($toConsider.Count -eq 0) {
             Write-Host "  [!] Python $ver está referenciado en un proyecto — se conserva." -ForegroundColor Yellow
             continue
         }
+        if ($Auto) {
+            Write-Status "Python $ver" "candidato a eliminar — correr .\modules\10-python-cleanup.ps1 manual para revisar" 'INFO'
+            continue
+        }
         Write-Host "  Python $ver no parece tener dependencias. ¿Eliminar? [Y/N]: " -NoNewline -ForegroundColor White
         $ans = Read-Host
         if ($ans -match '^[Yy]') {
@@ -193,5 +197,4 @@ Write-Host "  Verificación final:" -ForegroundColor DarkCyan
 try { $v = python --version 2>&1; Write-Host "  $v" -ForegroundColor Green } catch { }
 
 Write-Host ""
-Write-Host "  Presioná ENTER para volver..." -ForegroundColor DarkGray
-$null = Read-Host
+Wait-KeyIfInteractive -Auto:$Auto

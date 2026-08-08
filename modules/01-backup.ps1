@@ -1,5 +1,5 @@
 ﻿[CmdletBinding()]
-param()
+param([switch]$Auto)
 
 # ── MejoraPC — modules/01-backup.ps1 ───────────────────────────────
 # Punto de restauración + exportación de claves de registro clave.
@@ -52,5 +52,4 @@ foreach ($k in $keys) {
 Write-Host ""
 Write-Host "  Backups guardados en: $backupDir" -ForegroundColor DarkGray
 Write-Host ""
-Write-Host "  Presioná ENTER para volver..." -ForegroundColor DarkGray
-$null = Read-Host
+Wait-KeyIfInteractive -Auto:$Auto

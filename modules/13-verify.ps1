@@ -1,5 +1,5 @@
 ﻿[CmdletBinding()]
-param()
+param([switch]$Auto)
 
 # ── MejoraPC — modules/13-verify.ps1 ───────────────────────────────
 # Verificación REAL del sistema. No confía en lo que dijeron los otros
@@ -339,4 +339,11 @@ if ($script:nPend -gt 0) {
 }
 Write-Host ""
 
-if ($Host.Name -eq 'ConsoleHost' -and -not [Console]::IsInputRedirected) { Write-Host "  Presioná ENTER para volver..." -ForegroundColor DarkGray; $null = Read-Host }
+[PSCustomObject]@{
+    timestamp  = (Get-Date).ToString('o')
+    verificado = $script:nVerif
+    pendiente  = $script:nPend
+    fallido    = $script:nFail
+} | ConvertTo-Json | Set-Content -Path "$scriptRoot\data\last-verify.json" -Encoding UTF8
+
+Wait-KeyIfInteractive -Auto:$Auto

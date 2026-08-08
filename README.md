@@ -17,7 +17,18 @@ fondo 100% invisible.
 .\run.ps1
 ```
 
-## 🖥️ Menú
+Sin argumentos, `run.ps1` corre en **modo automático**: no pregunta nada,
+ejecuta el pipeline completo de optimización (backup → debloat → performance →
+estética → seguridad → python cleanup solo-reporte → verificación real) con el
+output de cada paso visible en pantalla, y termina con un informe consolidado
+(`monitor/report.py`). Cada corrida queda registrada en la base de datos
+(`data/mejorapc.db`, tabla `applied_actions`).
+
+```powershell
+.\run.ps1 -Menu   # menú clásico interactivo, para control manual módulo por módulo
+```
+
+## 🖥️ Menú manual (`-Menu`)
 
 ```
   ── OPTIMIZACIÓN ──

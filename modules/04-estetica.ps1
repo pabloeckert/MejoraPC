@@ -1,5 +1,5 @@
 ﻿[CmdletBinding()]
-param()
+param([switch]$Auto)
 
 # ── MejoraPC — modules/04-estetica.ps1 ─────────────────────────────
 # Ajustes visuales / animaciones. Perfil de 8GB: prioriza rendimiento.
@@ -14,13 +14,18 @@ Write-Host "  ║         04 - ESTÉTICA / EFECTOS VISUALES         ║" -Foregr
 Write-Host "  ╚══════════════════════════════════════════════════╝" -ForegroundColor Cyan
 Write-Host ""
 
-Write-Host "  [1] Modo Rendimiento (sin animaciones — recomendado 8GB)" -ForegroundColor White
-Write-Host "  [2] Modo Equilibrado (efectos esenciales)" -ForegroundColor White
-Write-Host "  [3] Restaurar valores por defecto" -ForegroundColor White
-Write-Host "  [0] Volver" -ForegroundColor DarkGray
-Write-Host ""
-Write-Host "  Opción: " -NoNewline
-$opt = Read-Host
+$opt = '1'
+if (-not $Auto) {
+    Write-Host "  [1] Modo Rendimiento (sin animaciones — recomendado 8GB)" -ForegroundColor White
+    Write-Host "  [2] Modo Equilibrado (efectos esenciales)" -ForegroundColor White
+    Write-Host "  [3] Restaurar valores por defecto" -ForegroundColor White
+    Write-Host "  [0] Volver" -ForegroundColor DarkGray
+    Write-Host ""
+    Write-Host "  Opción: " -NoNewline
+    $opt = Read-Host
+} else {
+    Write-Host "  Modo automático: aplicando Rendimiento (recomendado 8GB)" -ForegroundColor DarkGray
+}
 
 $regPath = 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\VisualEffects'
 
@@ -40,5 +45,4 @@ switch ($opt) {
 }
 
 Write-Host ""
-Write-Host "  Presioná ENTER para volver..." -ForegroundColor DarkGray
-$null = Read-Host
+Wait-KeyIfInteractive -Auto:$Auto

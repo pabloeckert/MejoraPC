@@ -1,5 +1,5 @@
 ﻿[CmdletBinding()]
-param()
+param([switch]$Auto)
 
 # ── MejoraPC — modules/06-seguridad.ps1 ────────────────────────────
 # Privacidad y telemetría.
@@ -14,14 +14,19 @@ Write-Host "  ║         06 - SEGURIDAD / PRIVACIDAD              ║" -Foregro
 Write-Host "  ╚══════════════════════════════════════════════════╝" -ForegroundColor Cyan
 Write-Host ""
 
-Write-Host "  [1] Deshabilitar telemetría de Windows" -ForegroundColor White
-Write-Host "  [2] Deshabilitar publicidad personalizada" -ForegroundColor White
-Write-Host "  [3] Deshabilitar seguimiento de actividad" -ForegroundColor White
-Write-Host "  [4] Aplicar todo" -ForegroundColor White
-Write-Host "  [0] Volver" -ForegroundColor DarkGray
-Write-Host ""
-Write-Host "  Opción: " -NoNewline
-$opt = Read-Host
+$opt = '4'
+if (-not $Auto) {
+    Write-Host "  [1] Deshabilitar telemetría de Windows" -ForegroundColor White
+    Write-Host "  [2] Deshabilitar publicidad personalizada" -ForegroundColor White
+    Write-Host "  [3] Deshabilitar seguimiento de actividad" -ForegroundColor White
+    Write-Host "  [4] Aplicar todo" -ForegroundColor White
+    Write-Host "  [0] Volver" -ForegroundColor DarkGray
+    Write-Host ""
+    Write-Host "  Opción: " -NoNewline
+    $opt = Read-Host
+} else {
+    Write-Host "  Modo automático: aplicando todo (telemetría + ads + actividad)" -ForegroundColor DarkGray
+}
 
 function Disable-Telemetry {
     try {
@@ -59,5 +64,4 @@ switch ($opt) {
 }
 
 Write-Host ""
-Write-Host "  Presioná ENTER para volver..." -ForegroundColor DarkGray
-$null = Read-Host
+Wait-KeyIfInteractive -Auto:$Auto

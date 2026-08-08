@@ -106,6 +106,14 @@ function Get-TemperatureStatus {
     return 'ERROR'
 }
 
+function Wait-KeyIfInteractive {
+    param([switch]$Auto)
+    if (-not $Auto -and $Host.Name -eq 'ConsoleHost' -and -not [Console]::IsInputRedirected) {
+        Write-Host "  Presioná ENTER para volver..." -ForegroundColor DarkGray
+        $null = Read-Host
+    }
+}
+
 function Ensure-DataDirectory {
     param([string]$ScriptRoot)
     foreach ($dir in @("$ScriptRoot\data", "$ScriptRoot\logs", "$ScriptRoot\logs\usage")) {

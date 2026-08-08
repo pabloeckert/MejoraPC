@@ -1,5 +1,5 @@
 ﻿[CmdletBinding()]
-param()
+param([switch]$Auto)
 
 # ── MejoraPC — modules/03-performance.ps1 ──────────────────────────
 # Aplica todos los tweaks de bajo riesgo automáticamente.
@@ -242,4 +242,4 @@ Write-Host "  TOTAL ESTIMADO:          ~$($e.total_mb)MB" -ForegroundColor White
 Write-Host ""
 Write-Host "  Log: $logFile" -ForegroundColor DarkGray
 Write-Host ""
-if ($Host.Name -eq 'ConsoleHost' -and -not [Console]::IsInputRedirected) { Write-Host "  Presioná ENTER para volver..." -ForegroundColor DarkGray; $null = Read-Host }
+Wait-KeyIfInteractive -Auto:$Auto
