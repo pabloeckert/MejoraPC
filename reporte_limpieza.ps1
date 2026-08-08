@@ -1,5 +1,5 @@
 # Ejecutar como Administrador
-# Uso: powershell -ExecutionPolicy Bypass -File C:\Github\MejoraPC\reporte_limpieza.ps1
+# Uso: powershell -ExecutionPolicy Bypass -File C:\Github\Herramientas\MejoraPC\reporte_limpieza.ps1
 
 $report = @()
 $threshold = 100MB
@@ -130,11 +130,11 @@ if (Test-Path $recycleBin) {
 }
 
 # --- GUARDAR REPORTE CSV ---
-$outCSV = "C:\Github\MejoraPC\reporte_limpieza_resultado.csv"
+$outCSV = "C:\Github\Herramientas\MejoraPC\reporte_limpieza_resultado.csv"
 $report | Export-Csv -Path $outCSV -NoTypeInformation -Encoding UTF8
 
 # --- GUARDAR REPORTE TXT LEGIBLE ---
-$outTXT = "C:\Github\MejoraPC\reporte_limpieza_resultado.txt"
+$outTXT = "C:\Github\Herramientas\MejoraPC\reporte_limpieza_resultado.txt"
 $totalLimpiar  = ($report | Where-Object { $_.Accion -eq "LIMPIAR" } | Measure-Object TamanoMB -Sum).Sum
 $totalRevisar  = ($report | Where-Object { $_.Accion -eq "REVISAR" } | Measure-Object TamanoMB -Sum).Sum
 $totalVaciar   = ($report | Where-Object { $_.Accion -eq "VACIAR"  } | Measure-Object TamanoMB -Sum).Sum

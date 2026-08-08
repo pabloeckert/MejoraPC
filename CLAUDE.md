@@ -30,6 +30,7 @@ módulos PowerShell (optimización) + monitoreo Python (scan/monitor/analyze/rep
   - `06-seguridad.ps1` — privacidad/telemetría.
   - `10-python-cleanup.ps1` — conserva 3.14, ofrece eliminar el resto si no hay dependencia.
   - `12-workflow-optimizer.ps1` — sesión dev (`-Restore` reactiva Windows Update).
+  - `13-verify.ps1` — verificación REAL post-cambio: relee disco/registry/servicios directo (nunca confía en lo que reportaron los otros módulos). Reporta VERIFICADO ✓ / PENDIENTE / FALLIDO ✗ por ítem.
 - **monitor/** — Python:
   - `scan.py` — MANUAL, output rich, hardware + alertas, guarda en DB y `status.json`.
   - `monitor.py` — INVISIBLE, sample cada 15min (`--install`/`--uninstall`/`--run`).
@@ -60,3 +61,28 @@ AppInstaller (winget), Twinkle Tray, CLEVOCO Fan/Control Center.
 ## Convención de UI
 Usar `Write-Status -Label -Value -Status OK|WARN|ERROR|INFO` de `lib/helpers.ps1`.
 Cabeceras con caja `╔═╗`. Español rioplatense.
+
+## Comandos comunes
+No hay build/lint/test formal (sin Pester, sin pytest). "Test" real = `13-verify.ps1`,
+que relee el estado del sistema en vez de confiar en el output de otro módulo.
+
+```powershell
+.\run.ps1                                   # menú principal (correr como admin para funcionalidad completa)
+.\modules\02-debloat.ps1                    # correr un módulo suelto directo
+.\modules\02-debloat.ps1 -RetryFailed       # reintentar solo los FAIL del último debloat
+.\modules\12-workflow-optimizer.ps1 -Restore # revertir sesión dev (reactiva Windows Update)
+.\modules\13-verify.ps1                     # verificación real post-cambio
+
+pip install -r monitor/requirements.txt     # psutil, rich, schedule (scan.py autoinstala si faltan)
+python monitor\scan.py                      # manual, output rich
+python monitor\report.py                    # manual, dashboard
+python monitor\analyze.py --run             # análisis manual (visible)
+python monitor\monitor.py --install|--uninstall|--run   # scheduled tasks invisibles (pythonw.exe)
+```
+
+## Archivos legado — no tocar ni extender
+Arquitectura anterior, reemplazada por `run.ps1` + `modules/`. Se mantienen en el repo
+pero **no** forman parte del flujo actual: `win-optimizer.ps1`, los scripts numerados de
+la raíz (`01-startup.ps1` … `09-report.ps1`), toda la carpeta `scripts/`, y `GEMINI.md`
+(documenta esa arquitectura vieja, no la de este archivo). Si una tarea parece requerir
+tocar algo ahí, confirmar con Pablo si en realidad corresponde en `modules/`.
