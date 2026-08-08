@@ -22,6 +22,10 @@ profiles/
 # PowerShell temp
 *.ps1xml
 
+# Python
+__pycache__/
+*.pyc
+
 # Windows
 Thumbs.db
 Desktop.ini
