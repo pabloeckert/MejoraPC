@@ -36,7 +36,9 @@ except ImportError:
 HERE = os.path.dirname(os.path.abspath(__file__))
 DATA = os.path.join(HERE, "..", "data")
 DB = os.path.join(DATA, "mejorapc.db")
-console = Console()
+LOGS = os.path.join(HERE, "..", "logs")
+REPORT_FILE = os.path.join(LOGS, "ultimo-informe.txt")
+console = Console(record=True)
 
 
 def main():
@@ -158,6 +160,10 @@ def main():
 
     con.close()
     console.print()
+
+    os.makedirs(LOGS, exist_ok=True)
+    console.save_text(REPORT_FILE)
+    console.print(f"  [dim]Informe guardado en: {REPORT_FILE}[/]")
 
 
 if __name__ == "__main__":
