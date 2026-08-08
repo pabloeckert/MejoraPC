@@ -35,6 +35,8 @@ fondo 100% invisible.
   10  Python cleanup
   11  Workflow optimizer (sesión dev)
   12  Instalar monitor background
+  13  Verificación real del sistema
+  14  Verificación post-reinicio (manual)
    0  Salir
 ```
 
@@ -57,6 +59,8 @@ memoria está crítica (<2.5GB) o si hay recomendaciones inteligentes pendientes
 | 10 | `modules/10-python-cleanup.ps1` | Conserva Python 3.14, ofrece eliminar el resto si no hay dependencia |
 | 11 | `modules/12-workflow-optimizer.ps1` | Sesión dev: limpia TEMP, pausa Windows Update, mata update checkers (`-Restore` revierte) |
 | 12 | `monitor/monitor.py --install` | Scheduled tasks **invisibles** (sample 15min + análisis semanal) |
+| 13 | `modules/13-verify.ps1` | Verificación real: relee disco/registry/servicios en vez de confiar en lo que reportaron los otros módulos |
+| 14 | `modules/14-post-reboot-verify.ps1` | Corre la verificación tras reiniciar; se auto-borra de la scheduled task si fue disparado por ella |
 
 ## 👤 Perfil definitivo
 

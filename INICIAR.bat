@@ -1,18 +1,10 @@
 @echo off
-:: Win Optimizer v3.0.0 - Launcher
+:: MejoraPC - Launcher
 :: Click derecho -> Ejecutar como administrador
 
 echo.
 echo  ╔═══════════════════════════════════════════════════════╗
-echo  ║                                                       ║
-echo  ║   ██╗   ██╗██╗███╗   ██╗     ██████╗ ██████╗████████╗║
-echo  ║   ██║   ██║██║████╗  ██║    ██╔════╝██╔══██╚══██╔══╝║
-echo  ║   ██║   ██║██║██╔██╗ ██║    ██║     ██████╔╝  ██║   ║
-echo  ║   ╚██╗ ██╔╝██║██║╚██╗██║    ██║     ██╔══██╗  ██║   ║
-echo  ║    ╚████╔╝ ██║██║ ╚████║    ╚██████╗██║  ██║  ██║   ║
-echo  ║     ╚═══╝  ╚═╝╚═╝  ╚═══╝     ╚═════╝╚═╝  ╚═╝  ╚═╝   ║
-echo  ║                                                       ║
-echo  ║          O P T I M I Z E R   v3.0.0                  ║
+echo  ║                     M E J O R A P C                    ║
 echo  ╚═══════════════════════════════════════════════════════╝
 echo.
 
@@ -27,5 +19,5 @@ if %errorLevel% neq 0 (
 )
 
 :: Ejecutar PowerShell
-powershell -ExecutionPolicy Bypass -File "%~dp0win-optimizer.ps1"
+powershell -ExecutionPolicy Bypass -File "%~dp0run.ps1"
 pause
