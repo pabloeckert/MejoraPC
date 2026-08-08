@@ -24,25 +24,31 @@ Write-Host "  Opción: " -NoNewline
 $opt = Read-Host
 
 function Disable-Telemetry {
-    $p = 'HKLM:\SOFTWARE\Policies\Microsoft\Windows\DataCollection'
-    if (-not (Test-Path $p)) { New-Item -Path $p -Force | Out-Null }
-    Set-ItemProperty -Path $p -Name 'AllowTelemetry' -Value 0 -Type DWord -Force
-    Stop-Service -Name DiagTrack -Force -ErrorAction SilentlyContinue
-    Set-Service -Name DiagTrack -StartupType Disabled -ErrorAction SilentlyContinue
-    Write-Status "Telemetría" "deshabilitada" 'OK'
+    try {
+        $p = 'HKLM:\SOFTWARE\Policies\Microsoft\Windows\DataCollection'
+        if (-not (Test-Path $p)) { New-Item -Path $p -Force -ErrorAction Stop | Out-Null }
+        Set-ItemProperty -Path $p -Name 'AllowTelemetry' -Value 0 -Type DWord -Force -ErrorAction Stop
+        Stop-Service -Name DiagTrack -Force -ErrorAction SilentlyContinue
+        Set-Service -Name DiagTrack -StartupType Disabled -ErrorAction SilentlyContinue
+        Write-Status "Telemetría" "deshabilitada" 'OK'
+    } catch { Write-Status "Telemetría" "error: $_" 'ERROR' }
 }
 function Disable-Ads {
-    $p = 'HKCU:\Software\Microsoft\Windows\CurrentVersion\AdvertisingInfo'
-    if (-not (Test-Path $p)) { New-Item -Path $p -Force | Out-Null }
-    Set-ItemProperty -Path $p -Name 'Enabled' -Value 0 -Type DWord
-    Write-Status "Publicidad personalizada" "deshabilitada" 'OK'
+    try {
+        $p = 'HKCU:\Software\Microsoft\Windows\CurrentVersion\AdvertisingInfo'
+        if (-not (Test-Path $p)) { New-Item -Path $p -Force -ErrorAction Stop | Out-Null }
+        Set-ItemProperty -Path $p -Name 'Enabled' -Value 0 -Type DWord -ErrorAction Stop
+        Write-Status "Publicidad personalizada" "deshabilitada" 'OK'
+    } catch { Write-Status "Publicidad personalizada" "error: $_" 'ERROR' }
 }
 function Disable-Activity {
-    $p = 'HKLM:\SOFTWARE\Policies\Microsoft\Windows\System'
-    if (-not (Test-Path $p)) { New-Item -Path $p -Force | Out-Null }
-    Set-ItemProperty -Path $p -Name 'EnableActivityFeed' -Value 0 -Type DWord
-    Set-ItemProperty -Path $p -Name 'PublishUserActivities' -Value 0 -Type DWord
-    Write-Status "Seguimiento de actividad" "deshabilitado" 'OK'
+    try {
+        $p = 'HKLM:\SOFTWARE\Policies\Microsoft\Windows\System'
+        if (-not (Test-Path $p)) { New-Item -Path $p -Force -ErrorAction Stop | Out-Null }
+        Set-ItemProperty -Path $p -Name 'EnableActivityFeed' -Value 0 -Type DWord -ErrorAction Stop
+        Set-ItemProperty -Path $p -Name 'PublishUserActivities' -Value 0 -Type DWord -ErrorAction Stop
+        Write-Status "Seguimiento de actividad" "deshabilitado" 'OK'
+    } catch { Write-Status "Seguimiento de actividad" "error: $_" 'ERROR' }
 }
 
 switch ($opt) {

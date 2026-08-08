@@ -23,7 +23,7 @@ if ($Restore) {
     Start-Service -Name wuauserv -ErrorAction SilentlyContinue
     Write-Host "  [OK] Windows Update re-habilitado." -ForegroundColor Green
     Write-Host ""
-    if ($Host.Name -eq 'ConsoleHost') { Write-Host "  ENTER para volver..." -ForegroundColor DarkGray; $null = Read-Host }
+    if ($Host.Name -eq 'ConsoleHost' -and -not [Console]::IsInputRedirected) { Write-Host "  ENTER para volver..." -ForegroundColor DarkGray; $null = Read-Host }
     return
 }
 
@@ -105,4 +105,4 @@ Write-Host "  Δ RAM: $delta GB" -ForegroundColor White
 Write-Host ""
 Write-Host "  Recordá: al terminar la sesión corré con -Restore para reactivar Windows Update." -ForegroundColor DarkGray
 Write-Host ""
-if ($Host.Name -eq 'ConsoleHost') { Write-Host "  Presioná ENTER para volver..." -ForegroundColor DarkGray; $null = Read-Host }
+if ($Host.Name -eq 'ConsoleHost' -and -not [Console]::IsInputRedirected) { Write-Host "  Presioná ENTER para volver..." -ForegroundColor DarkGray; $null = Read-Host }

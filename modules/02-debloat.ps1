@@ -52,13 +52,17 @@ $bloat = Get-Content $dataFile -Raw -Encoding UTF8 | ConvertFrom-Json
 function Set-RemovePolicy {
     param([string]$PolicyBase, [string[]]$Pfns)
     try {
-        if (-not (Test-Path $PolicyBase)) { New-Item -Path $PolicyBase -Force | Out-Null }
+        if (-not (Test-Path $PolicyBase)) { New-Item -Path $PolicyBase -Force -ErrorAction Stop | Out-Null }
         # La clave maestra habilita el mecanismo de remoción por política.
-        Set-ItemProperty -Path $PolicyBase -Name 'Enabled' -Value 1 -Type DWord -Force
+        # -ErrorAction Stop en los Set-ItemProperty: sin esto, "acceso denegado"
+        # (ej. sin admin) es un error NO terminante y esta función devuelve $true
+        # igual, aunque no se haya escrito nada — falso positivo en el mecanismo
+        # central del debloat permanente.
+        Set-ItemProperty -Path $PolicyBase -Name 'Enabled' -Value 1 -Type DWord -Force -ErrorAction Stop
         foreach ($pfn in $Pfns) {
             $subkey = Join-Path $PolicyBase $pfn
-            if (-not (Test-Path $subkey)) { New-Item -Path $subkey -Force | Out-Null }
-            Set-ItemProperty -Path $subkey -Name 'RemovedPackage' -Value 1 -Type DWord -Force
+            if (-not (Test-Path $subkey)) { New-Item -Path $subkey -Force -ErrorAction Stop | Out-Null }
+            Set-ItemProperty -Path $subkey -Name 'RemovedPackage' -Value 1 -Type DWord -Force -ErrorAction Stop
         }
         return $true
     } catch {

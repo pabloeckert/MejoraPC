@@ -18,9 +18,12 @@ function Write-Log { param([string]$Msg) Add-Content -Path $logFile -Value "$(Ge
 function Set-RegTweak {
     param([string]$Path, [string]$Name, $Value, [string]$Type = 'DWord')
     try {
-        if (-not (Test-Path $Path)) { New-Item -Path $Path -Force | Out-Null }
+        if (-not (Test-Path $Path)) { New-Item -Path $Path -Force -ErrorAction Stop | Out-Null }
         $old = (Get-ItemProperty -Path $Path -Name $Name -ErrorAction SilentlyContinue).$Name
-        Set-ItemProperty -Path $Path -Name $Name -Value $Value -Type $Type -Force
+        # -ErrorAction Stop: sin esto, un "acceso denegado" en HKLM (ej. sin admin)
+        # es un error NO terminante — cae de largo a las líneas de abajo y reporta
+        # OK aunque el valor no se haya escrito. Con Stop, el catch lo agarra bien.
+        Set-ItemProperty -Path $Path -Name $Name -Value $Value -Type $Type -Force -ErrorAction Stop
         Write-Log "REG  $Path\$Name : '$old' -> '$Value'"
         Write-Status "$Name" "$old -> $Value" 'OK'
     } catch {
@@ -56,10 +59,10 @@ foreach ($group in $tweaks.registry.PSObject.Properties) {
 Write-Host "  ── animaciones (UserPreferencesMask)" -ForegroundColor DarkCyan
 try {
     $upm = $tweaks.user_preferences_mask
-    if (-not (Test-Path $upm.path)) { New-Item -Path $upm.path -Force | Out-Null }
+    if (-not (Test-Path $upm.path)) { New-Item -Path $upm.path -Force -ErrorAction Stop | Out-Null }
     $bytes = for ($i = 0; $i -lt $upm.value_hex.Length; $i += 2) { [Convert]::ToByte($upm.value_hex.Substring($i, 2), 16) }
     $old = (Get-ItemProperty -Path $upm.path -Name $upm.name -ErrorAction SilentlyContinue).$($upm.name)
-    Set-ItemProperty -Path $upm.path -Name $upm.name -Value ([byte[]]$bytes) -Type Binary -Force
+    Set-ItemProperty -Path $upm.path -Name $upm.name -Value ([byte[]]$bytes) -Type Binary -Force -ErrorAction Stop
     Write-Log "REG  UserPreferencesMask actualizado (old bytes: $($old -join ','))"
     Write-Status "UserPreferencesMask" "aplicado" 'OK'
 } catch { Write-Status "UserPreferencesMask" "error: $_" 'ERROR' }
@@ -83,33 +86,63 @@ foreach ($svc in $tweaks.services) {
 }
 Write-Host ""
 
-# ── Corel Update Helper (deshabilitar startup) ─────────────────────
-Write-Host "  ── CorelUpdateHelper startup off" -ForegroundColor DarkCyan
-$corel = $tweaks.startup_disable.corel_update_helper
-$found = $false
-foreach ($rk in $corel.run_keys) {
-    if (Test-Path $rk) {
-        $props = Get-ItemProperty -Path $rk -ErrorAction SilentlyContinue
-        foreach ($p in $props.PSObject.Properties) {
-            if ($p.Name -match $corel.match -or "$($p.Value)" -match $corel.match) {
-                Remove-ItemProperty -Path $rk -Name $p.Name -ErrorAction SilentlyContinue
-                Write-Log "STARTUP  removido $rk\$($p.Name)"
-                Write-Status "Run\$($p.Name)" "removido de startup" 'OK'
-                $found = $true
+# ── Startup items (deshabilitar arranque, no desinstala nada) ──────
+Write-Host "  ── startup (arranque con Windows)" -ForegroundColor DarkCyan
+foreach ($group in $tweaks.startup_disable.PSObject.Properties) {
+    $item  = $group.Value
+    $found = $false
+    foreach ($rk in $item.run_keys) {
+        if (Test-Path $rk) {
+            $props = Get-ItemProperty -Path $rk -ErrorAction SilentlyContinue
+            foreach ($p in $props.PSObject.Properties) {
+                if ($p.Name -match $item.match -or "$($p.Value)" -match $item.match) {
+                    $found = $true
+                    try {
+                        Remove-ItemProperty -Path $rk -Name $p.Name -ErrorAction Stop
+                        # Verificar de verdad: -ErrorAction SilentlyContinue en el Remove
+                        # puede tragarse un "acceso denegado" sin avisar. Se relee la key.
+                        $stillHere = (Get-ItemProperty -Path $rk -Name $p.Name -ErrorAction SilentlyContinue)
+                        if ($stillHere) {
+                            Write-Log "STARTUP  FAIL (sigue presente tras Remove) $rk\$($p.Name)"
+                            Write-Status "Run\$($p.Name)" "no se pudo remover (¿admin?)" 'ERROR'
+                        } else {
+                            Write-Log "STARTUP  removido $rk\$($p.Name)"
+                            Write-Status "Run\$($p.Name)" "removido de startup" 'OK'
+                        }
+                    } catch {
+                        Write-Log "STARTUP  FAIL $rk\$($p.Name) : $_"
+                        Write-Status "Run\$($p.Name)" "error: $_" 'ERROR'
+                    }
+                }
             }
         }
     }
+    # Scheduled tasks
+    try {
+        Get-ScheduledTask -ErrorAction SilentlyContinue | Where-Object { $_.TaskName -match $item.match -and $_.State -ne 'Disabled' } | ForEach-Object {
+            # Capturar el objeto ANTES del try/catch: dentro de un catch, $_ pasa
+            # a ser el ErrorRecord, no la tarea del pipeline — usar $task adentro.
+            $task  = $_
+            $found = $true
+            try {
+                Disable-ScheduledTask -TaskName $task.TaskName -TaskPath $task.TaskPath -ErrorAction Stop | Out-Null
+                # Verificar de verdad: releer el estado en vez de confiar en que el cmdlet no tiró error.
+                $recheck = Get-ScheduledTask -TaskName $task.TaskName -TaskPath $task.TaskPath -ErrorAction SilentlyContinue
+                if ($recheck -and $recheck.State -eq 'Disabled') {
+                    Write-Log "STARTUP  task deshabilitada $($task.TaskName)"
+                    Write-Status "Task $($task.TaskName)" "deshabilitada" 'OK'
+                } else {
+                    Write-Log "STARTUP  FAIL (sigue $($recheck.State)) task $($task.TaskName)"
+                    Write-Status "Task $($task.TaskName)" "no se pudo deshabilitar (¿admin?)" 'ERROR'
+                }
+            } catch {
+                Write-Log "STARTUP  FAIL task $($task.TaskName) : $_"
+                Write-Status "Task $($task.TaskName)" "error: $_" 'ERROR'
+            }
+        }
+    } catch { }
+    if (-not $found) { Write-Status $group.Name "no encontrado" 'INFO' }
 }
-# Scheduled tasks
-try {
-    Get-ScheduledTask -ErrorAction SilentlyContinue | Where-Object { $_.TaskName -match $corel.match } | ForEach-Object {
-        Disable-ScheduledTask -TaskName $_.TaskName -TaskPath $_.TaskPath -ErrorAction SilentlyContinue | Out-Null
-        Write-Log "STARTUP  task deshabilitada $($_.TaskName)"
-        Write-Status "Task $($_.TaskName)" "deshabilitada" 'OK'
-        $found = $true
-    }
-} catch { }
-if (-not $found) { Write-Status "CorelUpdateHelper" "no encontrado" 'INFO' }
 Write-Host ""
 
 # ── Hibernate off ──────────────────────────────────────────────────
@@ -202,8 +235,11 @@ Write-Host "  Browsers background off: ~$($e.browsers_background_off)MB" -Foregr
 Write-Host "  Animaciones off:         ~$($e.animaciones_off)MB" -ForegroundColor Gray
 Write-Host "  CorelDRAW helper off:    ~$($e.corel_helper_off)MB" -ForegroundColor Gray
 Write-Host "  Superfetch off:          ~$($e.superfetch_off)MB" -ForegroundColor Gray
+Write-Host "  Roblox autostart off:    ~$($e.roblox_autostart_off)MB" -ForegroundColor Gray
+Write-Host "  Chrome autolaunch off:   ~$($e.chrome_autolaunch_off)MB" -ForegroundColor Gray
+Write-Host "  Canva autolaunch off:    ~$($e.canva_autolaunch_off)MB" -ForegroundColor Gray
 Write-Host "  TOTAL ESTIMADO:          ~$($e.total_mb)MB" -ForegroundColor White
 Write-Host ""
 Write-Host "  Log: $logFile" -ForegroundColor DarkGray
 Write-Host ""
-if ($Host.Name -eq 'ConsoleHost') { Write-Host "  Presioná ENTER para volver..." -ForegroundColor DarkGray; $null = Read-Host }
+if ($Host.Name -eq 'ConsoleHost' -and -not [Console]::IsInputRedirected) { Write-Host "  Presioná ENTER para volver..." -ForegroundColor DarkGray; $null = Read-Host }

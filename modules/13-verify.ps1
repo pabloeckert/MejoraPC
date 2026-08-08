@@ -100,6 +100,16 @@ $nonMsixGroups = @('emuladores','browsers_sin_uso','video_edicion','ftp_solapado
                    'descargas_solapadas','redes_sin_uso','ia_local','sin_uso_confirmado')
 $progFiles = @($env:ProgramFiles, ${env:ProgramFiles(x86)}, $env:LOCALAPPDATA) | Where-Object { $_ }
 
+# Palabras genéricas: el último segmento de un ID "Vendor.Producto" a veces
+# es una palabra común (ej. "Flywheel.Local" -> "Local") que matchea por
+# substring cualquier DisplayName no relacionado (ej. "... Localization
+# Component"). Para esos casos NO se confía en el match de registry — solo
+# en la carpeta exacta de Program Files (Test-Path, no substring).
+$genericWords = @('local','client','service','update','updater','app','desktop',
+                  'home','player','core','tools','tool','manager','helper',
+                  'viewer','studio','pro','plus','online','web','cloud','sync',
+                  'launcher','store','agent','host','engine','runtime')
+
 foreach ($grp in $nonMsixGroups) {
     $items = $bloat.blockA.groups.$grp
     if (-not $items) { continue }
@@ -109,7 +119,10 @@ foreach ($grp in $nonMsixGroups) {
         if ($kw -match '\\') { $kw = ($kw -split '\\')[-1] }
         if ($kw -match '^[^\s\\]+\.[^\s\\]+$') { $kw = ($kw -split '\.')[-1] }
 
-        $inRegistry = [bool]($allUninstall | Where-Object { $_.DisplayName -like "*$kw*" })
+        $inRegistry = $false
+        if ($genericWords -notcontains $kw.ToLower()) {
+            $inRegistry = [bool]($allUninstall | Where-Object { $_.DisplayName -like "*$kw*" })
+        }
         # Binario en disco: ¿existe una carpeta con ese nombre en Program Files?
         $onDisk = $false
         foreach ($pf in $progFiles) {
@@ -166,6 +179,27 @@ if (Test-Path $tweakFile) {
             Write-Row 'PENDIENTE' "servicio $($svc.name)" "StartMode=$startMode, esperado=$want"
         }
     }
+    # Startup items (Run keys / scheduled tasks deshabilitados).
+    foreach ($group in $tweaks.startup_disable.PSObject.Properties) {
+        $item = $group.Value
+        $stillThere = $false
+        foreach ($rk in $item.run_keys) {
+            if (-not (Test-Path $rk)) { continue }
+            $props = Get-ItemProperty -Path $rk -ErrorAction SilentlyContinue
+            foreach ($p in $props.PSObject.Properties) {
+                if ($p.Name -match $item.match -or "$($p.Value)" -match $item.match) { $stillThere = $true }
+            }
+        }
+        try {
+            $t = Get-ScheduledTask -ErrorAction SilentlyContinue | Where-Object { $_.TaskName -match $item.match -and $_.State -ne 'Disabled' }
+            if ($t) { $stillThere = $true }
+        } catch { }
+        if ($stillThere) {
+            Write-Row 'PENDIENTE' "startup / $($group.Name)" 'todavía en Run keys o task activa'
+        } else {
+            Write-Row 'VERIFICADO' "startup / $($group.Name)" 'sin entrada de arranque'
+        }
+    }
 } else {
     Write-Host "  [!] Falta data/tweaks.json — se omite la verificación de tweaks." -ForegroundColor Yellow
 }
@@ -196,14 +230,20 @@ Write-Section "3. DISCO — análisis directo (sin Get-ChildItem recursivo)"
 
 # Suma el tamaño de un árbol con una pila propia y [System.IO.Directory].
 # Evita Get-ChildItem -Recurse (que se cuelga con symlinks/permisos) y
-# tolera accesos denegados carpeta por carpeta.
+# tolera accesos denegados carpeta por carpeta. Corte duro por tiempo:
+# carpetas como AppData\Local con decenas de GB (caches de apps, node_modules,
+# etc.) pueden tardar minutos recorridas archivo por archivo — mismo problema
+# que ya se resolvió con timeouts en 02-debloat.ps1/10-python-cleanup.ps1.
 function Get-DirSize {
-    param([string]$Path)
+    param([string]$Path, [int]$MaxSeconds = 8)
     $total = 0L
-    if (-not [System.IO.Directory]::Exists($Path)) { return 0L }
+    $timedOut = $false
+    if (-not [System.IO.Directory]::Exists($Path)) { return @{ Bytes = 0L; TimedOut = $false } }
+    $sw = [System.Diagnostics.Stopwatch]::StartNew()
     $stack = New-Object System.Collections.Stack
     $stack.Push($Path)
     while ($stack.Count -gt 0) {
+        if ($sw.Elapsed.TotalSeconds -gt $MaxSeconds) { $timedOut = $true; break }
         $dir = $stack.Pop()
         try {
             foreach ($f in [System.IO.Directory]::GetFiles($dir)) {
@@ -212,7 +252,7 @@ function Get-DirSize {
             foreach ($d in [System.IO.Directory]::GetDirectories($dir)) { $stack.Push($d) }
         } catch { }   # acceso denegado / reparse point → se ignora esa rama
     }
-    return $total
+    return @{ Bytes = $total; TimedOut = $timedOut }
 }
 
 # Tamaños puntuales de carpetas clave.
@@ -227,22 +267,33 @@ $keyFolders = [ordered]@{
 Write-Host "  Carpetas clave:" -ForegroundColor DarkCyan
 foreach ($kv in $keyFolders.GetEnumerator()) {
     if (-not $kv.Value) { continue }
-    $sz = Get-DirSize -Path $kv.Value
-    Write-Host ("    {0,-22} {1,12}" -f $kv.Key, (ConvertTo-HumanReadable $sz)) -ForegroundColor Gray
+    $r = Get-DirSize -Path $kv.Value -MaxSeconds 5
+    $suffix = if ($r.TimedOut) { ' (parcial, excedió 5s)' } else { '' }
+    Write-Host ("    {0,-22} {1,12}{2}" -f $kv.Key, (ConvertTo-HumanReadable $r.Bytes), $suffix) -ForegroundColor Gray
 }
 Write-Host ""
 
 # TOP 20 subcarpetas más pesadas entre Program Files, ProgramData y AppData\Local.
+# Presupuesto de tiempo global (no solo por carpeta): en un dev box real con
+# decenas de subcarpetas pesadas (caches de apps, node_modules, etc.) esto
+# puede tardar minutos. Si se excede, se corta y se informa resultado parcial.
 Write-Host "  Escaneando subcarpetas (puede tardar)..." -ForegroundColor DarkGray
 $roots = @($env:ProgramFiles, ${env:ProgramFiles(x86)}, $env:ProgramData, $env:LOCALAPPDATA) | Where-Object { $_ }
 $subdirs = [System.Collections.ArrayList]@()
-foreach ($root in $roots) {
+$globalSw = [System.Diagnostics.Stopwatch]::StartNew()
+$globalMaxSeconds = 45
+$scanCut = $false
+:rootsLoop foreach ($root in $roots) {
     try {
         foreach ($d in [System.IO.Directory]::GetDirectories($root)) {
-            $sz = Get-DirSize -Path $d
-            $null = $subdirs.Add([PSCustomObject]@{ Carpeta = $d; Bytes = $sz })
+            if ($globalSw.Elapsed.TotalSeconds -gt $globalMaxSeconds) { $scanCut = $true; break rootsLoop }
+            $r = Get-DirSize -Path $d -MaxSeconds 5
+            $null = $subdirs.Add([PSCustomObject]@{ Carpeta = $d; Bytes = $r.Bytes; Parcial = $r.TimedOut })
         }
     } catch { }
+}
+if ($scanCut) {
+    Write-Host "  [!] Escaneo cortado a los ${globalMaxSeconds}s — resultados parciales ($($subdirs.Count) carpetas medidas)." -ForegroundColor Yellow
 }
 
 $top = $subdirs | Sort-Object Bytes -Descending | Select-Object -First 20
@@ -255,7 +306,9 @@ foreach ($d in $top) {
     $heavy = ($d.Bytes -gt 500MB) -and ($d.Carpeta -notlike "$env:SystemRoot*")
     $color = if ($heavy) { 'Yellow' } else { 'Gray' }
     Write-Host ("  {0,2}. {1,10}  " -f $i, $human) -NoNewline -ForegroundColor $color
-    Write-Host $d.Carpeta -ForegroundColor DarkGray
+    Write-Host $d.Carpeta -NoNewline -ForegroundColor DarkGray
+    if ($d.Parcial) { Write-Host "  (parcial)" -NoNewline -ForegroundColor DarkYellow }
+    Write-Host ""
     $i++
 }
 Write-Host ""
@@ -286,4 +339,4 @@ if ($script:nPend -gt 0) {
 }
 Write-Host ""
 
-if ($Host.Name -eq 'ConsoleHost') { Write-Host "  Presioná ENTER para volver..." -ForegroundColor DarkGray; $null = Read-Host }
+if ($Host.Name -eq 'ConsoleHost' -and -not [Console]::IsInputRedirected) { Write-Host "  Presioná ENTER para volver..." -ForegroundColor DarkGray; $null = Read-Host }
