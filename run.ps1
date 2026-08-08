@@ -104,6 +104,7 @@ function Show-Menu {
     Write-Host "  11  Workflow optimizer (sesión dev)" -ForegroundColor White
     Write-Host "  12  Instalar monitor background" -ForegroundColor Magenta
     Write-Host "  13  Verificación real del sistema" -ForegroundColor Green
+    Write-Host "  14  Verificación post-reinicio (manual)" -ForegroundColor Green
     Write-Host ""
     Write-Host "   0  Salir" -ForegroundColor DarkGray
     Write-Host ""
@@ -141,6 +142,7 @@ do {
             Write-Host "  ENTER para volver..." -ForegroundColor DarkGray; $null = Read-Host
         }
         '13' { Invoke-Module "modules\13-verify.ps1" }
+        '14' { Invoke-Module "modules\14-post-reboot-verify.ps1" }
         '0'  { Write-Host "`n  Hasta luego.`n" -ForegroundColor Cyan; break }
         default { Write-Host "`n  Opción no válida." -ForegroundColor Red; Start-Sleep -Seconds 1 }
     }

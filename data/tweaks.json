@@ -44,6 +44,33 @@
       ],
       "match": "CorelUpdateHelper",
       "ram_estimate_mb": 200
+    },
+    "roblox_autostart": {
+      "_desc": "Roblox no necesita precargarse al boot — el hijo lo abre cuando quiere jugar. No desinstala nada.",
+      "run_keys": [
+        "HKCU:\\Software\\Microsoft\\Windows\\CurrentVersion\\Run",
+        "HKLM:\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Run"
+      ],
+      "match": "^RobloxPlayerBeta$",
+      "ram_estimate_mb": 60
+    },
+    "chrome_autolaunch": {
+      "_desc": "Chrome se auto-lanza al login (GoogleChromeAutoLaunch_<hash>, sufijo cambia por instalación). Contradice el objetivo de RAM libre al boot — Chrome sigue disponible normalmente, solo no arranca solo.",
+      "run_keys": [
+        "HKCU:\\Software\\Microsoft\\Windows\\CurrentVersion\\Run",
+        "HKLM:\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Run"
+      ],
+      "match": "^GoogleChromeAutoLaunch",
+      "ram_estimate_mb": 150
+    },
+    "canva_autolaunch": {
+      "_desc": "Agente de background de Canva Desktop (availability check). No desinstala Canva, solo el auto-arranque.",
+      "run_keys": [
+        "HKCU:\\Software\\Microsoft\\Windows\\CurrentVersion\\Run",
+        "HKLM:\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Run"
+      ],
+      "match": "CanvaAutoLaunch",
+      "ram_estimate_mb": 40
     }
   },
   "power": {
@@ -64,6 +91,9 @@
     "animaciones_off": 50,
     "corel_helper_off": 200,
     "superfetch_off": 100,
-    "total_mb": 850
+    "roblox_autostart_off": 60,
+    "chrome_autolaunch_off": 150,
+    "canva_autolaunch_off": 40,
+    "total_mb": 1100
   }
 }

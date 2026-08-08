@@ -118,6 +118,7 @@ Write-Host ""
 
 # ── 4/5/7/8. Conservar 3.14, ofrecer eliminar el resto ─────────────
 $toConsider = @($pythons | Where-Object { $_.Version -ne '3.14' })
+$removedAny = $false
 if ($toConsider.Count -eq 0) {
     Write-Host "  [+] Solo está 3.14 (o no se detectaron otras). Nada que limpiar." -ForegroundColor Green
 } else {
@@ -138,7 +139,39 @@ if ($toConsider.Count -eq 0) {
             Write-Host "      Desinstalando $wid ..." -ForegroundColor DarkGray
             winget uninstall --id $wid --silent --accept-source-agreements 2>&1 | Out-Null
             Write-Host "  [OK] Python $ver eliminado." -ForegroundColor Green
+            $removedAny = $true
         }
+    }
+}
+
+# ── 9b. Reparar monitoreo invisible si apuntaba al Python eliminado ─
+# monitor.py/analyze.py --install fijan el path a pythonw.exe del intérprete
+# activo AL MOMENTO de instalar el scheduled task. Si acá se borra esa versión,
+# la task queda apuntando a un .exe que ya no existe y falla en silencio para
+# siempre (sin ventana de error — así se descubrió, con muestras de monitoreo
+# congeladas semanas). Si se borró alguna versión, se re-registran las tasks
+# existentes contra el Python que quedó vivo.
+if ($removedAny) {
+    Write-Host ""
+    Write-Host "  ── Revalidando monitoreo invisible ──────────────" -ForegroundColor DarkCyan
+    $pyCmd = $null
+    foreach ($c in @('python', 'py')) {
+        if (Get-Command $c -ErrorAction SilentlyContinue) { $pyCmd = $c; break }
+    }
+    if ($pyCmd) {
+        foreach ($taskInfo in @(
+            @{ Name = 'MejoraPC-Monitor'; Script = 'monitor\monitor.py' },
+            @{ Name = 'MejoraPC-Analyze'; Script = 'monitor\analyze.py' }
+        )) {
+            $existing = Get-ScheduledTask -TaskName $taskInfo.Name -ErrorAction SilentlyContinue
+            if ($existing) {
+                Write-Host "      Re-registrando $($taskInfo.Name) contra el Python actual..." -ForegroundColor DarkGray
+                & $pyCmd (Join-Path $scriptRoot $taskInfo.Script) --install 2>&1 | Out-Null
+                Write-Status $taskInfo.Name "re-registrada" 'OK'
+            }
+        }
+    } else {
+        Write-Status "Monitoreo invisible" "no se pudo revalidar (sin intérprete Python en PATH)" 'WARN'
     }
 }
 

@@ -232,15 +232,31 @@ def main():
         for color, msg in alerts:
             console.print(f"  [{color}]![/] {msg}")
 
-    # ── Tabla RAM recuperable ──
+    # ── Tabla RAM recuperable ── data/tweaks.json es la fuente de verdad
+    # (no hardcodear acá — si se agrega un tweak nuevo, este bloque tiene
+    # que reflejarlo solo, para no repetir el desfasaje que tenía esta lista).
     console.print()
     console.print("[bold]═══ RAM POTENCIALMENTE RECUPERABLE ═══[/]")
-    console.print("  Game Bar off:             ~100MB")
-    console.print("  Browsers background off:  ~400MB")
-    console.print("  Animaciones off:           ~50MB")
-    console.print("  CorelDRAW helper off:     ~200MB")
-    console.print("  Superfetch off:           ~100MB")
-    console.print("  [bold]TOTAL ESTIMADO: ~850MB[/]")
+    labels = {
+        "game_bar_off": "Game Bar off",
+        "browsers_background_off": "Browsers background off",
+        "animaciones_off": "Animaciones off",
+        "corel_helper_off": "CorelDRAW helper off",
+        "superfetch_off": "Superfetch off",
+        "roblox_autostart_off": "Roblox autostart off",
+        "chrome_autolaunch_off": "Chrome autolaunch off",
+        "canva_autolaunch_off": "Canva autolaunch off",
+    }
+    try:
+        with open(os.path.join(DATA, "tweaks.json"), "r", encoding="utf-8") as f:
+            estimate = json.load(f).get("ram_recoverable_estimate", {})
+        for key, label in labels.items():
+            if key in estimate:
+                console.print(f"  {label + ':':<26} ~{estimate[key]}MB")
+        if "total_mb" in estimate:
+            console.print(f"  [bold]TOTAL ESTIMADO: ~{estimate['total_mb']}MB[/]")
+    except Exception:
+        pass
 
     # ── Persistir ──
     profile = {
