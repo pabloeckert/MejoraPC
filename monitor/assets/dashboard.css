@@ -1,0 +1,135 @@
+/* MejoraPC — dashboard.css
+   Identidad Mejora Continua: blanco dominante, color como acento (nunca
+   fondo de bloque). Azul #1A3D84 = estructura/títulos. Rojo #E1061E =
+   alerta/fallido. Amarillo #F7CC13 = detalle/pendiente. Tipografía League
+   Spartan (Google Fonts, licencia abierta) — Bw Modelica es de pago y no
+   se redistribuye en un paquete que viaja a PCs de terceros vía USB.
+*/
+
+@import url('https://fonts.googleapis.com/css2?family=League+Spartan:wght@400;500;700&display=swap');
+
+:root {
+  --azul: #1A3D84;
+  --rojo: #E1061E;
+  --amarillo: #F7CC13;
+  --amarillo-oscuro: #A37F00;
+  --tinta: #2B2B2B;
+  --gris: #6B7280;
+  --blanco: #FFFFFF;
+  --ok: #2E7D32;
+  --borde: #E5E7EB;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: var(--blanco);
+  color: var(--tinta);
+  font-family: 'League Spartan', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  line-height: 1.5;
+}
+
+header {
+  padding: 32px 24px 16px;
+  border-bottom: 3px solid var(--azul);
+}
+
+.wordmark {
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--azul);
+  letter-spacing: -0.02em;
+}
+.wordmark .accent { color: var(--rojo); }
+
+.tagline {
+  color: var(--gris);
+  font-size: 14px;
+  margin-top: 4px;
+}
+
+main {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.card {
+  border: 1px solid var(--borde);
+  border-radius: 8px;
+  padding: 20px 24px;
+}
+
+.card-accent { border-left: 4px solid var(--amarillo); }
+
+h2 {
+  margin: 0 0 12px;
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--azul);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.kv {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 6px 0;
+  border-bottom: 1px solid var(--borde);
+  font-size: 14px;
+}
+.kv:last-child { border-bottom: none; }
+.kv span { color: var(--gris); }
+
+.delta-up { color: var(--ok); font-weight: 500; }
+.delta-down { color: var(--rojo); font-weight: 500; }
+
+.badges { display: flex; gap: 4px; align-items: center; font-size: 14px; flex-wrap: wrap; }
+.badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 24px;
+  height: 24px;
+  border-radius: 12px;
+  padding: 0 8px;
+  font-weight: 700;
+  color: white;
+  margin-right: 4px;
+}
+.badge-ok { background: var(--ok); }
+.badge-pending { background: var(--amarillo); color: var(--tinta); }
+.badge-fail { background: var(--rojo); }
+
+.rec-list { list-style: none; margin: 0; padding: 0; }
+.rec { padding: 10px 0; border-bottom: 1px solid var(--borde); font-size: 14px; }
+.rec:last-child { border-bottom: none; }
+.rec-desc { color: var(--gris); font-size: 13px; margin-top: 2px; }
+.rec-alta strong { color: var(--rojo); }
+.rec-media strong { color: var(--amarillo-oscuro); }
+.rec-baja strong { color: var(--gris); }
+
+table { width: 100%; border-collapse: collapse; font-size: 13px; }
+th { text-align: left; color: var(--gris); font-weight: 500; padding: 6px 8px; border-bottom: 2px solid var(--borde); }
+td { padding: 6px 8px; border-bottom: 1px solid var(--borde); vertical-align: top; }
+
+.muted { color: var(--gris); font-size: 14px; }
+code { background: #F3F4F6; padding: 2px 6px; border-radius: 4px; font-size: 13px; }
+
+footer {
+  text-align: center;
+  padding: 24px;
+  color: var(--gris);
+  font-size: 12px;
+}
+footer a { color: var(--azul); }
+
+@media (max-width: 600px) {
+  main { padding: 16px; }
+  .card { padding: 16px; }
+}
