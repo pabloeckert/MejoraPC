@@ -76,7 +76,9 @@ def rule_peak_hour(ctx):
 
 
 def rule_non_dev_processes(ctx):
-    top_candidates = [n for n, c in ctx["proc_counter"].most_common(5) if c >= ctx["n_rows"] * 0.3]
+    candidates = [n for n, c in ctx["proc_counter"].most_common(5) if c >= ctx["n_rows"] * 0.3]
+    confirmed = ctx.get("confirmed_active", set())
+    top_candidates = [n for n in candidates if not any(a in n.lower() for a in confirmed)]
     if not top_candidates:
         return []
     auto_action = json.dumps({"type": "startup_disable_candidate", "processes": top_candidates})
@@ -175,12 +177,23 @@ def analyze(verbose=False):
         alerts_per_day[ts[:10]] += 1
     avg_alerts = (sum(alerts_per_day.values()) / max(1, len(alerts_per_day))) if alerts_per_day else 0
 
+    confirmed_active = set()
+    profile_local_path = os.path.join(DATA, "profile-local.json")
+    if os.path.exists(profile_local_path):
+        try:
+            with open(profile_local_path, "r", encoding="utf-8") as f:
+                survey = json.load(f).get("survey", {})
+            confirmed_active = {a.lower() for a in survey.get("confirmed_active_apps", [])}
+        except Exception:
+            pass
+
     ctx = {
         "con": con,
         "by_hour": by_hour,
         "proc_counter": proc_counter,
         "n_rows": len(rows),
         "avg_alerts": avg_alerts,
+        "confirmed_active": confirmed_active,
     }
 
     now = datetime.now().isoformat()

@@ -6,7 +6,19 @@
     "updated": "2026-08-08",
     "origin": "manual"
   },
-  "survey": {},
+  "survey": {
+    "usage_type": "general",
+    "usage_type_raw": "todo (dev + oficina + gaming + familiar, sin uno solo predominante)",
+    "has_kids": true,
+    "primary_browser": "ninguno predominante — usa Chrome, Brave y Edge indistintamente",
+    "confirmed_active_apps": [
+      "Microsoft Edge",
+      "Copilot",
+      "CorelDRAW Graphics Suite 2026"
+    ],
+    "answered": "2026-08-08",
+    "note": "Encuesta respondida por chat (Claude Code) en vez de por modules/00-discover.ps1 interactivo — la herramienta usada no tiene consola interactiva real para el Read-Host del script. Mismo esquema de datos que generaría el script."
+  },
   "registry": {
     "vs_telemetria": [
       { "path": "HKLM:\\SOFTWARE\\Microsoft\\VSCommon\\17.0\\SQM", "name": "OptIn", "value": 0, "type": "DWord" },
