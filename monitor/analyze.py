@@ -3,10 +3,19 @@
 Análisis semanal COMPLETAMENTE INVISIBLE (scheduled task domingos 3AM).
 Usar pythonw.exe. Cero output, todo a data/monitor.log.
 
-Lee 7 días de usage_samples y genera smart_recommendations:
-  - Hora pico de RAM por hora del día
-  - Procesos top5 consistentes que NO son dev tools -> candidatos
-  - ram_alerts > 3/día -> recomendar módulo 12
+Motor de reglas: cada regla en RULES lee de un contexto compartido (ctx) y
+devuelve una lista de Recommendation. Agregar una regla nueva es agregar una
+función a la lista, no editar una función monolítica.
+
+Reglas actuales:
+  - rule_peak_hour: hora pico de RAM por hora del día
+  - rule_non_dev_processes: procesos top consistentes que NO son dev tools
+  - rule_ram_alerts: ram_alerts > 3/día -> recomendar módulo 12
+  - rule_ram_trend: RAM libre bajando en las últimas 3 corridas de scan.py
+
+auto_action marca recomendaciones que monitor/auto_adjust.py puede promover
+automáticamente a data/profile-local.json (solo en máquinas con ese archivo
+— autonomía ya aceptada) en vez de esperar acción manual.
 
 Args:
   --install    crea scheduled task semanal (domingos 3AM) con pythonw.exe
@@ -18,7 +27,7 @@ import os
 import sqlite3
 import subprocess
 import sys
-from collections import Counter, defaultdict
+from collections import Counter, defaultdict, namedtuple
 from datetime import datetime, timedelta
 
 try:
@@ -36,6 +45,8 @@ TASK_NAME = "MejoraPC-Analyze"
 DEV_TOOLS = {"code", "node", "python", "pythonw", "chrome", "brave", "msedge",
              "git", "bash", "powershell", "windowsterminal", "explorer", "claude"}
 
+Recommendation = namedtuple("Recommendation", "priority title description module auto_action")
+
 
 def log(msg):
     try:
@@ -50,6 +61,77 @@ def is_dev(name):
     return any(d in n for d in DEV_TOOLS)
 
 
+# ── Reglas ────────────────────────────────────────────────────────
+def rule_peak_hour(ctx):
+    by_hour = ctx["by_hour"]
+    if not by_hour:
+        return []
+    peak_hour = max(by_hour, key=lambda h: sum(by_hour[h]) / len(by_hour[h]))
+    peak_avg = sum(by_hour[peak_hour]) / len(by_hour[peak_hour])
+    return [Recommendation(
+        "Baja", f"Hora pico de RAM: {peak_hour:02d}:00",
+        f"Promedio {peak_avg:.0f}% de RAM a las {peak_hour:02d}h. Evitá tareas pesadas en esa franja.",
+        "08", None,
+    )]
+
+
+def rule_non_dev_processes(ctx):
+    top_candidates = [n for n, c in ctx["proc_counter"].most_common(5) if c >= ctx["n_rows"] * 0.3]
+    if not top_candidates:
+        return []
+    auto_action = json.dumps({"type": "startup_disable_candidate", "processes": top_candidates})
+    return [Recommendation(
+        "Media", "Procesos no-dev consistentes",
+        f"Consumen RAM seguido: {', '.join(top_candidates)}. Revisá si los necesitás (módulo 02 debloat).",
+        "02", auto_action,
+    )]
+
+
+def rule_ram_alerts(ctx):
+    if ctx["avg_alerts"] <= 3:
+        return []
+    return [Recommendation(
+        "Alta", "Alertas de RAM frecuentes",
+        f"{ctx['avg_alerts']:.1f} alertas/día de RAM >85%. Corré el Workflow Optimizer antes de trabajar (módulo 12).",
+        "12", None,
+    )]
+
+
+def rule_ram_trend(ctx):
+    rows = ctx["con"].execute(
+        "SELECT ram_free_gb FROM hardware_profile ORDER BY id DESC LIMIT 3"
+    ).fetchall()
+    if len(rows) < 3:
+        return []
+    vals = [r[0] for r in rows]  # vals[0] = más reciente
+    if not (vals[0] < vals[1] < vals[2]):
+        return []
+    return [Recommendation(
+        "Media", "Tendencia de RAM a la baja",
+        f"RAM libre bajó en las últimas 3 corridas ({vals[2]:.1f} -> {vals[1]:.1f} -> {vals[0]:.1f} GB). "
+        f"Revisá qué se está acumulando en el arranque.",
+        "03", None,
+    )]
+
+
+RULES = [rule_peak_hour, rule_non_dev_processes, rule_ram_alerts, rule_ram_trend]
+
+
+def ensure_schema(con):
+    con.executescript(
+        """
+        CREATE TABLE IF NOT EXISTS smart_recommendations (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            timestamp TEXT, priority TEXT, title TEXT, description TEXT,
+            module TEXT, applied INTEGER DEFAULT 0, auto_action TEXT
+        );
+        """
+    )
+    cols = [r[1] for r in con.execute("PRAGMA table_info(smart_recommendations)").fetchall()]
+    if "auto_action" not in cols:
+        con.execute("ALTER TABLE smart_recommendations ADD COLUMN auto_action TEXT")
+
+
 def analyze(verbose=False):
     if not os.path.exists(DB):
         log("DB no existe, nada que analizar")
@@ -58,15 +140,8 @@ def analyze(verbose=False):
         return
 
     con = sqlite3.connect(DB)
-    con.executescript(
-        """
-        CREATE TABLE IF NOT EXISTS smart_recommendations (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            timestamp TEXT, priority TEXT, title TEXT, description TEXT,
-            module TEXT, applied INTEGER DEFAULT 0
-        );
-        """
-    )
+    ensure_schema(con)
+
     cutoff = (datetime.now() - timedelta(days=7)).isoformat()
     rows = con.execute(
         "SELECT timestamp, ram_pct, top_processes FROM usage_samples WHERE timestamp >= ?",
@@ -80,7 +155,6 @@ def analyze(verbose=False):
         con.close()
         return
 
-    # Hora pico de RAM
     by_hour = defaultdict(list)
     proc_counter = Counter()
     for ts, ram, top_json in rows:
@@ -93,10 +167,6 @@ def analyze(verbose=False):
         except Exception:
             continue
 
-    peak_hour = max(by_hour, key=lambda h: sum(by_hour[h]) / len(by_hour[h])) if by_hour else None
-    peak_avg = (sum(by_hour[peak_hour]) / len(by_hour[peak_hour])) if peak_hour is not None else 0
-
-    # ram_alerts por día
     alert_rows = con.execute(
         "SELECT timestamp FROM ram_alerts WHERE timestamp >= ?", (cutoff,)
     ).fetchall()
@@ -105,42 +175,36 @@ def analyze(verbose=False):
         alerts_per_day[ts[:10]] += 1
     avg_alerts = (sum(alerts_per_day.values()) / max(1, len(alerts_per_day))) if alerts_per_day else 0
 
-    # ── Generar recomendaciones ──
+    ctx = {
+        "con": con,
+        "by_hour": by_hour,
+        "proc_counter": proc_counter,
+        "n_rows": len(rows),
+        "avg_alerts": avg_alerts,
+    }
+
     now = datetime.now().isoformat()
     con.execute("DELETE FROM smart_recommendations WHERE applied = 0")
+
     recs = []
+    for rule in RULES:
+        recs.extend(rule(ctx))
 
-    if peak_hour is not None:
-        recs.append(("Baja", f"Hora pico de RAM: {peak_hour:02d}:00",
-                     f"Promedio {peak_avg:.0f}% de RAM a las {peak_hour:02d}h. "
-                     f"Evitá tareas pesadas en esa franja.", "08"))
-
-    top_candidates = [n for n, c in proc_counter.most_common(5) if c >= len(rows) * 0.3]
-    if top_candidates:
-        recs.append(("Media", "Procesos no-dev consistentes",
-                     f"Consumen RAM seguido: {', '.join(top_candidates)}. "
-                     f"Revisá si los necesitás (módulo 02 debloat).", "02"))
-
-    if avg_alerts > 3:
-        recs.append(("Alta", "Alertas de RAM frecuentes",
-                     f"{avg_alerts:.1f} alertas/día de RAM >85%. "
-                     f"Corré el Workflow Optimizer antes de trabajar (módulo 12).", "12"))
-
-    for pr, title, desc, mod in recs:
+    for r in recs:
         con.execute(
-            "INSERT INTO smart_recommendations (timestamp, priority, title, description, module, applied) "
-            "VALUES (?,?,?,?,?,0)",
-            (now, pr, title, desc, mod),
+            "INSERT INTO smart_recommendations (timestamp, priority, title, description, module, applied, auto_action) "
+            "VALUES (?,?,?,?,?,0,?)",
+            (now, r.priority, r.title, r.description, r.module, r.auto_action),
         )
     con.commit()
     con.close()
 
-    log(f"analyze ok: {len(recs)} recomendaciones, peak_hour={peak_hour}, avg_alerts={avg_alerts:.1f}")
+    log(f"analyze ok: {len(recs)} recomendaciones")
     if verbose:
         print(f"\nAnálisis completo — {len(recs)} recomendación(es):\n")
-        for pr, title, desc, mod in recs:
-            print(f"  [{pr}] {title} (módulo {mod})")
-            print(f"        {desc}\n")
+        for r in recs:
+            print(f"  [{r.priority}] {r.title} (módulo {r.module})")
+            print(f"        {r.description}\n")
 
 
 def _pythonw():

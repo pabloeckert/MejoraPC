@@ -21,7 +21,7 @@ def init_db(con):
         CREATE TABLE IF NOT EXISTS smart_recommendations (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             timestamp TEXT, priority TEXT, title TEXT, description TEXT,
-            module TEXT, applied INTEGER DEFAULT 0
+            module TEXT, applied INTEGER DEFAULT 0, auto_action TEXT
         );
         CREATE TABLE IF NOT EXISTS applied_actions (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -31,24 +31,19 @@ def init_db(con):
     )
 
 
-def main():
-    ap = argparse.ArgumentParser()
-    ap.add_argument("--action", help="Nombre del módulo/paso ejecutado, ej. 02-debloat")
-    ap.add_argument("--detail", default="", help="Resumen del resultado")
-    ap.add_argument("--mark-applied", default="", help="CSV de códigos de módulo a marcar applied=1, ej. 02,03,04,06")
-    args = ap.parse_args()
-
+def record(action=None, detail="", mark_applied=""):
+    """Callable directo — usado por run.ps1 (CLI) y por otros módulos (import)."""
     con = sqlite3.connect(DB)
     init_db(con)
 
-    if args.action:
+    if action:
         con.execute(
             "INSERT INTO applied_actions (timestamp, action, detail) VALUES (?, ?, ?)",
-            (datetime.now().isoformat(), args.action, args.detail),
+            (datetime.now().isoformat(), action, detail),
         )
 
-    if args.mark_applied:
-        mods = [m.strip() for m in args.mark_applied.split(",") if m.strip()]
+    if mark_applied:
+        mods = [m.strip() for m in mark_applied.split(",") if m.strip()]
         if mods:
             placeholders = ",".join("?" * len(mods))
             con.execute(
@@ -58,6 +53,15 @@ def main():
 
     con.commit()
     con.close()
+
+
+def main():
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--action", help="Nombre del módulo/paso ejecutado, ej. 02-debloat")
+    ap.add_argument("--detail", default="", help="Resumen del resultado")
+    ap.add_argument("--mark-applied", default="", help="CSV de códigos de módulo a marcar applied=1, ej. 02,03,04,06")
+    args = ap.parse_args()
+    record(action=args.action, detail=args.detail, mark_applied=args.mark_applied)
 
 
 if __name__ == "__main__":
