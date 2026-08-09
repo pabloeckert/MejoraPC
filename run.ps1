@@ -136,6 +136,15 @@ function Invoke-AutoOptimize {
     Write-Host "  Modo automático — sin menú. Ejecutando pipeline completo." -ForegroundColor DarkGray
     Write-Host ""
 
+    Invoke-AutoStep "00 - Descubrimiento (primera vez en esta máquina)" {
+        if (-not (Test-Path "$scriptRoot\data\discovery-report.json")) {
+            Invoke-Module "modules\00-discover.ps1" -Auto
+            Invoke-Py "monitor\record_run.py" @('--action', '00-discover', '--detail', 'inventario + encuesta inicial')
+        } else {
+            Write-Host "  Ya se descubrió esta máquina — sin cambios." -ForegroundColor DarkGray
+        }
+    }
+
     Invoke-AutoStep "Monitor invisible (primera vez)" {
         $monitorTask = Get-ScheduledTask -TaskName 'MejoraPC-Monitor' -ErrorAction SilentlyContinue
         $analyzeTask = Get-ScheduledTask -TaskName 'MejoraPC-Analyze' -ErrorAction SilentlyContinue
@@ -162,7 +171,7 @@ function Invoke-AutoOptimize {
 
     Invoke-AutoStep "03 - Performance" {
         Invoke-Module "modules\03-performance.ps1" -Auto
-        Invoke-Py "monitor\record_run.py" @('--action', '03-performance', '--detail', 'tweaks de data/tweaks.json aplicados')
+        Invoke-Py "monitor\record_run.py" @('--action', '03-performance', '--detail', 'tweaks universales + perfil local aplicados')
     }
 
     Invoke-AutoStep "04 - Estética" {
@@ -181,6 +190,8 @@ function Invoke-AutoOptimize {
     }
 
     Invoke-AutoStep "Análisis inteligente" { Invoke-Py "monitor\analyze.py" @('--run') }
+
+    Invoke-AutoStep "Auto-ajuste (solo perfil local)" { Invoke-Py "monitor\auto_adjust.py" }
 
     Invoke-AutoStep "13 - Verificación real" {
         Invoke-Module "modules\13-verify.ps1" -Auto
@@ -203,6 +214,8 @@ function Invoke-AutoOptimize {
 
     Write-Host "`n  ═══ INFORME FINAL ═══" -ForegroundColor Cyan
     Invoke-Py "monitor\report.py"
+
+    Invoke-AutoStep "Dashboard visual" { Invoke-Py "monitor\html_report.py" }
 
     Write-Host ""
     Write-Host "  Listo. Para el menú manual: .\run.ps1 -Menu" -ForegroundColor DarkGray

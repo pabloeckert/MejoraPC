@@ -5,10 +5,15 @@ logs/
 data/mejorapc.db
 data/status.json
 data/monitor.log
+data/last-verify.json
+data/discovery-report.json
 
 # Backups generados (contienen info del sistema del usuario)
 backups/
 reporte_limpieza_resultado.*
+
+# Paquete USB generado por installer/build-package.ps1
+dist/
 
 # Rescue points (contienen info del sistema del usuario)
 rescue/
