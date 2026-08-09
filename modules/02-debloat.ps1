@@ -22,7 +22,7 @@ param(
 $scriptRoot = Split-Path -Parent $PSScriptRoot
 . "$scriptRoot\lib\helpers.ps1"
 
-$dataFile  = "$scriptRoot\data\bloatware.json"
+$dataFile  = "$scriptRoot\data\universal-bloatware.json"
 $logDir    = "$scriptRoot\logs"
 $backupDir = "$scriptRoot\backups"
 foreach ($d in @($logDir, $backupDir)) { if (-not (Test-Path $d)) { New-Item -ItemType Directory -Force $d | Out-Null } }
@@ -38,10 +38,10 @@ function Write-Log {
 }
 
 if (-not (Test-Path $dataFile)) {
-    Write-Host "  [x] No se encuentra data/bloatware.json" -ForegroundColor Red
+    Write-Host "  [x] No se encuentra data/universal-bloatware.json" -ForegroundColor Red
     return
 }
-$bloat = Get-Content $dataFile -Raw -Encoding UTF8 | ConvertFrom-Json
+$bloat = Get-MergedBloatCatalog -ScriptRoot $scriptRoot
 
 # ═══════════════════════════════════════════════════════════════════
 # CAPA 1 + CAPA 2 — política permanente y remoción inmediata (MSIX)

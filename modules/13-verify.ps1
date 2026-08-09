@@ -14,8 +14,8 @@ param([switch]$Auto)
 $scriptRoot = Split-Path -Parent $PSScriptRoot
 . "$scriptRoot\lib\helpers.ps1"
 
-$bloatFile = "$scriptRoot\data\bloatware.json"
-$tweakFile = "$scriptRoot\data\tweaks.json"
+$bloatFile = "$scriptRoot\data\universal-bloatware.json"
+$tweakFile = "$scriptRoot\data\universal-tweaks.json"
 
 Clear-Host
 Write-Host ""
@@ -53,8 +53,8 @@ function Write-Section {
     Write-Host ""
 }
 
-if (-not (Test-Path $bloatFile)) { Write-Host "  [x] Falta data/bloatware.json" -ForegroundColor Red; return }
-$bloat = Get-Content $bloatFile -Raw -Encoding UTF8 | ConvertFrom-Json
+if (-not (Test-Path $bloatFile)) { Write-Host "  [x] Falta data/universal-bloatware.json" -ForegroundColor Red; return }
+$bloat = Get-MergedBloatCatalog -ScriptRoot $scriptRoot
 
 # ═══════════════════════════════════════════════════════════════════
 # 1. DEBLOAT — MSIX (Appx + política) y no-MSIX (registry/Programs)
@@ -144,7 +144,7 @@ foreach ($grp in $nonMsixGroups) {
 Write-Section "2. TWEAKS DE PERFORMANCE"
 
 if (Test-Path $tweakFile) {
-    $tweaks = Get-Content $tweakFile -Raw -Encoding UTF8 | ConvertFrom-Json
+    $tweaks = Get-MergedTweaksCatalog -ScriptRoot $scriptRoot
 
     foreach ($group in $tweaks.registry.PSObject.Properties) {
         foreach ($t in $group.Value) {
@@ -201,7 +201,7 @@ if (Test-Path $tweakFile) {
         }
     }
 } else {
-    Write-Host "  [!] Falta data/tweaks.json — se omite la verificación de tweaks." -ForegroundColor Yellow
+    Write-Host "  [!] Falta data/universal-tweaks.json — se omite la verificación de tweaks." -ForegroundColor Yellow
 }
 
 # Power plan activo.

@@ -106,6 +106,57 @@ function Get-TemperatureStatus {
     return 'ERROR'
 }
 
+function Get-MergedBloatCatalog {
+    # Universal (cualquier Windows 11) + data/profile-local.json si existe
+    # (perfil de esta máquina: nunca viaja en el paquete USB).
+    param([string]$ScriptRoot)
+    $u = Get-Content "$ScriptRoot\data\universal-bloatware.json" -Raw -Encoding UTF8 | ConvertFrom-Json
+    $pPath = "$ScriptRoot\data\profile-local.json"
+    if (Test-Path $pPath) {
+        $p = Get-Content $pPath -Raw -Encoding UTF8 | ConvertFrom-Json
+        if ($p.blockA_extra -and $p.blockA_extra.groups) {
+            foreach ($g in $p.blockA_extra.groups.PSObject.Properties) {
+                $u.blockA.groups | Add-Member -NotePropertyName $g.Name -NotePropertyValue $g.Value -Force
+            }
+        }
+        if ($p.blockB) { $u | Add-Member -NotePropertyName 'blockB' -NotePropertyValue $p.blockB -Force }
+        if ($p.keep_always) { $u | Add-Member -NotePropertyName 'keep_always' -NotePropertyValue $p.keep_always -Force }
+    }
+    return $u
+}
+
+function Get-MergedTweaksCatalog {
+    # Universal (cualquier Windows 11) + data/profile-local.json si existe
+    # (perfil de esta máquina: nunca viaja en el paquete USB).
+    param([string]$ScriptRoot)
+    $u = Get-Content "$ScriptRoot\data\universal-tweaks.json" -Raw -Encoding UTF8 | ConvertFrom-Json
+    $pPath = "$ScriptRoot\data\profile-local.json"
+    if (Test-Path $pPath) {
+        $p = Get-Content $pPath -Raw -Encoding UTF8 | ConvertFrom-Json
+        if ($p.registry) {
+            foreach ($g in $p.registry.PSObject.Properties) {
+                $u.registry | Add-Member -NotePropertyName $g.Name -NotePropertyValue $g.Value -Force
+            }
+        }
+        if ($p.startup_disable) {
+            foreach ($g in $p.startup_disable.PSObject.Properties) {
+                $u.startup_disable | Add-Member -NotePropertyName $g.Name -NotePropertyValue $g.Value -Force
+            }
+        }
+        if ($p.ram_recoverable_estimate) {
+            foreach ($g in $p.ram_recoverable_estimate.PSObject.Properties) {
+                $u.ram_recoverable_estimate | Add-Member -NotePropertyName $g.Name -NotePropertyValue $g.Value -Force
+            }
+            $sum = 0
+            foreach ($g in $u.ram_recoverable_estimate.PSObject.Properties) {
+                if ($g.Name -ne 'total_mb') { $sum += [int]$g.Value }
+            }
+            $u.ram_recoverable_estimate | Add-Member -NotePropertyName 'total_mb' -NotePropertyValue $sum -Force
+        }
+    }
+    return $u
+}
+
 function Wait-KeyIfInteractive {
     param([switch]$Auto)
     if (-not $Auto -and $Host.Name -eq 'ConsoleHost' -and -not [Console]::IsInputRedirected) {

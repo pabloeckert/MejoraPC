@@ -65,7 +65,7 @@ def init_db():
         CREATE TABLE IF NOT EXISTS smart_recommendations (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             timestamp TEXT, priority TEXT, title TEXT, description TEXT,
-            module TEXT, applied INTEGER DEFAULT 0
+            module TEXT, applied INTEGER DEFAULT 0, auto_action TEXT
         );
         CREATE TABLE IF NOT EXISTS applied_actions (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -232,27 +232,26 @@ def main():
         for color, msg in alerts:
             console.print(f"  [{color}]![/] {msg}")
 
-    # ── Tabla RAM recuperable ── data/tweaks.json es la fuente de verdad
-    # (no hardcodear acá — si se agrega un tweak nuevo, este bloque tiene
-    # que reflejarlo solo, para no repetir el desfasaje que tenía esta lista).
+    # ── Tabla RAM recuperable ── universal-tweaks.json + profile-local.json
+    # (si existe) son la fuente de verdad. Etiquetas generadas del nombre de
+    # la clave, no hardcodeadas — si se agrega un tweak nuevo (universal o de
+    # perfil local), esta tabla lo refleja solo.
     console.print()
     console.print("[bold]═══ RAM POTENCIALMENTE RECUPERABLE ═══[/]")
-    labels = {
-        "game_bar_off": "Game Bar off",
-        "browsers_background_off": "Browsers background off",
-        "animaciones_off": "Animaciones off",
-        "corel_helper_off": "CorelDRAW helper off",
-        "superfetch_off": "Superfetch off",
-        "roblox_autostart_off": "Roblox autostart off",
-        "chrome_autolaunch_off": "Chrome autolaunch off",
-        "canva_autolaunch_off": "Canva autolaunch off",
-    }
     try:
-        with open(os.path.join(DATA, "tweaks.json"), "r", encoding="utf-8") as f:
-            estimate = json.load(f).get("ram_recoverable_estimate", {})
-        for key, label in labels.items():
-            if key in estimate:
-                console.print(f"  {label + ':':<26} ~{estimate[key]}MB")
+        with open(os.path.join(DATA, "universal-tweaks.json"), "r", encoding="utf-8") as f:
+            estimate = dict(json.load(f).get("ram_recoverable_estimate", {}))
+        profile_path = os.path.join(DATA, "profile-local.json")
+        if os.path.exists(profile_path):
+            with open(profile_path, "r", encoding="utf-8") as f:
+                local_estimate = json.load(f).get("ram_recoverable_estimate", {})
+            estimate.update(local_estimate)
+            estimate["total_mb"] = sum(v for k, v in estimate.items() if k != "total_mb")
+        for key, mb in estimate.items():
+            if key == "total_mb":
+                continue
+            label = key.replace("_off", "").replace("_", " ").capitalize() + " off"
+            console.print(f"  {label + ':':<26} ~{mb}MB")
         if "total_mb" in estimate:
             console.print(f"  [bold]TOTAL ESTIMADO: ~{estimate['total_mb']}MB[/]")
     except Exception:

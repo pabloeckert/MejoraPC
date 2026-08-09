@@ -8,7 +8,7 @@ param([switch]$Auto)
 $scriptRoot = Split-Path -Parent $PSScriptRoot
 . "$scriptRoot\lib\helpers.ps1"
 
-$dataFile = "$scriptRoot\data\tweaks.json"
+$dataFile = "$scriptRoot\data\universal-tweaks.json"
 $logDir   = "$scriptRoot\logs"
 if (-not (Test-Path $logDir)) { New-Item -ItemType Directory -Force $logDir | Out-Null }
 $logFile  = Join-Path $logDir "performance-$((Get-Date).ToString('yyyy-MM-dd')).log"
@@ -33,10 +33,10 @@ function Set-RegTweak {
 }
 
 if (-not (Test-Path $dataFile)) {
-    Write-Host "  [x] No se encuentra data/tweaks.json" -ForegroundColor Red
+    Write-Host "  [x] No se encuentra data/universal-tweaks.json" -ForegroundColor Red
     return
 }
-$tweaks = Get-Content $dataFile -Raw -Encoding UTF8 | ConvertFrom-Json
+$tweaks = Get-MergedTweaksCatalog -ScriptRoot $scriptRoot
 
 Clear-Host
 Write-Host ""
@@ -230,15 +230,11 @@ Write-Log "=== FIN PERFORMANCE ==="
 Write-Host ""
 Write-Host "  ── RAM estimada recuperable ──────────────────────" -ForegroundColor Cyan
 $e = $tweaks.ram_recoverable_estimate
-Write-Host "  Game Bar off:            ~$($e.game_bar_off)MB" -ForegroundColor Gray
-Write-Host "  Browsers background off: ~$($e.browsers_background_off)MB" -ForegroundColor Gray
-Write-Host "  Animaciones off:         ~$($e.animaciones_off)MB" -ForegroundColor Gray
-Write-Host "  CorelDRAW helper off:    ~$($e.corel_helper_off)MB" -ForegroundColor Gray
-Write-Host "  Superfetch off:          ~$($e.superfetch_off)MB" -ForegroundColor Gray
-Write-Host "  Roblox autostart off:    ~$($e.roblox_autostart_off)MB" -ForegroundColor Gray
-Write-Host "  Chrome autolaunch off:   ~$($e.chrome_autolaunch_off)MB" -ForegroundColor Gray
-Write-Host "  Canva autolaunch off:    ~$($e.canva_autolaunch_off)MB" -ForegroundColor Gray
-Write-Host "  TOTAL ESTIMADO:          ~$($e.total_mb)MB" -ForegroundColor White
+foreach ($k in $e.PSObject.Properties) {
+    if ($k.Name -eq 'total_mb') { continue }
+    Write-Host ("  {0,-28} ~{1}MB" -f $k.Name, $k.Value) -ForegroundColor Gray
+}
+Write-Host "  TOTAL ESTIMADO:              ~$($e.total_mb)MB" -ForegroundColor White
 Write-Host ""
 Write-Host "  Log: $logFile" -ForegroundColor DarkGray
 Write-Host ""

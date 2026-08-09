@@ -1,0 +1,54 @@
+{
+  "_meta": {
+    "profile": "universal",
+    "notes": "Tweaks de performance/privacidad seguros para cualquier Windows 11. Se aplican todos automáticamente sin confirmación, en cualquier PC.",
+    "updated": "2026-08-08"
+  },
+  "registry": {
+    "game_bar": [
+      { "path": "HKCU:\\Software\\Microsoft\\GameBar", "name": "AllowAutoGameMode", "value": 0, "type": "DWord" },
+      { "path": "HKCU:\\Software\\Microsoft\\GameBar", "name": "UseNexusForGameBarEnabled", "value": 0, "type": "DWord" },
+      { "path": "HKCU:\\System\\GameConfigStore", "name": "GameDVR_Enabled", "value": 0, "type": "DWord" },
+      { "path": "HKLM:\\SOFTWARE\\Policies\\Microsoft\\Windows\\GameDVR", "name": "AllowGameDVR", "value": 0, "type": "DWord" }
+    ],
+    "browsers_background": [
+      { "path": "HKLM:\\SOFTWARE\\Policies\\Google\\Chrome", "name": "BackgroundModeEnabled", "value": 0, "type": "DWord" },
+      { "path": "HKLM:\\SOFTWARE\\Policies\\Microsoft\\Edge", "name": "StartupBoostEnabled", "value": 0, "type": "DWord" },
+      { "path": "HKLM:\\SOFTWARE\\Policies\\BraveSoftware\\Brave", "name": "BackgroundModeEnabled", "value": 0, "type": "DWord" }
+    ],
+    "animaciones_off": [
+      { "path": "HKCU:\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\VisualEffects", "name": "VisualFXSetting", "value": 2, "type": "DWord" }
+    ]
+  },
+  "user_preferences_mask": {
+    "_desc": "HKCU:\\Control Panel\\Desktop\\UserPreferencesMask — deshabilita animaciones (perf).",
+    "path": "HKCU:\\Control Panel\\Desktop",
+    "name": "UserPreferencesMask",
+    "value_hex": "9012038010000000",
+    "type": "Binary"
+  },
+  "services": [
+    { "name": "SysMain", "action": "Disabled", "stop": true, "ram_estimate_mb": 100 },
+    { "name": "WSearch", "action": "Manual", "stop": false }
+  ],
+  "startup_disable": {},
+  "power": {
+    "hibernate_off": { "_desc": "powercfg /h off — libera espacio SSD = tamaño RAM" },
+    "pagefile_fijo": {
+      "_desc": "Pagefile fijo en SSD principal. min = RAM total (MB), max = RAM total x2 (MB).",
+      "multiplier_min": 1,
+      "multiplier_max": 2
+    },
+    "ultimate_performance": {
+      "_desc": "Crear si no existe y activar el plan Ultimate Performance.",
+      "template_guid": "e9a42b02-d5df-448d-aa00-03f14749eb61"
+    }
+  },
+  "ram_recoverable_estimate": {
+    "game_bar_off": 100,
+    "browsers_background_off": 400,
+    "animaciones_off": 50,
+    "superfetch_off": 100,
+    "total_mb": 650
+  }
+}

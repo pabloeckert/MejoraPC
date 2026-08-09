@@ -1,0 +1,83 @@
+{
+  "_meta": {
+    "profile": "universal",
+    "ram_gb": null,
+    "notes": "Bloatware MS Store / OEM genérico, seguro para cualquier Windows 11. Bloque A sin confirmación. Sin Bloque B — riesgo medio, requiere revisión, queda fuera del set automático para PCs ajenas.",
+    "updated": "2026-08-08"
+  },
+  "policy_msix": {
+    "_desc": "PackageFamilyNames para la política permanente RemoveDefaultMicrosoftStorePackages (CAPA 1). Windows los elimina en cada login y bloquea reinstalación. CAPA 2 fuerza la remoción inmediata por Appx en la sesión actual.",
+    "policy_base": "HKLM:\\SOFTWARE\\Policies\\Microsoft\\Windows\\Appx\\RemoveDefaultMicrosoftStorePackages",
+    "package_family_names": [
+      "Clipchamp.Clipchamp_yxz26nhyzhsrt",
+      "Microsoft.BingNews_8wekyb3d8bbwe",
+      "Microsoft.BingSearch_8wekyb3d8bbwe",
+      "Microsoft.BingWeather_8wekyb3d8bbwe",
+      "Microsoft.Copilot_8wekyb3d8bbwe",
+      "Microsoft.GamingApp_8wekyb3d8bbwe",
+      "Microsoft.GamingServices_8wekyb3d8bbwe",
+      "Microsoft.XboxGamingOverlay_8wekyb3d8bbwe",
+      "Microsoft.Xbox.TCUI_8wekyb3d8bbwe",
+      "Microsoft.XboxIdentityProvider_8wekyb3d8bbwe",
+      "Microsoft.GetHelp_8wekyb3d8bbwe",
+      "Microsoft.MicrosoftSolitaireCollection_8wekyb3d8bbwe",
+      "Microsoft.MicrosoftStickyNotes_8wekyb3d8bbwe",
+      "Microsoft.OutlookForWindows_8wekyb3d8bbwe",
+      "Microsoft.Todos_8wekyb3d8bbwe",
+      "Microsoft.WindowsFeedbackHub_8wekyb3d8bbwe",
+      "Microsoft.YourPhone_8wekyb3d8bbwe",
+      "Microsoft.PowerAutomateDesktop_8wekyb3d8bbwe",
+      "Microsoft.Windows.DevHome_8wekyb3d8bbwe",
+      "MicrosoftWindows.Client.WebExperience_cw5n1h2txyewy",
+      "MicrosoftCorporationII.MicrosoftFamily_8wekyb3d8bbwe",
+      "MicrosoftCorporationII.QuickAssist_8wekyb3d8bbwe",
+      "Microsoft.ZuneMusic_8wekyb3d8bbwe",
+      "Microsoft.WindowsAlarms_8wekyb3d8bbwe",
+      "Microsoft.WindowsCamera_8wekyb3d8bbwe",
+      "Microsoft.WindowsSoundRecorder_8wekyb3d8bbwe",
+      "MicrosoftWindows.CrossDevice_cw5n1h2txyewy",
+      "Microsoft.549981C3F5F10_8wekyb3d8bbwe",
+      "Microsoft.MicrosoftOfficeHub_8wekyb3d8bbwe"
+    ]
+  },
+  "blockA": {
+    "_desc": "Bajo riesgo, cero valor para cualquier usuario. Se eliminan sin confirmación.",
+    "groups": {
+      "xbox_gaming": [
+        "Microsoft.GamingApp",
+        "Microsoft.GamingServices",
+        "Microsoft.XboxGamingOverlay",
+        "Microsoft.Xbox.TCUI",
+        "Microsoft.XboxIdentityProvider",
+        "Microsoft.Edge.GameAssist"
+      ],
+      "microsoft_bloat": [
+        "Microsoft.BingNews",
+        "Microsoft.BingSearch",
+        "Microsoft.BingWeather",
+        "Microsoft.Copilot",
+        "Microsoft.MicrosoftDynamicsBusinessAnalyzer",
+        "Microsoft.Paint3DCreatures",
+        "Microsoft.WindowsFeedbackHub",
+        "Microsoft.GetHelp",
+        "Microsoft.Messaging",
+        "Microsoft.YourPhone",
+        "MicrosoftCorporationII.MicrosoftFamily",
+        "MicrosoftCorporationII.QuickAssist",
+        "Microsoft.StartExperiencesApp",
+        "Microsoft.WidgetsPlatformRuntime",
+        "Microsoft.Windows.DevHome",
+        "MicrosoftWindows.Client.WebExperience",
+        "Microsoft.MicrosoftForms",
+        "Microsoft.PowerAutomateDesktop",
+        "Microsoft.MicrosoftStickyNotes",
+        "Microsoft.Todos"
+      ],
+      "office_residuos": [
+        "Microsoft.Office.OneNoteVirtualPrinter",
+        "Microsoft.OfficePushNotificationUtility",
+        "Microsoft.Office.ActionsServer"
+      ]
+    }
+  }
+}
