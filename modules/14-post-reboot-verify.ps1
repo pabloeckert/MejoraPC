@@ -1,4 +1,4 @@
-[CmdletBinding()]
+﻿[CmdletBinding()]
 param()
 
 # ── MejoraPC — modules/14-post-reboot-verify.ps1 ───────────────────

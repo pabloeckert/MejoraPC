@@ -1,4 +1,4 @@
-[CmdletBinding()]
+﻿[CmdletBinding()]
 param([switch]$Auto)
 
 # ── MejoraPC — modules/15-hardware-check.ps1 ───────────────────────
