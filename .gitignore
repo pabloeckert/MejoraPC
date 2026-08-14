@@ -7,6 +7,8 @@ data/status.json
 data/monitor.log
 data/last-verify.json
 data/discovery-report.json
+data/last-hardware-check.json
+data/last-startup-audit.json
 
 # Backups generados (contienen info del sistema del usuario)
 backups/

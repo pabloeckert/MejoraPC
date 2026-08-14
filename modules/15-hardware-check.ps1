@@ -148,13 +148,23 @@ try {
 } catch { $old = @() }
 
 try {
-    $winget = & winget upgrade --accept-source-agreements 2>$null | Out-String
-    $driverPublishers = 'Intel', 'NVIDIA', 'Realtek', 'Advanced Micro Devices', 'AMD'
-    $driverLines = ($winget -split "`n") | Where-Object { $line = $_; $driverPublishers | Where-Object { $line -match $_ } }
-    if ($driverLines) {
-        Report WARN 'Actualizaciones disponibles (winget) de fabricantes de driver' "$($driverLines.Count) paquete(s) — correr 'winget upgrade' para ver el detalle, NO se auto-instala nada"
+    # winget puede colgarse minutos (fuentes lentas/prompts) — se acota con timeout
+    # en un job aparte para que el módulo nunca bloquee la corrida de mantenimiento.
+    $wingetJob = Start-Job -ScriptBlock { & winget upgrade --accept-source-agreements --disable-interactivity 2>$null }
+    if (Wait-Job $wingetJob -Timeout 45) {
+        $winget = Receive-Job $wingetJob | Out-String
+        Remove-Job $wingetJob -Force -ErrorAction SilentlyContinue
+        $driverPublishers = 'Intel', 'NVIDIA', 'Realtek', 'Advanced Micro Devices', 'AMD'
+        $driverLines = ($winget -split "`n") | Where-Object { $line = $_; $driverPublishers | Where-Object { $line -match $_ } }
+        if ($driverLines) {
+            Report WARN 'Actualizaciones disponibles (winget) de fabricantes de driver' "$($driverLines.Count) paquete(s) — correr 'winget upgrade' para ver el detalle, NO se auto-instala nada"
+        } else {
+            Report OK 'winget upgrade (drivers)' 'sin actualizaciones pendientes de Intel/NVIDIA/Realtek/AMD'
+        }
     } else {
-        Report OK 'winget upgrade (drivers)' 'sin actualizaciones pendientes de Intel/NVIDIA/Realtek/AMD'
+        Stop-Job $wingetJob -ErrorAction SilentlyContinue
+        Remove-Job $wingetJob -Force -ErrorAction SilentlyContinue
+        Report WARN 'winget upgrade' 'timeout de 45s sin respuesta — se saltea esta consulta'
     }
 } catch { Report WARN 'winget upgrade' 'no se pudo consultar (¿winget instalado?)' }
 
