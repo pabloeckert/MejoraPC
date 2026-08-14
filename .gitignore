@@ -35,5 +35,8 @@ __pycache__/
 Thumbs.db
 Desktop.ini
 
-# Claude Code local state
-.claude/
+# Claude Code local state (settings/permissions/locks de esta máquina —
+# no las skills, que sí viajan con el repo: son código/config, igual que
+# data/profile-local.json)
+.claude/settings.local.json
+.claude/scheduled_tasks.lock

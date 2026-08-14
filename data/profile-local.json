@@ -3,7 +3,7 @@
     "profile": "Pablo — definitivo",
     "ram_gb": 8,
     "notes": "Perfil LOCAL de esta máquina — nunca viaja en el paquete USB (installer/build-package.ps1 lo excluye). Se mergea sobre data/universal-tweaks.json y data/universal-bloatware.json vía lib/helpers.ps1 (Get-MergedTweaksCatalog / Get-MergedBloatCatalog). En una PC ajena, este archivo lo genera modules/00-discover.ps1 (encuesta breve) en vez de estar curado a mano.",
-    "updated": "2026-08-08",
+    "updated": "2026-08-14",
     "origin": "manual"
   },
   "survey": {
@@ -61,7 +61,23 @@
       ],
       "match": "CanvaAutoLaunch",
       "ram_estimate_mb": 40
+    },
+    "corel_softlanding_task": {
+      "_desc": "Tarea programada 'SoftLandingCreativeManagementTask' (gestión/telemetría de Corel, corre por COM handler 2 veces al día). Distinta de corel_update_helper (esa es el Run key del updater). No es la licencia de CorelDRAW ni el update helper — CorelDRAW sigue en keep_always, no se desinstala nada. Sin proceso residente asociado, por eso no suma a ram_recoverable_estimate.",
+      "run_keys": [],
+      "match": "SoftLandingCreativeManagementTask",
+      "ram_estimate_mb": 0
     }
+  },
+  "startup_disable_uwp": {
+    "_desc": "Apps UWP/MSIX (Store) usan un mecanismo de auto-arranque propio, separado de HKCU/HKLM Run: no lo cubren ni 'startup_disable' (run_keys+match) ni 03-performance.ps1/13-verify.ps1 todavía. Se detecta con Get-ChildItem sobre 'HKCU:\\Software\\Classes\\Local Settings\\Software\\Microsoft\\Windows\\CurrentVersion\\AppModel\\SystemAppData\\<PackageFamilyName>' (subclaves = TaskID, valor 'State' DWord: 2=habilitado, 1=deshabilitado). Se desactiva con Set-ItemProperty ...State -Value 1. Descubierto el 2026-08-14: Spotify y Firefox (versión Store, no la clásica) y Windows Terminal se reabrían solos después de que Pablo cerraba todo y apagaba — no era RestartApps (HKCU:\\...\\Winlogon\\RestartApps=1, que sigue activo y no se tocó) sino StartupTask propio de cada paquete.",
+    "applied_2026-08-14": [
+      { "package": "SpotifyAB.SpotifyMusic_zpdnekdrzrea0", "task_id": "Spotify", "state_set": 1 },
+      { "package": "SpotifyAB.SpotifyMusic_zpdnekdrzrea0", "task_id": "SpotifyLauncher", "state_set": 1 },
+      { "package": "Mozilla.Firefox_n80bbvh6b1yt2", "task_id": "LaunchOnLogin", "state_set": 1 },
+      { "package": "Microsoft.WindowsTerminal_8wekyb3d8bbwe", "task_id": "StartTerminalOnLoginTask", "state_set": 1 }
+    ],
+    "roadmap_note": "Si se reinstalan/actualizan estas apps el PackageFamilyName puede cambiar de sufijo (como GoogleChromeAutoLaunch_<hash> en startup_disable) y este bloqueo dejaría de aplicar. Para que 13-verify.ps1 lo re-verifique automáticamente, o 03-performance.ps1 lo re-aplique, habría que extenderlos a leer esta rama del registro además de run_keys — no implementado todavía."
   },
   "ram_recoverable_estimate": {
     "corel_helper_off": 200,

@@ -17,6 +17,41 @@ PCs. Suite de módulos PowerShell (optimización) + monitoreo Python
   local" abajo. **No es el único perfil soportado**: en otra PC,
   `modules/00-discover.ps1` genera su propio `profile-local.json`.
 
+## Regla de transcripción de sesión — NO NEGOCIABLE (dogma, 2026-08-09)
+Cada vez que se actualiza este archivo (`CLAUDE.md`), actualizar en el mismo
+turno `backups/transcripcion-sesion-completa.md` para que quede al día con
+toda la conversación de la sesión hasta ese punto. La transcripción va en
+texto corrido, sin marcar quién habla en cada momento (ni "usuario:" ni
+"asistente:"), incluyendo decisiones, hallazgos y explicaciones en prosa,
+más comandos de terminal, JSON crudo de herramientas y outputs técnicos
+(git, SQL, curl, etc.) literales, más el código HTML/MD final completo de
+cualquier archivo relevante generado en la sesión (no resumido). Adjuntos,
+archivos pegados por el usuario e imágenes también se transcriben a texto
+dentro del mismo documento. Es una regla recurrente, no una tarea de una
+sola vez — se repite en cada sesión donde se toque `CLAUDE.md`.
+
+## Regla de commit/push inmediato — NO NEGOCIABLE (dogma, 2026-08-14)
+Todo cambio de código, configuración o documentación (`CLAUDE.md`, módulos
+PowerShell, `monitor/*.py`, `data/*.json` trackeados, skills en
+`.claude/skills/`, `.gitignore`, etc.) se commitea y se pushea a `origin`
+(GitHub, repo **público** `pabloeckert/MejoraPC`) en el mismo turno en que
+se termina de escribir — nunca queda como cambio local sin subir. Repo
+local y remoto siempre sincronizados.
+
+Excepción explícita, no negociable en el otro sentido: todo lo que ya
+estaba (o queda) gitignoreado por contener información personal / huella
+de esta máquina específica — `backups/` completo (incluida
+`transcripcion-sesion-completa.md`: SID de usuario, inventario de hardware/
+software, hábitos de uso), `data/mejorapc.db`, `data/status.json`,
+`data/monitor.log`, `data/last-verify.json`, `data/discovery-report.json`,
+`profiles/`, `rescue/`, `.claude/settings.local.json`,
+`.claude/scheduled_tasks.lock` — sigue sin subirse nunca. El repo es
+público; esos archivos son el mismo tipo de dato que `profile-local.json`
+ya trata como frontera de seguridad (con la diferencia de que
+`profile-local.json` sí se trackea: es curaduría de decisiones, no huella
+cruda del sistema). Decisión tomada el 2026-08-14 junto con Pablo, tras
+confirmar que el repo es público.
+
 ## Regla global de background — NO NEGOCIABLE
 - Usar `pythonw.exe` (no `python.exe`) en toda scheduled task.
 - Tasks con `-WindowStyle Hidden -ExecutionPolicy Bypass`, sin consola.
@@ -86,9 +121,28 @@ específico de una máquina/usuario particular:
   - `13-verify.ps1` — verificación REAL post-cambio: relee disco/registry/
     servicios directo. Reporta VERIFICADO ✓ / PENDIENTE / FALLIDO ✗, y en
     `-Auto` vuelca contadores a `data/last-verify.json`.
+  - `15-hardware-check.ps1` — diagnóstico de hardware y drivers, SOLO
+    REPORTA (nunca instala/actualiza nada): salud de disco (SMART/
+    reliability), CPU (carga/throttling/errores WHEA), RAM (capacidad/
+    errores en Event Log), drivers (antigüedad, dispositivos con problema
+    vía `pnputil`, updates disponibles vía `winget upgrade` filtrado a
+    fabricantes de driver). Vuelca a `data/last-hardware-check.json`.
+    Fuera del pipeline automático de `run.ps1` — lo dispara la rutina
+    `mantenimiento` (ver más abajo).
+  - `16-startup-audit.ps1` — auditoría de TODO lo que puede arrancar solo,
+    más allá del catálogo `startup_disable` clásico (Run keys): carpetas
+    Startup, tareas programadas Logon/Boot, Winlogon Shell/Userinit,
+    AppInit_DLLs, y StartupTask de apps UWP/Store (`AppModel\
+    SystemAppData`, invisible para Run keys — ver `startup_disable_uwp` en
+    `profile-local.json`). Reafirma solo lo ya aprobado si "drifeó": reporta
+    sin tocar todo lo nuevo. Vuelca a `data/last-startup-audit.json`. Fuera
+    del pipeline automático, igual que `15-hardware-check.ps1`.
   - Módulos del pipeline (00,01,03,04,06,10,13) aceptan `-Auto`: sin
     submenú, decisión por defecto, sin ENTER final. `02-debloat.ps1` usa su
     `-Yes` existente (incluye Bloque B — decisión explícita de Pablo).
+    `15` y `16` también aceptan `-Auto` pero quedan fuera del pipeline de
+    `run.ps1` por defecto (son diagnóstico profundo, no todo runs necesitan
+    correrlos) — se disparan desde la rutina `mantenimiento`.
 - **monitor/** — Python:
   - `scan.py` — MANUAL, output rich, hardware + alertas, guarda en DB y
     `status.json`. Tabla de RAM recuperable lee universal+local dinámicamente.
@@ -126,16 +180,33 @@ específico de una máquina/usuario particular:
   encuesta en su primera corrida real).
 - **data/** — `universal-tweaks.json`, `universal-bloatware.json`,
   `profile-local.json` (nunca viaja al USB), `mejorapc.db` (SQLite),
-  `status.json`, `discovery-report.json`, `last-verify.json`.
+  `status.json`, `discovery-report.json`, `last-verify.json`,
+  `last-hardware-check.json`, `last-startup-audit.json`.
   `tweaks.json`/`bloatware.json` quedan como legado (reemplazados por la
   capa universal+local), no se borraron todavía.
 - **backups/** — `debloat-removed-FECHA.txt`, `.reg`, `python-packages-*.txt`.
 - **logs/** — `debloat-FECHA.log`, `performance-FECHA.log`, `ultimo-informe.txt`
-  (consola), `dashboard.html` (visual).
+  (consola), `dashboard.html` (visual), `hardware-check-FECHA.log`,
+  `startup-audit-FECHA.log`.
 
 > PowerShell 5.1 no lee SQLite nativamente: los scripts Python escriben además
 > un `data/status.json` liviano que `run.ps1` lee para el banner. La DB es la
 > fuente de verdad; las recomendaciones pendientes se consultan vía Python.
+
+## Rutina "mantenimiento" (skill, 2026-08-14)
+`.claude/skills/mantenimiento/SKILL.md` — se dispara cuando Pablo dice la
+palabra "mantenimiento". Es la forma repetible de todo lo que ya hace
+`run.ps1` en automático MÁS diagnóstico profundo: corre `15-hardware-check.ps1`
+y `16-startup-audit.ps1` (ver arriba), reanaliza cruzando
+`last-verify.json`/`last-hardware-check.json`/`last-startup-audit.json`/
+`smart_recommendations`, investiga a fondo cualquier hallazgo nuevo (mismo
+criterio forense que resolvió el caso Spotify/Firefox/Windows Terminal
+reabriéndose solos — ver `startup_disable_uwp` en `profile-local.json`),
+aplica lo de bajo riesgo y **propone con una confirmación** lo de riesgo
+medio/alto (drivers, hallazgos no reconocidos) — nunca auto-aplica algo así
+en silencio. Al cerrar, actualiza memoria de Claude (decisiones tomadas, no
+datos crudos — esos ya viven en `mejorapc.db`) para que el próximo
+"mantenimiento" no arranque de cero.
 
 ## DB (data/mejorapc.db)
 `hardware_profile`, `usage_samples`, `ram_alerts`,
@@ -180,6 +251,8 @@ que relee el estado del sistema en vez de confiar en el output de otro módulo.
 .\modules\12-workflow-optimizer.ps1 -Restore # revertir sesión dev (reactiva Windows Update)
 .\modules\13-verify.ps1                     # verificación real post-cambio
 .\modules\14-post-reboot-verify.ps1         # verificación post-reinicio
+.\modules\15-hardware-check.ps1 -Auto       # diagnóstico de hardware/drivers (solo reporta)
+.\modules\16-startup-audit.ps1 -Auto        # auditoría total de arranque (Run/tasks/UWP StartupTask)
 .\installer\build-package.ps1               # empaquetar para USB (excluye datos personales, se auto-verifica)
 
 pip install -r monitor/requirements.txt     # psutil, rich, schedule (scan.py autoinstala si faltan)
