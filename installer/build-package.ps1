@@ -4,13 +4,16 @@ param(
 )
 
 # ── MejoraPC — installer/build-package.ps1 ─────────────────────────
-# Empaqueta el repo para llevar en USB. Corre en la PC de Pablo, ANTES de
-# copiar a un pendrive — no se distribuye con el paquete. Excluye todo lo
-# que es historial/datos personales de esta máquina: el paquete resultante
-# arranca "limpio" en cualquier PC, y modules/00-discover.ps1 genera su
-# propio data/profile-local.json ahí (nunca el de Pablo).
+# Empaqueta el repo para llevar a otra PC (USB, OneDrive compartido, etc).
+# Corre en la PC de Pablo, ANTES de trasladarlo — no se distribuye con el
+# paquete. Excluye todo lo que es historial/datos personales de esta
+# máquina: el paquete resultante arranca "limpio" en cualquier PC, y
+# modules/00-discover.ps1 genera su propio data/profile-local.json ahí
+# (nunca el de Pablo). Genera tanto la carpeta portable como un .zip listo
+# para copiar/sincronizar.
 
 $scriptRoot = Split-Path -Parent $PSScriptRoot
+$zipPath = "$scriptRoot\dist\MejoraPC.zip"
 
 Write-Host ""
 Write-Host "  Empaquetando MejoraPC para USB..." -ForegroundColor Cyan
@@ -28,6 +31,7 @@ New-Item -ItemType Directory -Force -Path $OutDir | Out-Null
 $excludeFiles = @(
     'mejorapc.db', 'profile-local.json', 'status.json',
     'last-verify.json', 'discovery-report.json', 'monitor.log',
+    'last-hardware-check.json', 'last-startup-audit.json',
     'hardware-profile.json', 'recommendations.json', 'smart-recommendations.json',
     'reporte_limpieza_resultado.csv', 'reporte_limpieza_resultado.txt'
 )
@@ -58,7 +62,21 @@ if ($leaked.Count -gt 0) {
 Write-Host "  [+] Paquete listo en: $OutDir" -ForegroundColor Green
 Write-Host "  [+] Verificado: sin datos personales en el paquete." -ForegroundColor Green
 Write-Host ""
-Write-Host "  Copiá esa carpeta completa a un USB. El usuario final hace" -ForegroundColor DarkGray
-Write-Host "  doble-click en Setup.bat desde ahí." -ForegroundColor DarkGray
+
+# ── Comprimir a .zip, listo para USB, OneDrive, etc ─────────────────
+if (Test-Path $zipPath) { Remove-Item -Path $zipPath -Force }
+Compress-Archive -Path "$OutDir\*" -DestinationPath $zipPath -CompressionLevel Optimal
+
+if (-not (Test-Path $zipPath)) {
+    Write-Host "  [x] No se pudo crear el .zip." -ForegroundColor Red
+    exit 1
+}
+
+Write-Host "  [+] Zip listo en: $zipPath" -ForegroundColor Green
+Write-Host ""
+Write-Host "  Copiá ese .zip a la PC destino (USB, carpeta de OneDrive" -ForegroundColor DarkGray
+Write-Host "  compartida, etc), descomprimilo ahí, y hacé doble-click en" -ForegroundColor DarkGray
+Write-Host "  Setup.bat. Se auto-eleva a administrador y corre todo solo:" -ForegroundColor DarkGray
+Write-Host "  descubrimiento de esa PC + optimización + monitor invisible." -ForegroundColor DarkGray
 Write-Host ""
 exit 0

@@ -170,13 +170,17 @@ específico de una máquina/usuario particular:
     del pipeline. Incluye sección "Qué se cambió / Cómo revertir".
   - `record_run.py` — expone `record()` (importable) y CLI; escribe
     `applied_actions` y marca `smart_recommendations.applied`.
-- **installer/build-package.ps1** — empaqueta el repo para USB, excluyendo
-  TODO archivo con datos personales de esta máquina (ver lista en el
-  script — se auto-verifica que ninguno llegue al paquete). Corre en la PC
-  de Pablo, no se distribuye.
-- **Setup.bat** (raíz) — el que se dobleclickea desde el USB en la PC
-  destino: se auto-eleva, copia a `%LOCALAPPDATA%\MejoraPC`, crea acceso
-  directo en el Escritorio, lanza `run.ps1` (dispara descubrimiento +
+- **installer/build-package.ps1** — empaqueta el repo para llevar a otra PC
+  (USB, carpeta de OneDrive compartida, etc), excluyendo TODO archivo con
+  datos personales de esta máquina (ver lista en el script — se
+  auto-verifica que ninguno llegue al paquete, incluidos
+  `last-hardware-check.json`/`last-startup-audit.json`). Genera tanto la
+  carpeta portable (`dist/MejoraPC-portable/`) como un `.zip`
+  (`dist/MejoraPC.zip`) listo para copiar. Corre en la PC de Pablo, no se
+  distribuye.
+- **Setup.bat** (raíz) — el que se dobleclickea tras descomprimir el zip en
+  la PC destino: se auto-eleva, copia a `%LOCALAPPDATA%\MejoraPC`, crea
+  acceso directo en el Escritorio, lanza `run.ps1` (dispara descubrimiento +
   encuesta en su primera corrida real).
 - **data/** — `universal-tweaks.json`, `universal-bloatware.json`,
   `profile-local.json` (nunca viaja al USB), `mejorapc.db` (SQLite),
@@ -254,7 +258,7 @@ que relee el estado del sistema en vez de confiar en el output de otro módulo.
 .\modules\14-post-reboot-verify.ps1         # verificación post-reinicio
 .\modules\15-hardware-check.ps1 -Auto       # diagnóstico de hardware/drivers (solo reporta)
 .\modules\16-startup-audit.ps1 -Auto        # auditoría total de arranque (Run/tasks/UWP StartupTask)
-.\installer\build-package.ps1               # empaquetar para USB (excluye datos personales, se auto-verifica)
+.\installer\build-package.ps1               # empaquetar en carpeta + .zip para otra PC (excluye datos personales, se auto-verifica)
 
 pip install -r monitor/requirements.txt     # psutil, rich, schedule (scan.py autoinstala si faltan)
 python monitor\scan.py                      # manual, output rich

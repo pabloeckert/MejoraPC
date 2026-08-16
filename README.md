@@ -47,15 +47,18 @@ RAM seguido, horas pico, tendencias) y `monitor/auto_adjust.py` promueve las
 recomendaciones ya validadas al perfil local — se aplican en la corrida
 siguiente, con el mismo mecanismo verificado de siempre.
 
-## 💾 Llevarlo a otra PC (USB)
+## 💾 Llevarlo a otra PC (USB, OneDrive, lo que sea)
 
 ```powershell
-.\installer\build-package.ps1   # empaqueta en dist/MejoraPC-portable/ (excluye tus datos personales)
+.\installer\build-package.ps1   # genera dist/MejoraPC-portable/ y dist/MejoraPC.zip (excluye tus datos personales)
 ```
 
-Copiá esa carpeta a un USB. En la PC destino: doble-click en `Setup.bat`
-(se auto-eleva, instala en `%LOCALAPPDATA%\MejoraPC`, crea acceso directo,
-y arranca el descubrimiento + optimización).
+Copiá `dist/MejoraPC.zip` a la PC destino por el medio que quieras — USB,
+una carpeta de OneDrive compartida, lo que sea. Ahí: descomprimilo y
+doble-click en `Setup.bat` (se auto-eleva a administrador, instala en
+`%LOCALAPPDATA%\MejoraPC`, crea acceso directo, y arranca solo: escanea esa
+PC, hace una encuesta breve, optimiza, e instala el monitor invisible para
+aprender de esa máquina en adelante).
 
 ## 🖥️ Menú manual (`-Menu`)
 
