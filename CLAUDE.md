@@ -189,7 +189,11 @@ específico de una máquina/usuario particular:
 - **Setup.bat** (raíz) — el que se dobleclickea tras descomprimir el zip en
   la PC destino: se auto-eleva, copia a `%LOCALAPPDATA%\MejoraPC`, crea
   acceso directo en el Escritorio, lanza `run.ps1` (dispara descubrimiento +
-  encuesta en su primera corrida real).
+  encuesta en su primera corrida real). Escribe su propio `setup-log.txt`
+  con checkpoints (elevación, resultado de robocopy, versión de PowerShell,
+  código de salida de `run.ps1`) en la misma carpeta donde se descomprimió
+  — independiente del diagnóstico de `run.ps1`, para el caso en que falle
+  ANTES de llegar a lanzarlo (política de ejecución, elevación denegada).
 - **data/** — `universal-tweaks.json`, `universal-bloatware.json`,
   `profile-local.json` (nunca viaja al USB), `mejorapc.db` (SQLite),
   `status.json`, `discovery-report.json`, `last-verify.json`,
@@ -252,6 +256,15 @@ skill `mejora-continua-brand` antes de tocar el CSS.
 ## Convención de UI
 Usar `Write-Status -Label -Value -Status OK|WARN|ERROR|INFO` de `lib/helpers.ps1`.
 Cabeceras con caja `╔═╗`. Español rioplatense.
+
+**Todo `.ps1` nuevo necesita BOM UTF-8.** Windows PowerShell 5.1 (la que
+corre `run.ps1` elevado en la mayoría de las PCs) lee un `.ps1` sin BOM con
+el codepage ANSI del sistema, no UTF-8 — un guion largo `—` dentro de un
+string con comillas dobles se decodifica mal y corta el parseo del resto
+del archivo, con errores de sintaxis que no tienen nada que ver con la
+causa real. Verificar con `[System.IO.File]::ReadAllBytes($path)[0..2]` →
+debe ser `239,187,191`. Si un módulo nuevo falla con errores de parseo raros
+bajo PowerShell 5.1, sospechar esto primero.
 
 ## Comandos comunes
 No hay build/lint/test formal (sin Pester, sin pytest). "Test" real = `13-verify.ps1`,
