@@ -181,7 +181,8 @@ específico de una máquina/usuario particular:
 - **data/** — `universal-tweaks.json`, `universal-bloatware.json`,
   `profile-local.json` (nunca viaja al USB), `mejorapc.db` (SQLite),
   `status.json`, `discovery-report.json`, `last-verify.json`,
-  `last-hardware-check.json`, `last-startup-audit.json`.
+  `last-hardware-check.json`, `last-startup-audit.json`, `monitor.log`
+  (log de los scripts de background, INVISIBLE).
   `tweaks.json`/`bloatware.json` quedan como legado (reemplazados por la
   capa universal+local), no se borraron todavía.
 - **backups/** — `debloat-removed-FECHA.txt`, `.reg`, `python-packages-*.txt`.
