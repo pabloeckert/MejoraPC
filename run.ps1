@@ -249,6 +249,25 @@ if (-not $Menu) {
 
     if ($transcriptOn) { try { Stop-Transcript | Out-Null } catch { } }
 
+    # Espejo opcional: si data/mirror-output-dir.txt existe (se arma a mano
+    # antes de empaquetar para un despliegue puntual, no viaja en el
+    # template universal), copiar el diagnóstico ahí también — pensado para
+    # una carpeta sincronizada por OneDrive, así llega solo sin que nadie
+    # tenga que buscarlo ni mandarlo a mano.
+    $mirrorConfig = "$scriptRoot\data\mirror-output-dir.txt"
+    if (Test-Path $mirrorConfig) {
+        try {
+            $mirrorDir = (Get-Content $mirrorConfig -Raw).Trim()
+            if ($mirrorDir) {
+                if (-not (Test-Path $mirrorDir)) { New-Item -ItemType Directory -Force -Path $mirrorDir -ErrorAction Stop | Out-Null }
+                Copy-Item -Path $diagLog -Destination (Join-Path $mirrorDir 'ultimo-diagnostico.txt') -Force -ErrorAction Stop
+                Write-Host "  Copiado también a: $mirrorDir" -ForegroundColor DarkGray
+            }
+        } catch {
+            Write-Host "  [!] No se pudo copiar el diagnóstico a la carpeta espejo: $_" -ForegroundColor Yellow
+        }
+    }
+
     Write-Host ""
     Write-Host "  Diagnóstico completo guardado en: $diagLog" -ForegroundColor DarkGray
     Write-Host "  Si algo se ve raro, adjuntá ese archivo." -ForegroundColor DarkGray

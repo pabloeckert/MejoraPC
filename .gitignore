@@ -20,6 +20,12 @@ dist/
 # Rescue points (contienen info del sistema del usuario)
 rescue/
 
+# Destino de espejo de diagnóstico para un despliegue puntual (ver
+# run.ps1) — contiene una ruta con nombre de usuario/carpeta de otra
+# persona, no del propio Pablo. Se arma a mano antes de empaquetar para
+# ese despliegue específico, no es parte del template universal.
+data/mirror-output-dir.txt
+
 # Profiles (configuraciones del usuario)
 profiles/
 

@@ -1,4 +1,4 @@
-# Ejecutar como Administrador
+﻿# Ejecutar como Administrador
 # Uso: powershell -ExecutionPolicy Bypass -File C:\Github\Herramientas\MejoraPC\reporte_limpieza.ps1
 
 $report = @()
