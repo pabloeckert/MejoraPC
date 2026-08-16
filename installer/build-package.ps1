@@ -47,6 +47,17 @@ if ($LASTEXITCODE -ge 8) {
     exit 1
 }
 
+# Marca de versión — para saber exactamente qué código corrió en una PC
+# ajena al leer un diagnóstico enviado de vuelta (ver Get-DiagnosticHeader).
+$gitHash = $null
+try { $gitHash = (git -C $scriptRoot rev-parse --short HEAD 2>$null) } catch { }
+$buildInfo = if ($gitHash) {
+    "commit $gitHash — empaquetado $(Get-Date -Format 'yyyy-MM-dd HH:mm')"
+} else {
+    "empaquetado $(Get-Date -Format 'yyyy-MM-dd HH:mm') (sin info de git)"
+}
+Set-Content -Path "$OutDir\data\build-version.txt" -Value $buildInfo -Encoding UTF8
+
 # Verificación: ninguno de los archivos excluidos debe existir en destino.
 $leaked = @()
 foreach ($f in $excludeFiles) {

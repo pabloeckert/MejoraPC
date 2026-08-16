@@ -223,7 +223,36 @@ function Invoke-AutoOptimize {
 }
 
 if (-not $Menu) {
+    # Diagnóstico completo: graba TODO lo que pasa por consola (incluidos
+    # errores rojos que si no, desaparecen apenas se scrollean) a un único
+    # archivo, sin ocultar nada en pantalla — pensado para adjuntar si algo
+    # sale raro en una PC ajena que no se puede inspeccionar directo.
+    $diagLog = "$scriptRoot\logs\ultimo-diagnostico.txt"
+    $Error.Clear()
+    $transcriptOn = $false
+    try { Start-Transcript -Path $diagLog -Force -ErrorAction Stop | Out-Null; $transcriptOn = $true } catch { }
+
+    Write-Host (Get-DiagnosticHeader -ScriptRoot $scriptRoot)
+
     Invoke-AutoOptimize
+
+    if ($Error.Count -gt 0) {
+        Write-Host ""
+        Write-Host "  ═══ ERRORES DE POWERSHELL CAPTURADOS EN ESTA CORRIDA ($($Error.Count)) ═══" -ForegroundColor Red
+        for ($i = $Error.Count - 1; $i -ge 0; $i--) {
+            Write-Host "`n  --- Error $($Error.Count - $i) de $($Error.Count) ---" -ForegroundColor Red
+            $Error[$i] | Format-List * -Force | Out-String -Width 200 | Write-Host
+        }
+    } else {
+        Write-Host "`n  Sin errores de PowerShell capturados en esta corrida." -ForegroundColor Green
+    }
+
+    if ($transcriptOn) { try { Stop-Transcript | Out-Null } catch { } }
+
+    Write-Host ""
+    Write-Host "  Diagnóstico completo guardado en: $diagLog" -ForegroundColor DarkGray
+    Write-Host "  Si algo se ve raro, adjuntá ese archivo." -ForegroundColor DarkGray
+    Write-Host ""
     return
 }
 

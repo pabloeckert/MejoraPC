@@ -92,13 +92,19 @@ específico de una máquina/usuario particular:
   seguridad → python cleanup solo-reporte → análisis inteligente →
   auto-ajuste → verificación real → informe consolidado + dashboard HTML),
   persistiendo cada paso en `applied_actions` (`monitor/record_run.py`). El
-  menú interactivo clásico sigue existiendo detrás de `.\run.ps1 -Menu`.
-  `05-rescate.ps1` y `12-workflow-optimizer.ps1` quedan siempre fuera del
-  pipeline automático (emergencia / sesión dev, no "optimizar").
+  modo automático envuelve toda la corrida en `Start-Transcript`/
+  `Stop-Transcript` hacia `logs/ultimo-diagnostico.txt` (encabezado de
+  `Get-DiagnosticHeader` + dump de `$Error` al final) — pensado para
+  diagnosticar remotamente una PC ajena donde algo sale mal: se adjunta ese
+  único archivo. El menú interactivo clásico sigue existiendo detrás de
+  `.\run.ps1 -Menu`. `05-rescate.ps1` y `12-workflow-optimizer.ps1` quedan
+  siempre fuera del pipeline automático (emergencia / sesión dev, no
+  "optimizar").
 - **lib/helpers.ps1** — funciones compartidas: `Write-Status`,
   `ConvertTo-HumanReadable`, `Get-MergedBloatCatalog`/`Get-MergedTweaksCatalog`
   (merge universal+local), `Wait-KeyIfInteractive` (reemplaza el ENTER final
-  cuando `-Auto`), etc.
+  cuando `-Auto`), `Get-DiagnosticHeader` (equipo/OS/PowerShell/Python/build
+  para diagnóstico remoto), etc.
 - **modules/** — módulos de optimización PowerShell:
   - `00-discover.ps1` — motor de descubrimiento, corre UNA vez por máquina
     (gate: `data/discovery-report.json`). Enumera software instalado,
@@ -176,8 +182,10 @@ específico de una máquina/usuario particular:
   auto-verifica que ninguno llegue al paquete, incluidos
   `last-hardware-check.json`/`last-startup-audit.json`). Genera tanto la
   carpeta portable (`dist/MejoraPC-portable/`) como un `.zip`
-  (`dist/MejoraPC.zip`) listo para copiar. Corre en la PC de Pablo, no se
-  distribuye.
+  (`dist/MejoraPC.zip`) listo para copiar, y escribe
+  `data/build-version.txt` (commit de git + fecha de empaquetado) dentro
+  del paquete, para saber qué versión corrió al leer un diagnóstico
+  enviado desde otra PC. Corre en la PC de Pablo, no se distribuye.
 - **Setup.bat** (raíz) — el que se dobleclickea tras descomprimir el zip en
   la PC destino: se auto-eleva, copia a `%LOCALAPPDATA%\MejoraPC`, crea
   acceso directo en el Escritorio, lanza `run.ps1` (dispara descubrimiento +
@@ -192,7 +200,9 @@ específico de una máquina/usuario particular:
 - **backups/** — `debloat-removed-FECHA.txt`, `.reg`, `python-packages-*.txt`.
 - **logs/** — `debloat-FECHA.log`, `performance-FECHA.log`, `ultimo-informe.txt`
   (consola), `dashboard.html` (visual), `hardware-check-FECHA.log`,
-  `startup-audit-FECHA.log`.
+  `startup-audit-FECHA.log`, `ultimo-diagnostico.txt` (transcript completo
+  de la última corrida automática + errores de PowerShell capturados — para
+  adjuntar si algo falla en una PC ajena).
 
 > PowerShell 5.1 no lee SQLite nativamente: los scripts Python escriben además
 > un `data/status.json` liviano que `run.ps1` lee para el banner. La DB es la

@@ -157,6 +157,48 @@ function Get-MergedTweaksCatalog {
     return $u
 }
 
+function Get-DiagnosticHeader {
+    # Encabezado de contexto para logs/ultimo-diagnostico.txt — info del
+    # equipo/entorno que ayuda a diagnosticar remotamente un run.ps1 corrido
+    # en una PC ajena (sin acceso directo a esa máquina).
+    param([string]$ScriptRoot)
+    $isAdmin = ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
+    $os = Get-CimInstance Win32_OperatingSystem -ErrorAction SilentlyContinue
+    $cs = Get-CimInstance Win32_ComputerSystem -ErrorAction SilentlyContinue
+
+    $pyVersion = 'no detectado'
+    foreach ($c in @('python', 'py')) {
+        if (Get-Command $c -ErrorAction SilentlyContinue) {
+            try { $pyVersion = (& $c --version 2>&1 | Out-String).Trim() } catch { }
+            break
+        }
+    }
+
+    $buildFile = "$ScriptRoot\data\build-version.txt"
+    $build = if (Test-Path $buildFile) { (Get-Content $buildFile -Raw).Trim() } else { 'desarrollo local (sin data\build-version.txt)' }
+    $onOneDrive = $ScriptRoot -match 'OneDrive'
+
+    $ramGB = if ($cs.TotalPhysicalMemory) { [math]::Round($cs.TotalPhysicalMemory / 1GB, 1) } else { '?' }
+
+    return @"
+═══════════════════════════════════════════════════════════
+  MejoraPC — Diagnóstico completo
+═══════════════════════════════════════════════════════════
+Fecha/hora:        $(Get-Date -Format 'yyyy-MM-dd HH:mm:ss')
+Build instalado:   $build
+Equipo:            $($cs.Manufacturer) $($cs.Model) — $env:COMPUTERNAME
+Windows:           $($os.Caption) $($os.Version) (Build $($os.BuildNumber))
+PowerShell:        $($PSVersionTable.PSVersion) ($($PSVersionTable.PSEdition))
+Corriendo como admin: $isAdmin
+Ruta de ejecución: $ScriptRoot
+  ¿Carpeta sincronizada por OneDrive?: $onOneDrive
+Python:            $pyVersion
+CPU/RAM:           $($cs.NumberOfLogicalProcessors) núcleos lógicos, ${ramGB}GB RAM
+═══════════════════════════════════════════════════════════
+
+"@
+}
+
 function Wait-KeyIfInteractive {
     param([switch]$Auto)
     if (-not $Auto -and $Host.Name -eq 'ConsoleHost' -and -not [Console]::IsInputRedirected) {
