@@ -5,7 +5,7 @@ lo que es seguro para cualquier equipo, aprende de tu uso, y te muestra un
 informe visual — todo sin menús ni confirmaciones. Empaquetable en USB para
 llevarlo a otra PC.
 
-> Desarrollado sobre una BANGHO MAX L5 (i7-10510U, 8GB RAM). Funciona en
+> Desarrollado sobre una BANGHO MAX L5 (i7-10510U, 16GB RAM). Funciona en
 > cualquier Windows 11.
 
 ---
@@ -112,7 +112,7 @@ memoria está crítica (<2.5GB) o si hay recomendaciones inteligentes pendientes
 
 `data/profile-local.json` **nunca viaja en el paquete USB** — es la
 frontera de seguridad entre "esta PC" y cualquier otra. En esta máquina
-(Pablo): 8GB RAM crítico, dev full-stack (Claude Code, VSCode, Git, Node,
+(Pablo): 16GB RAM, dev full-stack (Claude Code, VSCode, Git, Node,
 Python 3.14), hijo con Roblox nativo, browsers Chrome/Brave/Edge.
 
 Catálogo universal (cualquier PC) en

@@ -46,7 +46,7 @@ function Show-Banner {
     Write-Host "  | |\/| |/ _ \ |/ _ \| '__/ _\` | |_) | |    " -ForegroundColor Cyan
     Write-Host "  | |  | |  __/ | (_) | | | (_| |  __/| |___ " -ForegroundColor Cyan
     Write-Host "  |_|  |_|\___|_|\___/|_|  \__,_|_|    \____|" -ForegroundColor Cyan
-    Write-Host "                        perfil definitivo · 8GB" -ForegroundColor DarkGray
+    Write-Host "                        perfil definitivo · 16GB" -ForegroundColor DarkGray
     Write-Host ""
 
     # Estado desde data/status.json

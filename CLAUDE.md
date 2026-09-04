@@ -8,7 +8,10 @@ PCs. Suite de módulos PowerShell (optimización) + monitoreo Python
 (scan/monitor/analyze/report).
 
 ## Perfil de Pablo (esta máquina)
-- **RAM: 8GB — crítico.** Toda decisión prioriza liberar RAM.
+- **RAM: 16GB** (upgrade 2026-09-04, un solo slot — antes 8GB era crítico).
+  Ya no es el cuello de botella principal, pero los tweaks de startup
+  aplicados con RAM crítica (Corel/Roblox/Chrome/Canva) siguen vigentes:
+  siguen liberando RAM sin costo, no hay razón para revertirlos.
 - Uso: desarrollador full-stack (Claude Code, VSCode, Git, Node, Python 3.14).
 - Hijo: Roblox app nativa (BlueStacks y LDPlayer se desinstalan).
 - Browsers: Chrome (principal), Brave (testing), Edge (alternativo).

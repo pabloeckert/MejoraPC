@@ -1,9 +1,9 @@
 {
   "_meta": {
     "profile": "Pablo — definitivo",
-    "ram_gb": 8,
-    "notes": "Perfil LOCAL de esta máquina — nunca viaja en el paquete USB (installer/build-package.ps1 lo excluye). Se mergea sobre data/universal-tweaks.json y data/universal-bloatware.json vía lib/helpers.ps1 (Get-MergedTweaksCatalog / Get-MergedBloatCatalog). En una PC ajena, este archivo lo genera modules/00-discover.ps1 (encuesta breve) en vez de estar curado a mano.",
-    "updated": "2026-08-14",
+    "ram_gb": 16,
+    "notes": "Perfil LOCAL de esta máquina — nunca viaja en el paquete USB (installer/build-package.ps1 lo excluye). Se mergea sobre data/universal-tweaks.json y data/universal-bloatware.json vía lib/helpers.ps1 (Get-MergedTweaksCatalog / Get-MergedBloatCatalog). En una PC ajena, este archivo lo genera modules/00-discover.ps1 (encuesta breve) en vez de estar curado a mano. 2026-09-04: upgrade de RAM de 8GB a 16GB (un solo slot, se cambió un módulo por otro). Ya no es un perfil RAM-crítico, pero los tweaks de startup ya aplicados (startup_disable/startup_disable_uwp) se mantienen: siguen siendo optimizaciones válidas sin costo, no ataduras a la urgencia de 8GB.",
+    "updated": "2026-09-04",
     "origin": "manual"
   },
   "survey": {
