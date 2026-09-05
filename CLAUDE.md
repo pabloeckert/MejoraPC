@@ -172,7 +172,14 @@ específico de una máquina/usuario particular:
     de autoarranque REALMENTE detectable en el registro (vía `winreg`) para
     el proceso candidato — si no hay match real, no promueve nada. En la
     corrida siguiente, `03-performance.ps1` aplica la entrada nueva con su
-    mecanismo normal.
+    mecanismo normal. Respeta `profile-local.json` →
+    `auto_adjust_declined.processes`: candidatos que Pablo ya rechazó
+    explícitamente (ej. "no quiero apagar el autoarranque de OneDrive") —
+    sin esto, `analyze.py` seguía generando la misma recomendación mientras
+    la condición siguiera siendo cierta, y `auto_adjust.py` la re-promovía
+    sin fin porque solo chequeaba si ya estaba aplicada, no si ya se había
+    dicho que no. La regla `rule_non_dev_processes` de `analyze.py` también
+    lee esa lista, para no proponerlo de nuevo en el dashboard.
   - `report.py` — MANUAL, dashboard rich (consola); delta de RAM + última
     verificación real.
   - `dashboard_data.py` — recolecta datos para el dashboard HTML (queries
