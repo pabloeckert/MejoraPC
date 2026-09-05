@@ -255,6 +255,19 @@ Write-Section "3. DISCO — análisis directo (sin Get-ChildItem recursivo)"
 # carpetas como AppData\Local con decenas de GB (caches de apps, node_modules,
 # etc.) pueden tardar minutos recorridas archivo por archivo — mismo problema
 # que ya se resolvió con timeouts en 02-debloat.ps1/10-python-cleanup.ps1.
+# Windows tiene junctions de compatibilidad legado que apuntan hacia ATRÁS o
+# hacia el propio padre (ej. C:\ProgramData\Datos de programa -> C:\ProgramData,
+# alias en español de la carpeta desde Vista). Seguirlos como si fueran
+# subcarpetas reales duplica el conteo (y en el caso de un junction que
+# apunta a sí mismo, es un ciclo infinito que solo el timeout corta) —
+# descubierto el 2026-09-05 viendo "22,5 GB" reportados para una carpeta
+# que en realidad ES ProgramData de nuevo, no espacio adicional real.
+function Test-IsReparsePoint {
+    param([string]$Path)
+    try { return [bool]((New-Object System.IO.DirectoryInfo($Path)).Attributes -band [System.IO.FileAttributes]::ReparsePoint) }
+    catch { if ($Error.Count -gt 0) { $Error.RemoveAt(0) }; return $false }
+}
+
 function Get-DirSize {
     param([string]$Path, [int]$MaxSeconds = 8)
     $total = 0L
@@ -270,7 +283,10 @@ function Get-DirSize {
             foreach ($f in [System.IO.Directory]::GetFiles($dir)) {
                 try { $total += [System.IO.FileInfo]::new($f).Length } catch { if ($Error.Count -gt 0) { $Error.RemoveAt(0) } }
             }
-            foreach ($d in [System.IO.Directory]::GetDirectories($dir)) { $stack.Push($d) }
+            foreach ($d in [System.IO.Directory]::GetDirectories($dir)) {
+                if (Test-IsReparsePoint -Path $d) { continue }
+                $stack.Push($d)
+            }
         } catch {
             # acceso denegado / reparse point (ej. C:\ProgramData\...\ServiceData con ACL
             # de sistema) → se ignora esa rama. Se limpia de $Error para no ensuciar el
@@ -313,6 +329,7 @@ $scanCut = $false
     try {
         foreach ($d in [System.IO.Directory]::GetDirectories($root)) {
             if ($globalSw.Elapsed.TotalSeconds -gt $globalMaxSeconds) { $scanCut = $true; break rootsLoop }
+            if (Test-IsReparsePoint -Path $d) { continue }
             $r = Get-DirSize -Path $d -MaxSeconds 5
             $null = $subdirs.Add([PSCustomObject]@{ Carpeta = $d; Bytes = $r.Bytes; Parcial = $r.TimedOut })
         }
