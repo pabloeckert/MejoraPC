@@ -161,6 +161,21 @@ function Test-IsMsix {
     return $false
 }
 
+# Get-Package -Name con un patrón que no matchea NADA lanza una excepción
+# terminante "NoMatchFound" que -ErrorAction SilentlyContinue NO suprime del
+# todo (bug conocido del módulo PackageManagement) — no rompe el script, pero
+# la deja en $Error, ensuciando logs/ultimo-diagnostico.txt. Se fuerza a
+# terminante con -ErrorAction Stop para que el catch la absorba de verdad.
+function Find-InstalledPackage {
+    param([string]$Pattern)
+    try {
+        return Get-Package -Name $Pattern -ErrorAction Stop
+    } catch {
+        if ($Error.Count -gt 0) { $Error.RemoveAt(0) }
+        return $null
+    }
+}
+
 # ¿El paquete está REALMENTE instalado? La mayoría de los FAIL del log son apps
 # que ya no están: verificamos antes de intentar desinstalar para no ensuciar el
 # log. Devuelve $true si CUALQUIER método lo encuentra (corta apenas hay un hit).
@@ -179,7 +194,7 @@ function Test-PackageInstalled {
     $pattern = Resolve-PackageName -Id $Id
 
     # Programs / MSI (Get-Package).
-    if (Get-Package -Name $pattern -ErrorAction SilentlyContinue) { return $true }
+    if (Find-InstalledPackage -Pattern $pattern) { return $true }
 
     # Registry: DisplayName en las claves Uninstall.
     $keys = @(
@@ -220,7 +235,12 @@ function Invoke-WingetUninstall {
     try {
         $out  = & winget @wargs 2>&1 | Out-String
         $code = $LASTEXITCODE
-    } catch { return 'FAIL' }
+    } catch {
+        # Mismo caso que en Test-PackageInstalled: "winget" como App Execution
+        # Alias puede no estar resuelto todavía (CommandNotFoundException).
+        if ($Error.Count -gt 0) { $Error.RemoveAt(0) }
+        return 'FAIL'
+    }
     if ($code -eq 0 -or $out -match 'Successfully uninstalled|desinstalad')  { return 'OK (winget)' }
     if ($out -match 'No installed package found|No se encontró|0x8a15002b')  { return 'OK (no instalado)' }
     return 'FAIL'
@@ -319,16 +339,16 @@ function Remove-Package {
     if (Test-IsMsix -Id $Id) { return (Remove-AppxById -Id $Id) }
 
     $pattern = Resolve-PackageName -Id $Id
-    $pkg     = Get-Package -Name $pattern -ErrorAction SilentlyContinue | Select-Object -First 1
+    $pkg     = Find-InstalledPackage -Pattern $pattern | Select-Object -First 1
 
     if ($pkg) {
         try {
             if ($pkg.ProviderName -eq 'msi') {
                 Uninstall-Package -InputObject $pkg -Force -AdditionalArguments '/quiet /norestart' -ErrorAction Stop | Out-Null
-                if (-not (Get-Package -Name $pattern -ErrorAction SilentlyContinue)) { return 'OK (msi)' }
+                if (-not (Find-InstalledPackage -Pattern $pattern)) { return 'OK (msi)' }
             } else {
                 Uninstall-Package -InputObject $pkg -Force -ErrorAction Stop | Out-Null
-                if (-not (Get-Package -Name $pattern -ErrorAction SilentlyContinue)) { return 'OK (Programs)' }
+                if (-not (Find-InstalledPackage -Pattern $pattern)) { return 'OK (Programs)' }
             }
         } catch { }
     }
