@@ -65,12 +65,19 @@ try {
 } catch { Write-Status "wuauserv" "error: $_" 'WARN' }
 
 # ── Matar update checkers ──────────────────────────────────────────
+# Lista explícita, no un patrón amplio: "-match 'Update'" mataba CUALQUIER
+# proceso con esa palabra en el nombre — OneDriveUpdaterService,
+# MicrosoftEdgeUpdate, GoogleUpdate, GitHubDesktopUpdater, etc. también
+# calzaban ahí, con el riesgo real de cortar algo legítimo en medio de una
+# sesión de trabajo. Corregido el 2026-09-05 a pedido de Pablo. Agregar acá
+# el nombre de proceso si aparece otro updater molesto específico.
+$killed = 0
+$updateCheckers = @('CorelUpdateHelper')
 Write-Host ""
 Write-Host "  ── Matando update checkers" -ForegroundColor DarkCyan
-$killed = 0
 Get-Process -ErrorAction SilentlyContinue | Where-Object {
-    $_.ProcessName -match 'CorelUpdateHelper' -or
-    ($_.ProcessName -match 'Update' -and $_.ProcessName -notmatch 'svchost|wuauclt')
+    $name = $_.ProcessName
+    $updateCheckers | Where-Object { $name -match $_ }
 } | ForEach-Object {
     try { Stop-Process -Id $_.Id -Force -ErrorAction Stop; Write-Status $_.ProcessName "terminado" 'OK'; $killed++ } catch { }
 }
