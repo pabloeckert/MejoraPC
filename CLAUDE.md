@@ -199,8 +199,6 @@ específico de una máquina/usuario particular:
   `status.json`, `discovery-report.json`, `last-verify.json`,
   `last-hardware-check.json`, `last-startup-audit.json`, `monitor.log`
   (log de los scripts de background, INVISIBLE).
-  `tweaks.json`/`bloatware.json` quedan como legado (reemplazados por la
-  capa universal+local), no se borraron todavía.
 - **backups/** — `debloat-removed-FECHA.txt`, `.reg`, `python-packages-*.txt`.
 - **logs/** — `debloat-FECHA.log`, `performance-FECHA.log`, `ultimo-informe.txt`
   (consola), `dashboard.html` (visual), `hardware-check-FECHA.log`,
@@ -310,6 +308,3 @@ vigente. Si algo referencia esos nombres, es historial viejo (ver tag
   muestreo cada 15 min).
 - `Setup.bat` sin firma dispara SmartScreen en máquinas ajenas — aceptable
   para uso personal/cercano, no para distribución amplia.
-- Migrar/eliminar `data/tweaks.json` y `data/bloatware.json` (legado, ya
-  reemplazados por la capa universal+local) una vez confirmado que nada
-  más los referencia.

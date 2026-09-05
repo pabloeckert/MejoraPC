@@ -124,6 +124,22 @@ foreach ($group in $tweaks.startup_disable.PSObject.Properties) {
             # a ser el ErrorRecord, no la tarea del pipeline — usar $task adentro.
             $task  = $_
             $found = $true
+            # Tareas bajo el perfil de OTRO usuario (TaskPath \...\<SID>\) no se pueden
+            # deshabilitar desde esta sesión sin actuar como ese usuario o SYSTEM — Access
+            # denied aunque corramos como admin. Si ese SID es una cuenta local deshabilitada
+            # (WsiAccount, WDAGUtilityAccount, etc. — nunca inicia sesión), la tarea jamás se
+            # ejecuta: no es un fallo real, es no aplicable.
+            if ($task.TaskPath -match '(S-1-5-21-[0-9-]+)') {
+                $sid = $matches[1]
+                try {
+                    $acct = Get-LocalUser -SID $sid -ErrorAction Stop
+                    if (-not $acct.Enabled) {
+                        Write-Log "STARTUP  task $($task.TaskName) en perfil deshabilitado ($($acct.Name)) — no aplica"
+                        Write-Status "Task $($task.TaskName)" "perfil deshabilitado ($($acct.Name)) — no aplica" 'INFO'
+                        return
+                    }
+                } catch { }
+            }
             try {
                 Disable-ScheduledTask -TaskName $task.TaskName -TaskPath $task.TaskPath -ErrorAction Stop | Out-Null
                 # Verificar de verdad: releer el estado en vez de confiar en que el cmdlet no tiró error.

@@ -92,7 +92,13 @@ function Remove-AppxByFamilyName {
         Get-AppxProvisionedPackage -Online -ErrorAction SilentlyContinue |
             Where-Object { $_.PackageName -like "$name`_*" -or $_.DisplayName -eq $name } |
             ForEach-Object { $null = Remove-AppxProvisionedPackage -Online -PackageName $_.PackageName -ErrorAction SilentlyContinue; $removed = $true }
-    } catch { }
+    } catch {
+        # Get-AppxProvisionedPackage -Online puede tirar "Access is denied" (COMException)
+        # incluso corriendo como admin — límite conocido de DISM en builds recientes de
+        # Windows 11. No bloquea nada (Capa 1/política + Get-AppxPackage normal cubren el
+        # caso real); se limpia de $Error para no ensuciar el diagnóstico con ruido esperado.
+        if ($Error.Count -gt 0) { $Error.RemoveAt(0) }
+    }
     # Verificación real en vez de confiar en el exit code.
     if (Get-AppxPackage -Name $name -ErrorAction SilentlyContinue) { return 'PARCIAL' }
     if ($removed) { return 'OK' }
@@ -186,8 +192,16 @@ function Test-PackageInstalled {
     }
 
     # winget por --id exacto: exit 0 = instalado (último porque es el más lento).
-    winget list --id $Id --exact 2>$null | Out-Null
-    if ($LASTEXITCODE -eq 0) { return $true }
+    # try/catch porque "winget" es un App Execution Alias: si todavía no resolvió
+    # (ej. justo después de tocar políticas de Appx en Capa 1) PowerShell tira
+    # CommandNotFoundException, que "2>$null" NO captura (ocurre al resolver el
+    # comando, no en su stream de error).
+    try {
+        winget list --id $Id --exact 2>$null | Out-Null
+        if ($LASTEXITCODE -eq 0) { return $true }
+    } catch {
+        if ($Error.Count -gt 0) { $Error.RemoveAt(0) }
+    }
 
     return $false
 }
@@ -229,7 +243,10 @@ function Remove-AppxById {
     try {
         $prov = Get-AppxProvisionedPackage -Online -ErrorAction SilentlyContinue | Where-Object { $_.DisplayName -like "*$name*" }
         foreach ($pp in $prov) { $null = Remove-AppxProvisionedPackage -Online -PackageName $pp.PackageName -ErrorAction SilentlyContinue; $done = $true }
-    } catch { }
+    } catch {
+        # Ver Remove-AppxByFamilyName más arriba: mismo límite conocido de DISM.
+        if ($Error.Count -gt 0) { $Error.RemoveAt(0) }
+    }
     if ($done) { return 'OK (Appx)' }
     return (Invoke-WingetUninstall -Id $Id)   # no era MSIX real → último intento con winget
 }

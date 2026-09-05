@@ -20,12 +20,19 @@ foreach ($c in @('python', 'py')) {
 }
 
 function Invoke-Py {
-    param([string]$Script, [string[]]$Args = @())
+    # El parámetro NO puede llamarse "$Args": ese nombre colisiona con la variable
+    # automática reservada de PowerShell ($args, la bolsa de argumentos no
+    # declarados) y el parameter binder la prioriza sobre el parámetro explícito
+    # — lo que se pasa acá NUNCA llega, $Args queda siempre en su default @().
+    # Bug real descubierto el 2026-09-04: por esto monitor.py/analyze.py --install
+    # corrían como "--run" (sin instalar la scheduled task) y record_run.py nunca
+    # insertaba nada en applied_actions (action llegaba $null a argparse).
+    param([string]$Script, [string[]]$PyArgs = @())
     if (-not $script:PyCmd) {
         Write-Host "`n  [x] Python no está en PATH. Instalalo o agregalo al PATH.`n" -ForegroundColor Red
         Start-Sleep -Seconds 2; return
     }
-    & $script:PyCmd (Join-Path $scriptRoot $Script) @Args
+    & $script:PyCmd (Join-Path $scriptRoot $Script) @PyArgs
 }
 
 function Get-PendingRecs {
@@ -146,12 +153,29 @@ function Invoke-AutoOptimize {
     }
 
     Invoke-AutoStep "Monitor invisible (primera vez)" {
+        # -ErrorAction SilentlyContinue evita que "tarea no encontrada" rompa el flujo,
+        # pero PowerShell igual la deja en $Error (queda en el reporte de diagnóstico
+        # como ruido esperado) — se limpia acá mismo.
         $monitorTask = Get-ScheduledTask -TaskName 'MejoraPC-Monitor' -ErrorAction SilentlyContinue
+        if ($Error.Count -gt 0) { $Error.RemoveAt(0) }
         $analyzeTask = Get-ScheduledTask -TaskName 'MejoraPC-Analyze' -ErrorAction SilentlyContinue
+        if ($Error.Count -gt 0) { $Error.RemoveAt(0) }
         if (-not $monitorTask -or -not $analyzeTask) {
+            Write-Host "  Instalando scheduled tasks invisibles..." -ForegroundColor DarkGray
             Invoke-Py "monitor\monitor.py" @('--install')
             Invoke-Py "monitor\analyze.py" @('--install')
             Invoke-Py "monitor\record_run.py" @('--action', 'monitor-install', '--detail', 'scheduled tasks invisibles instaladas')
+            # Verificación real: confirmar que quedaron creadas de verdad, no confiar
+            # en que el script Python no haya tirado error silenciosamente.
+            $mOk = [bool](Get-ScheduledTask -TaskName 'MejoraPC-Monitor' -ErrorAction SilentlyContinue)
+            $aOk = [bool](Get-ScheduledTask -TaskName 'MejoraPC-Analyze' -ErrorAction SilentlyContinue)
+            if ($Error.Count -gt 0) { $Error.RemoveAt(0) }
+            if ($Error.Count -gt 0) { $Error.RemoveAt(0) }
+            if ($mOk -and $aOk) {
+                Write-Status "Scheduled tasks" "MejoraPC-Monitor y MejoraPC-Analyze creadas" 'OK'
+            } else {
+                Write-Status "Scheduled tasks" "no quedaron creadas (Monitor=$mOk Analyze=$aOk) — revisar data\monitor.log" 'ERROR'
+            }
         } else {
             Write-Host "  Ya instalado — sin cambios." -ForegroundColor DarkGray
         }

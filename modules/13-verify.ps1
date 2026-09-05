@@ -190,12 +190,32 @@ if (Test-Path $tweakFile) {
                 if ($p.Name -match $item.match -or "$($p.Value)" -match $item.match) { $stillThere = $true }
             }
         }
+        $naReason = $null
         try {
-            $t = Get-ScheduledTask -ErrorAction SilentlyContinue | Where-Object { $_.TaskName -match $item.match -and $_.State -ne 'Disabled' }
-            if ($t) { $stillThere = $true }
+            $tasks = @(Get-ScheduledTask -ErrorAction SilentlyContinue | Where-Object { $_.TaskName -match $item.match -and $_.State -ne 'Disabled' })
+            foreach ($t in $tasks) {
+                # Tareas que viven bajo el perfil de OTRO usuario (TaskPath \...\<SID>\) no se
+                # pueden deshabilitar desde esta sesión sin actuar como ese usuario o SYSTEM
+                # (Access denied aunque corramos como admin). Si ese SID es una cuenta local
+                # deshabilitada (WsiAccount, WDAGUtilityAccount, etc. — nunca inicia sesión),
+                # la tarea jamás se ejecuta: no es un PENDIENTE real, es no aplicable.
+                if ($t.TaskPath -match '(S-1-5-21-[0-9-]+)') {
+                    $sid = $matches[1]
+                    try {
+                        $acct = Get-LocalUser -SID $sid -ErrorAction Stop
+                        if (-not $acct.Enabled) {
+                            $naReason = "task en perfil deshabilitado ($($acct.Name)) — no aplica"
+                            continue
+                        }
+                    } catch { }
+                }
+                $stillThere = $true
+            }
         } catch { }
         if ($stillThere) {
             Write-Row 'PENDIENTE' "startup / $($group.Name)" 'todavía en Run keys o task activa'
+        } elseif ($naReason) {
+            Write-Row 'VERIFICADO' "startup / $($group.Name)" $naReason
         } else {
             Write-Row 'VERIFICADO' "startup / $($group.Name)" 'sin entrada de arranque'
         }
@@ -247,10 +267,15 @@ function Get-DirSize {
         $dir = $stack.Pop()
         try {
             foreach ($f in [System.IO.Directory]::GetFiles($dir)) {
-                try { $total += [System.IO.FileInfo]::new($f).Length } catch { }
+                try { $total += [System.IO.FileInfo]::new($f).Length } catch { if ($Error.Count -gt 0) { $Error.RemoveAt(0) } }
             }
             foreach ($d in [System.IO.Directory]::GetDirectories($dir)) { $stack.Push($d) }
-        } catch { }   # acceso denegado / reparse point → se ignora esa rama
+        } catch {
+            # acceso denegado / reparse point (ej. C:\ProgramData\...\ServiceData con ACL
+            # de sistema) → se ignora esa rama. Se limpia de $Error para no ensuciar el
+            # reporte final de ultimo-diagnostico.txt con ruido ya manejado a propósito.
+            if ($Error.Count -gt 0) { $Error.RemoveAt(0) }
+        }
     }
     return @{ Bytes = $total; TimedOut = $timedOut }
 }
