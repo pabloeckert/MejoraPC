@@ -71,10 +71,18 @@ def collect():
             "SELECT timestamp, action, detail FROM applied_actions ORDER BY id DESC LIMIT 10"
         ).fetchall()
         data["history"] = [{"timestamp": t, "action": a, "detail": d or ""} for t, a, d in acts]
-        for row in data["history"]:
-            if row["action"] == "01-backup":
-                data["restore_point"] = row["timestamp"][:19].replace("T", " ")
-                break
+        # Query separada, sin el LIMIT 10 de arriba: ese límite es correcto para
+        # la tabla de historial visible, pero el último restore point es un dato
+        # de seguridad que no debería "desaparecer" del dashboard solo porque
+        # hubo más de 10 acciones de limpieza/revisión manual entre una corrida
+        # de 01-backup y la siguiente (visto el 2026-09-05: una sola sesión de
+        # mantenimiento activa ya generó más de 10 filas sin volver a correr
+        # el backup).
+        last_backup = con.execute(
+            "SELECT timestamp FROM applied_actions WHERE action = '01-backup' ORDER BY id DESC LIMIT 1"
+        ).fetchone()
+        if last_backup:
+            data["restore_point"] = last_backup[0][:19].replace("T", " ")
     except sqlite3.OperationalError:
         pass
 
