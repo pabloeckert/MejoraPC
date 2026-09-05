@@ -104,7 +104,13 @@ específico de una máquina/usuario particular:
   `ConvertTo-HumanReadable`, `Get-MergedBloatCatalog`/`Get-MergedTweaksCatalog`
   (merge universal+local), `Wait-KeyIfInteractive` (reemplaza el ENTER final
   cuando `-Auto`), `Get-DiagnosticHeader` (equipo/OS/PowerShell/Python/build
-  para diagnóstico remoto), etc.
+  para diagnóstico remoto), `Repair-WingetPath` (agrega
+  `%LOCALAPPDATA%\Microsoft\WindowsApps` al `$env:PATH` del proceso si
+  `winget` no resuelve — esa carpeta se inyecta por sesión de escritorio,
+  no vive en el PATH persistente, así que cualquier proceso que no
+  desciende de esa inyección — scheduled task, automatización, sesiones
+  como la de Claude Code — la necesita explícita; llamada desde `run.ps1`
+  y desde todo módulo que use `winget` directo), etc.
 - **modules/** — módulos de optimización PowerShell:
   - `00-discover.ps1` — motor de descubrimiento, corre UNA vez por máquina
     (gate: `data/discovery-report.json`). Enumera software instalado,
