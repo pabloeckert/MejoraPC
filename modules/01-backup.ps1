@@ -23,7 +23,25 @@ Write-Host "  Creando punto de restauración del sistema..." -ForegroundColor Da
 try {
     Enable-ComputerRestore -Drive $env:SystemDrive -ErrorAction SilentlyContinue
     Checkpoint-Computer -Description "MejoraPC $stamp" -RestorePointType MODIFY_SETTINGS -ErrorAction Stop
-    Write-Status "Restore point" "creado" 'OK'
+    # Verificación real: Windows limita a 1 restore point cada 24h (registro
+    # SystemRestorePointCreationFrequency) y cuando bloquea la creación por eso
+    # emite un WARNING, no una excepción -- Checkpoint-Computer "no falla" pero
+    # tampoco crea nada nuevo. Sin este chequeo se reportaba "creado" como falso
+    # positivo (descubierto el 2026-09-04 comparando contra el dashboard, que
+    # mostraba "no se encontró punto de restauración" pese al "[OK] creado").
+    Start-Sleep -Milliseconds 500
+    $rp = Get-ComputerRestorePoint -ErrorAction Stop | Sort-Object SequenceNumber -Descending | Select-Object -First 1
+    if ($rp) {
+        $created = [Management.ManagementDateTimeConverter]::ToDateTime($rp.CreationTime)
+        $ageMin  = (New-TimeSpan -Start $created -End (Get-Date)).TotalMinutes
+        if ($ageMin -le 5) {
+            Write-Status "Restore point" "creado ahora ($($created.ToString('yyyy-MM-dd HH:mm')))" 'OK'
+        } else {
+            Write-Status "Restore point" "ya existía uno reciente ($($created.ToString('yyyy-MM-dd HH:mm')), <24h) — Windows no permite crear otro" 'OK'
+        }
+    } else {
+        Write-Status "Restore point" "Checkpoint-Computer no tiró error pero no se encontró ninguno — revisar manualmente" 'WARN'
+    }
 } catch {
     Write-Status "Restore point" "no disponible (admin/políticas): $_" 'WARN'
 }
