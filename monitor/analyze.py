@@ -78,7 +78,12 @@ def rule_peak_hour(ctx):
 def rule_non_dev_processes(ctx):
     candidates = [n for n, c in ctx["proc_counter"].most_common(5) if c >= ctx["n_rows"] * 0.3]
     confirmed = ctx.get("confirmed_active", set())
-    top_candidates = [n for n in candidates if not any(a in n.lower() for a in confirmed)]
+    declined = ctx.get("declined", set())
+    top_candidates = [
+        n for n in candidates
+        if not any(a in n.lower() for a in confirmed)
+        and n.lower().replace(".exe", "") not in declined
+    ]
     if not top_candidates:
         return []
     auto_action = json.dumps({"type": "startup_disable_candidate", "processes": top_candidates})
@@ -178,12 +183,21 @@ def analyze(verbose=False):
     avg_alerts = (sum(alerts_per_day.values()) / max(1, len(alerts_per_day))) if alerts_per_day else 0
 
     confirmed_active = set()
+    declined = set()
     profile_local_path = os.path.join(DATA, "profile-local.json")
     if os.path.exists(profile_local_path):
         try:
             with open(profile_local_path, "r", encoding="utf-8") as f:
-                survey = json.load(f).get("survey", {})
+                profile = json.load(f)
+            survey = profile.get("survey", {})
             confirmed_active = {a.lower() for a in survey.get("confirmed_active_apps", [])}
+            # Candidatos que Pablo ya rechazó explícitamente (ver auto_adjust.py) —
+            # sin esto, la misma recomendación "cerrada" reaparece en cada corrida
+            # mientras la condición siga siendo cierta. Descubierto el 2026-09-05.
+            declined = {
+                d.lower().replace(".exe", "")
+                for d in profile.get("auto_adjust_declined", {}).get("processes", [])
+            }
         except Exception:
             pass
 
@@ -194,6 +208,7 @@ def analyze(verbose=False):
         "n_rows": len(rows),
         "avg_alerts": avg_alerts,
         "confirmed_active": confirmed_active,
+        "declined": declined,
     }
 
     now = datetime.now().isoformat()

@@ -90,6 +90,17 @@ def run():
     with open(PROFILE_LOCAL, "r", encoding="utf-8") as f:
         profile = json.load(f)
     profile.setdefault("startup_disable", {})
+    # Candidatos que Pablo ya rechazó explícitamente (ej. "no quiero apagar el
+    # autoarranque de OneDrive") — nombres de proceso normalizados (sin .exe,
+    # minúsculas), no key_names. Sin esto, analyze.py vuelve a generar la
+    # misma recomendación en cada corrida mientras la condición siga siendo
+    # cierta, y este script la re-promovería sin fin porque lo único que
+    # revisaba antes era si ya estaba en startup_disable, no si ya se decidió
+    # explícitamente que NO. Descubierto el 2026-09-05 con auto_onedrive.
+    declined = {
+        d.lower().replace(".exe", "")
+        for d in profile.get("auto_adjust_declined", {}).get("processes", [])
+    }
 
     added = []
     for _module, auto_action_raw in rows:
@@ -100,6 +111,8 @@ def run():
         if action.get("type") != "startup_disable_candidate":
             continue
         for proc in action.get("processes", []):
+            if proc.lower().replace(".exe", "") in declined:
+                continue  # ya rechazado explícitamente por Pablo
             key_name = "auto_" + re.sub(r"[^a-z0-9]+", "_", proc.lower().replace(".exe", "")).strip("_")
             if key_name in profile["startup_disable"]:
                 continue  # ya promovido en una corrida anterior

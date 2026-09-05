@@ -3,7 +3,7 @@
     "profile": "Pablo — definitivo",
     "ram_gb": 8,
     "notes": "Perfil LOCAL de esta máquina — nunca viaja en el paquete USB (installer/build-package.ps1 lo excluye). Se mergea sobre data/universal-tweaks.json y data/universal-bloatware.json vía lib/helpers.ps1 (Get-MergedTweaksCatalog / Get-MergedBloatCatalog). En una PC ajena, este archivo lo genera modules/00-discover.ps1 (encuesta breve) en vez de estar curado a mano.",
-    "updated": "2026-09-04",
+    "updated": "2026-09-05",
     "origin": "manual"
   },
   "survey": {
@@ -78,6 +78,13 @@
       "match": "SoftLandingCreativeManagementTask",
       "ram_estimate_mb": 0
     }
+  },
+  "auto_adjust_declined": {
+    "_desc": "Procesos que monitor/analyze.py detecta como 'no-dev consistentes' pero que Pablo ya decidió explícitamente NO tocar. monitor/auto_adjust.py y la regla rule_non_dev_processes de analyze.py leen esta lista para no re-proponer ni re-promover lo mismo en cada corrida (sin esto, la recomendación 'cerrada' reaparecía sola cada vez que la condición seguía siendo cierta — descubierto el 2026-09-05 con OneDrive).",
+    "processes": [
+      "OneDrive",
+      "MsMpEng"
+    ]
   },
   "startup_disable_uwp": {
     "_desc": "Apps UWP/MSIX (Store) usan un mecanismo de auto-arranque propio, separado de HKCU/HKLM Run: no lo cubren ni 'startup_disable' (run_keys+match) ni 03-performance.ps1/13-verify.ps1 todavía. Se detecta con Get-ChildItem sobre 'HKCU:\\Software\\Classes\\Local Settings\\Software\\Microsoft\\Windows\\CurrentVersion\\AppModel\\SystemAppData\\<PackageFamilyName>' (subclaves = TaskID, valor 'State' DWord: 2=habilitado, 1=deshabilitado). Se desactiva con Set-ItemProperty ...State -Value 1. Descubierto el 2026-08-14: Spotify y Firefox (versión Store, no la clásica) y Windows Terminal se reabrían solos después de que Pablo cerraba todo y apagaba — no era RestartApps (HKCU:\\...\\Winlogon\\RestartApps=1, que sigue activo y no se tocó) sino StartupTask propio de cada paquete.",
