@@ -26,7 +26,16 @@ if ($isTaskTrigger) { Start-Sleep -Seconds 45 }
 
 # *>&1 (no 2>&1): 13-verify.ps1 imprime casi todo con Write-Host, que va al
 # stream de Information (6), no al de error (2) — con 2>&1 el log queda vacío.
-$output = & "$scriptRoot\modules\13-verify.ps1" *>&1 | Out-String
+# -Auto es obligatorio acá: sin él, Wait-KeyIfInteractive al final de
+# 13-verify.ps1 puede quedar esperando un Read-Host que nunca llega si esto
+# corre headless (Host.Name sigue siendo 'ConsoleHost' y
+# [Console]::IsInputRedirected da false en una consola oculta, no
+# redirigida) — dejaría el proceso de la scheduled task colgado para
+# siempre y la tarea nunca se autoeliminaría (línea de abajo nunca se
+# alcanzaría). Nadie en el repo crea hoy "MejoraPC-PostRebootVerify"
+# todavía (la creación de la tarea es una feature pendiente, no
+# implementada), pero este fix es correcto sin importar eso.
+$output = & "$scriptRoot\modules\13-verify.ps1" -Auto *>&1 | Out-String
 Add-Content -Path $logFile -Value "=== post-reboot-verify $(Get-Date -Format s) ===" -Encoding utf8
 Add-Content -Path $logFile -Value $output -Encoding utf8
 

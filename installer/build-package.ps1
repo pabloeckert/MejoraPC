@@ -33,7 +33,12 @@ $excludeFiles = @(
     'last-verify.json', 'discovery-report.json', 'monitor.log',
     'last-hardware-check.json', 'last-startup-audit.json',
     'hardware-profile.json', 'recommendations.json', 'smart-recommendations.json',
-    'reporte_limpieza_resultado.csv', 'reporte_limpieza_resultado.txt'
+    'reporte_limpieza_resultado.csv', 'reporte_limpieza_resultado.txt',
+    # Config de un despliegue puntual (ruta de una carpeta de OneDrive
+    # compartida específica) — gitignoreado, pero robocopy no respeta
+    # .gitignore, así que sin esta entrada terminaba igual en el paquete USB
+    # para otra PC. Descubierto el 2026-09-05 auditando este script.
+    'mirror-output-dir.txt'
 )
 # Carpetas de runtime/historial + control de versiones/estado local.
 $excludeDirs = @('logs', 'backups', 'rescue', '__pycache__', '.git', '.claude', 'dist')
