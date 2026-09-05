@@ -12,6 +12,7 @@ param([switch]$Auto)
 
 $scriptRoot = Split-Path -Parent $PSScriptRoot
 . "$scriptRoot\lib\helpers.ps1"
+$null = Repair-WingetPath
 
 Clear-Host
 Write-Host ""

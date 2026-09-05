@@ -21,6 +21,7 @@ param(
 
 $scriptRoot = Split-Path -Parent $PSScriptRoot
 . "$scriptRoot\lib\helpers.ps1"
+$null = Repair-WingetPath
 
 $dataFile  = "$scriptRoot\data\universal-bloatware.json"
 $logDir    = "$scriptRoot\logs"

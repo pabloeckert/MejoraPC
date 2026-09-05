@@ -1,5 +1,29 @@
 ﻿# Funciones compartidas para todos los módulos de MejoraPC
 
+# winget vive como App Execution Alias en
+# %LOCALAPPDATA%\Microsoft\WindowsApps\winget.exe. Windows inyecta esa
+# carpeta al PATH dinámicamente por cada sesión de escritorio (explorer.exe),
+# NO vive en la variable PATH persistente del registro (HKCU/HKLM) — por
+# eso no aparece ahí ni en una máquina sana. El problema real es que
+# cualquier proceso que NO desciende de esa inyección de sesión (una
+# scheduled task, un entorno de automatización/CI, una consola lanzada por
+# una cadena de procesos que no la propaga) no tiene "winget" en el PATH,
+# y Get-Command/CommandNotFoundException fallan igual de silencioso que si
+# winget no estuviera instalado — descubierto el 2026-09-05 corriendo
+# run.ps1 desde una sesión así: 56+ de 57 "errores capturados" del
+# diagnóstico eran consecuencia indirecta de esto. Se agrega el directorio
+# al $env:PATH del proceso actual (no toca nada persistente del sistema)
+# si el ejecutable existe físicamente pero el comando no resuelve.
+function Repair-WingetPath {
+    if (Get-Command winget -ErrorAction SilentlyContinue) { return $true }
+    $wingetDir = Join-Path $env:LOCALAPPDATA 'Microsoft\WindowsApps'
+    if (Test-Path (Join-Path $wingetDir 'winget.exe')) {
+        $env:PATH = "$wingetDir;$env:PATH"
+        return [bool](Get-Command winget -ErrorAction SilentlyContinue)
+    }
+    return $false
+}
+
 function Write-Status {
     param(
         [string]$Label,

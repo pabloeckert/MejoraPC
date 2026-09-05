@@ -7,6 +7,7 @@ param([switch]$Auto)
 
 $scriptRoot = Split-Path -Parent $PSScriptRoot
 . "$scriptRoot\lib\helpers.ps1"
+$null = Repair-WingetPath
 
 $backupDir = "$scriptRoot\backups"
 if (-not (Test-Path $backupDir)) { New-Item -ItemType Directory -Force $backupDir | Out-Null }

@@ -13,6 +13,7 @@ param([switch]$Auto)
 
 $scriptRoot = Split-Path -Parent $PSScriptRoot
 . "$scriptRoot\lib\helpers.ps1"
+$null = Repair-WingetPath
 
 $bloatFile = "$scriptRoot\data\universal-bloatware.json"
 $tweakFile = "$scriptRoot\data\universal-tweaks.json"
