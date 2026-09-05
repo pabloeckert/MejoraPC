@@ -18,7 +18,16 @@ function Repair-WingetPath {
     if (Get-Command winget -ErrorAction SilentlyContinue) { return $true }
     $wingetDir = Join-Path $env:LOCALAPPDATA 'Microsoft\WindowsApps'
     if (Test-Path (Join-Path $wingetDir 'winget.exe')) {
-        $env:PATH = "$wingetDir;$env:PATH"
+        # AL FINAL del PATH, no al principio: esa misma carpeta también tiene
+        # el stub placeholder de "python.exe" (y otros) de la Microsoft Store.
+        # Anteponerla le robaba prioridad a instalaciones reales ya presentes
+        # en el PATH (ej. C:\Python314\python.exe) — un "python" en cualquier
+        # módulo empezaba a resolver al stub roto en vez del real. Al agregar
+        # al final, se sigue usando la instalación real si existe, y el stub
+        # solo entra en juego si NINGÚN OTRO PATH tiene ese comando (mismo
+        # comportamiento nativo de Windows). Descubierto el 2026-09-05:
+        # 10-python-cleanup.ps1 rompió apenas se agregó esta función.
+        $env:PATH = "$env:PATH;$wingetDir"
         return [bool](Get-Command winget -ErrorAction SilentlyContinue)
     }
     return $false
@@ -45,76 +54,6 @@ function ConvertTo-HumanReadable {
     if ($Bytes -ge 1MB) { return '{0:N0} MB' -f ($Bytes / 1MB) }
     if ($Bytes -ge 1KB) { return '{0:N0} KB' -f ($Bytes / 1KB) }
     return "$Bytes B"
-}
-
-function Write-AsciiChart {
-    param(
-        [array]$Values,
-        [array]$Labels,
-        [string]$Title    = '',
-        [int]$MaxWidth    = 35,
-        [string]$Unit     = '%',
-        [int]$MaxValue    = 100
-    )
-    if ($Title) { Write-Host "  $Title" -ForegroundColor DarkCyan }
-    for ($i = 0; $i -lt $Values.Count; $i++) {
-        $val    = [Math]::Max(0, [Math]::Min([int]$Values[$i], $MaxValue))
-        $filled = [int](($val / $MaxValue) * $MaxWidth)
-        $bar    = ('█' * $filled) + ('░' * ($MaxWidth - $filled))
-        $label  = if ($Labels -and $i -lt $Labels.Count) { $Labels[$i] } else { "$i" }
-        $lpad   = $label.PadRight(6).Substring(0, 6)
-        $color  = if ($val -ge 85) { 'Red' } elseif ($val -ge 60) { 'Yellow' } else { 'Green' }
-        Write-Host "  $lpad " -NoNewline -ForegroundColor Gray
-        Write-Host $bar -NoNewline -ForegroundColor $color
-        Write-Host " $val$Unit" -ForegroundColor White
-    }
-    Write-Host ""
-}
-
-function Read-UsageLogs {
-    param(
-        [string]$LogsDir,
-        [int]$DaysBack = 7
-    )
-    $logs = [System.Collections.ArrayList]@()
-    for ($i = 0; $i -le $DaysBack; $i++) {
-        $dateStr = (Get-Date).AddDays(-$i).ToString('yyyy-MM-dd')
-        $logFile = Join-Path $LogsDir "$dateStr.json"
-        if (Test-Path $logFile) {
-            try {
-                $content = Get-Content $logFile -Raw | ConvertFrom-Json
-                $null = $logs.Add($content)
-            } catch { }
-        }
-    }
-    return $logs
-}
-
-function Get-SystemScore {
-    param([string]$ProfilePath)
-    if (-not (Test-Path $ProfilePath)) { return 50 }
-    try {
-        $p = Get-Content $ProfilePath -Raw | ConvertFrom-Json
-        if (-not $p.cpu) { return 50 }
-        $score = 100
-        $ramGB = if ($p.ram.totalGB) { $p.ram.totalGB } else { [math]::Round($p.ram.totalBytes / 1GB, 1) }
-        if     ($ramGB -lt 4)  { $score -= 30 }
-        elseif ($ramGB -lt 8)  { $score -= 15 }
-        elseif ($ramGB -lt 16) { $score -= 5  }
-        if ($p.storage) {
-            $hddCount = @($p.storage | Where-Object { $_.type -eq 'HDD' }).Count
-            $ssdCount = @($p.storage | Where-Object { $_.type -in 'SSD','NVMe' }).Count
-            if ($hddCount -gt 0 -and $ssdCount -eq 0) { $score -= 20 }
-        }
-        $cores = if ($p.cpu.physicalCores) { $p.cpu.physicalCores } else { 2 }
-        if     ($cores -lt 2) { $score -= 20 }
-        elseif ($cores -lt 4) { $score -= 10 }
-        if ($p.cpu.temperatureC) {
-            if     ($p.cpu.temperatureC -gt 90) { $score -= 15 }
-            elseif ($p.cpu.temperatureC -gt 75) { $score -= 7  }
-        }
-        return [Math]::Max(0, [Math]::Min(100, $score))
-    } catch { return 50 }
 }
 
 function Get-TemperatureStatus {
