@@ -124,6 +124,16 @@
     ],
     "roadmap_note": "Si se reinstalan/actualizan estas apps el PackageFamilyName puede cambiar de sufijo (como GoogleChromeAutoLaunch_<hash> en startup_disable) y este bloqueo dejaría de aplicar. Para que 13-verify.ps1 lo re-verifique automáticamente, o 03-performance.ps1 lo re-aplique, habría que extenderlos a leer esta rama del registro además de run_keys — no implementado todavía."
   },
+  "startup_audit_reconocidos": {
+    "_desc": "Hallazgos de modules/16-startup-audit.ps1 ya investigados y confirmados como legítimos (no se apagan, a diferencia de startup_disable_uwp) — sin esto, cada corrida futura los volvía a listar como 'nuevo hallazgo sin decisión previa' aunque ya se hubiera concluido que no ameritan acción, mismo patrón de bug ya resuelto para auto_adjust_declined con recomendaciones de RAM. Descubierto el 2026-09-07.",
+    "task_name_patterns": [
+      "^\\\\OneDrive Startup Task-"
+    ],
+    "uwp": [
+      "CLEVOCO.FnhotkeysandOSD_6h6z29zh29qx0\\FnKeyStartupId",
+      "Microsoft.6365217CE6EB4_8wekyb3d8bbwe\\microsoftdefender"
+    ]
+  },
   "ram_recoverable_estimate": {
     "corel_helper_off": 200,
     "roblox_autostart_off": 60,
