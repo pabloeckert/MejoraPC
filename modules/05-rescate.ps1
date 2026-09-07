@@ -7,6 +7,7 @@ param()
 $scriptRoot = Split-Path -Parent $PSScriptRoot
 . "$scriptRoot\lib\helpers.ps1"
 $null = Repair-WingetPath
+Repair-PSModulePath
 
 $backupDir = "$scriptRoot\backups"
 $logDir    = "$scriptRoot\logs"

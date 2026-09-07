@@ -33,6 +33,25 @@ function Repair-WingetPath {
     return $false
 }
 
+# En Windows PowerShell 5.1 (Desktop CLR), Get-Package/Import-Module auto-cargan
+# el módulo PackageManagement buscando en $env:PSModulePath en orden. Si la
+# carpeta de PowerShell 7 (Core) quedó antes que las carpetas nativas de
+# WindowsPowerShell (pasa cuando pwsh7 se instaló y se agregó al PSModulePath
+# persistente), PS 5.1 encuentra ahí la copia para pwsh7 — sin la subcarpeta
+# "fullclr" que el Desktop CLR necesita — y Get-Package falla con
+# FileNotFoundException aunque el paquete buscado sí exista. Descubierto el
+# 2026-09-07: Find-InstalledPackage en 02-debloat.ps1 ensuciaba $Error con 2
+# excepciones por corrida pese a su propio try/catch, porque el fallo real es
+# al importar el módulo, no al buscar el paquete — el catch nunca llega a
+# ejecutarse para esa causa. Solo se toca en Desktop edition: si este script
+# corre directo bajo pwsh7, esa carpeta es la correcta y no se toca.
+function Repair-PSModulePath {
+    if ($PSVersionTable.PSEdition -ne 'Desktop') { return }
+    $env:PSModulePath = ($env:PSModulePath -split ';' | Where-Object {
+        $_ -notlike '*\PowerShell\7\Modules*'
+    }) -join ';'
+}
+
 function Write-Status {
     param(
         [string]$Label,

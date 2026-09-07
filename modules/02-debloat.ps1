@@ -22,6 +22,7 @@ param(
 $scriptRoot = Split-Path -Parent $PSScriptRoot
 . "$scriptRoot\lib\helpers.ps1"
 $null = Repair-WingetPath
+Repair-PSModulePath
 
 $dataFile  = "$scriptRoot\data\universal-bloatware.json"
 $logDir    = "$scriptRoot\logs"
@@ -167,12 +168,16 @@ function Test-IsMsix {
 # todo (bug conocido del módulo PackageManagement) — no rompe el script, pero
 # la deja en $Error, ensuciando logs/ultimo-diagnostico.txt. Se fuerza a
 # terminante con -ErrorAction Stop para que el catch la absorba de verdad.
+# Un fallo al auto-cargar el módulo PackageManagement (ver Repair-PSModulePath
+# en lib/helpers.ps1) puede dejar 2+ entradas en $Error por una sola llamada
+# (una por cada DLL que no cargó) — se limpian todas, no solo la última.
 function Find-InstalledPackage {
     param([string]$Pattern)
+    $countAntes = $Error.Count
     try {
         return Get-Package -Name $Pattern -ErrorAction Stop
     } catch {
-        if ($Error.Count -gt 0) { $Error.RemoveAt(0) }
+        while ($Error.Count -gt $countAntes) { $Error.RemoveAt(0) }
         return $null
     }
 }

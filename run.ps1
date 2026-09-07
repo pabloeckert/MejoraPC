@@ -6,6 +6,7 @@ $scriptRoot = $PSScriptRoot
 . "$scriptRoot\lib\helpers.ps1"
 Ensure-DataDirectory -ScriptRoot $scriptRoot
 $null = Repair-WingetPath
+Repair-PSModulePath
 
 # Advertir si no es admin
 if (-not ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)) {
