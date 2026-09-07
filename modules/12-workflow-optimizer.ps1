@@ -10,7 +10,7 @@ $scriptRoot = Split-Path -Parent $PSScriptRoot
 
 function Get-FreeRamGB { [math]::Round((Get-CimInstance Win32_OperatingSystem).FreePhysicalMemory / 1MB, 2) }
 
-Clear-Host
+Clear-HostSafe
 Write-Host ""
 Write-Host "  ╔══════════════════════════════════════════════════╗" -ForegroundColor Cyan
 Write-Host "  ║         12 - WORKFLOW OPTIMIZER (sesión dev)     ║" -ForegroundColor Cyan

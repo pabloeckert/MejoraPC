@@ -18,7 +18,7 @@ $null = Repair-WingetPath
 $bloatFile = "$scriptRoot\data\universal-bloatware.json"
 $tweakFile = "$scriptRoot\data\universal-tweaks.json"
 
-Clear-Host
+Clear-HostSafe
 Write-Host ""
 Write-Host "  ╔══════════════════════════════════════════════════╗" -ForegroundColor Cyan
 Write-Host "  ║         13 - VERIFICACIÓN REAL DEL SISTEMA       ║" -ForegroundColor Cyan

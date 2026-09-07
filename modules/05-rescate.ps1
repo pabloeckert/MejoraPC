@@ -11,7 +11,7 @@ $null = Repair-WingetPath
 $backupDir = "$scriptRoot\backups"
 $logDir    = "$scriptRoot\logs"
 
-Clear-Host
+Clear-HostSafe
 Write-Host ""
 Write-Host "  ╔══════════════════════════════════════════════════╗" -ForegroundColor Cyan
 Write-Host "  ║         05 - RESCATE / RESTAURAR                 ║" -ForegroundColor Cyan

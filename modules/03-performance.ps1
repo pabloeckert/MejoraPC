@@ -38,7 +38,7 @@ if (-not (Test-Path $dataFile)) {
 }
 $tweaks = Get-MergedTweaksCatalog -ScriptRoot $scriptRoot
 
-Clear-Host
+Clear-HostSafe
 Write-Host ""
 Write-Host "  ╔══════════════════════════════════════════════════╗" -ForegroundColor Cyan
 Write-Host "  ║         03 - PERFORMANCE + TWEAKS                ║" -ForegroundColor Cyan

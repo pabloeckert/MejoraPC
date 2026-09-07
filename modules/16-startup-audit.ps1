@@ -23,7 +23,7 @@ param([switch]$Auto)
 $scriptRoot = Split-Path -Parent $PSScriptRoot
 . "$scriptRoot\lib\helpers.ps1"
 
-Clear-Host
+Clear-HostSafe
 Write-Host ""
 Write-Host "  ╔══════════════════════════════════════════════════╗" -ForegroundColor Cyan
 Write-Host "  ║   16 - AUDITORÍA DE ARRANQUE (todos los mecanismos) ║" -ForegroundColor Cyan
@@ -50,6 +50,10 @@ if ($profile -and $profile.startup_disable_uwp) {
     }
 }
 $knownUwpKeys = $knownUwp | ForEach-Object { "$($_.package)\$($_.task_id)" }
+$recognized = $null
+if ($profile -and $profile.startup_audit_reconocidos) { $recognized = $profile.startup_audit_reconocidos }
+$recognizedTaskPatterns = @($recognized.task_name_patterns)
+$recognizedUwp = @($recognized.uwp)
 
 # ═══════════════════════════════════════════════════════════════════
 # 1. Run / RunOnce
@@ -95,10 +99,13 @@ foreach ($t in $tasks) {
     $trig = @($t.Triggers | ForEach-Object { $_.CimClass.CimClassName })
     if ($trig -notmatch 'Logon|Boot') { continue }
     $esMicrosoft = $t.TaskPath -like '\Microsoft\*'
-    $status = if ($esMicrosoft) { 'OK' } else { 'WARN' }
-    Write-Status -Label "$($t.TaskPath)$($t.TaskName)" -Value "trigger=$($trig -join ',') estado=$($t.State)" -Status $status
-    if (-not $esMicrosoft) {
-        $null = $nuevos.Add([PSCustomObject]@{ tipo = 'tarea_no_microsoft'; nombre = "$($t.TaskPath)$($t.TaskName)"; detalle = "trigger=$($trig -join ',')" })
+    $fullName = "$($t.TaskPath)$($t.TaskName)"
+    $esReconocida = $false
+    foreach ($pat in $recognizedTaskPatterns) { if ($fullName -match $pat) { $esReconocida = $true; break } }
+    $status = if ($esMicrosoft -or $esReconocida) { 'OK' } else { 'WARN' }
+    Write-Status -Label $fullName -Value "trigger=$($trig -join ',') estado=$($t.State)" -Status $status
+    if (-not $esMicrosoft -and -not $esReconocida) {
+        $null = $nuevos.Add([PSCustomObject]@{ tipo = 'tarea_no_microsoft'; nombre = $fullName; detalle = "trigger=$($trig -join ',')" })
     }
 }
 
@@ -139,6 +146,9 @@ foreach ($pkg in $pkgs) {
             # Ya aprobado por Pablo como "apagar" — si volvió a 2 (ej. update de la app), se reafirma.
             Set-ItemProperty -Path $_.PSPath -Name State -Value 1 -Type DWord
             Write-Status -Label $key -Value 'había vuelto a habilitarse solo — reafirmado a deshabilitado' -Status WARN
+        } elseif ($recognizedUwp -contains $key) {
+            # Ya investigado y confirmado como legítimo — se deja arrancar, no se re-reporta como nuevo.
+            Write-Status -Label $key -Value 'StartupTask activo — reconocido/aprobado, se deja como está' -Status OK
         } else {
             Write-Status -Label $key -Value 'StartupTask activo, sin decisión previa' -Status INFO
             $null = $nuevos.Add([PSCustomObject]@{ tipo = 'uwp_startup_nuevo'; nombre = $key; detalle = 'no está en startup_disable_uwp — no se tocó' })

@@ -403,7 +403,7 @@ function Invoke-RetryList {
 
 # ── Modo reintento standalone: lee el log y reprocesa solo los FAIL ─
 if ($RetryFailed) {
-    Clear-Host
+    Clear-HostSafe
     Write-Host ""
     Write-Host "  ╔══════════════════════════════════════════════════╗" -ForegroundColor Cyan
     Write-Host "  ║     02 - REINTENTO DE FALLIDOS (último debloat)   ║" -ForegroundColor Cyan
@@ -424,7 +424,7 @@ if ($RetryFailed) {
     return
 }
 
-Clear-Host
+Clear-HostSafe
 Write-Host ""
 Write-Host "  ╔══════════════════════════════════════════════════╗" -ForegroundColor Cyan
 Write-Host "  ║         02 - DEBLOAT (perfil definitivo)         ║" -ForegroundColor Cyan

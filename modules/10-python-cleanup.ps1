@@ -13,7 +13,7 @@ $backupDir = "$scriptRoot\backups"
 if (-not (Test-Path $backupDir)) { New-Item -ItemType Directory -Force $backupDir | Out-Null }
 $date = (Get-Date).ToString('yyyy-MM-dd')
 
-Clear-Host
+Clear-HostSafe
 Write-Host ""
 Write-Host "  ╔══════════════════════════════════════════════════╗" -ForegroundColor Cyan
 Write-Host "  ║         10 - PYTHON CLEANUP                      ║" -ForegroundColor Cyan

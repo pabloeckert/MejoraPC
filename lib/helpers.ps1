@@ -170,6 +170,19 @@ function Wait-KeyIfInteractive {
     }
 }
 
+function Clear-HostSafe {
+    # Envuelve Clear-Host: en un host sin buffer de consola real (PowerShell
+    # 7/pwsh corriendo con salida redirigida, sesión remota, automatización
+    # sin pty) Clear-Host lanza SetValueInvocationException al intentar
+    # mover el cursor ("Controlador no válido") y aborta el script entero
+    # en su primera línea -- visto el 2026-09-07: tiró abajo 7 de 9 módulos
+    # del pipeline (01-backup, 02-debloat, 03-performance, 04-estetica,
+    # 06-seguridad, 10-python-cleanup, 13-verify) sin ejecutar nada de su
+    # lógica real. Es puramente estético (limpiar pantalla), así que un
+    # fallo acá nunca debe frenar el módulo.
+    try { Clear-Host } catch { if ($Error.Count -gt 0) { $Error.RemoveAt(0) } }
+}
+
 function Ensure-DataDirectory {
     param([string]$ScriptRoot)
     foreach ($dir in @("$ScriptRoot\data", "$ScriptRoot\logs", "$ScriptRoot\logs\usage")) {

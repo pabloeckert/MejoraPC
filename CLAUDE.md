@@ -110,7 +110,14 @@ específico de una máquina/usuario particular:
   no vive en el PATH persistente, así que cualquier proceso que no
   desciende de esa inyección — scheduled task, automatización, sesiones
   como la de Claude Code — la necesita explícita; llamada desde `run.ps1`
-  y desde todo módulo que use `winget` directo), etc.
+  y desde todo módulo que use `winget` directo), `Clear-HostSafe` (wrapper
+  de `Clear-Host` con try/catch — en un host sin buffer de consola real,
+  como PowerShell 7/pwsh corriendo con salida redirigida o sin pty,
+  `Clear-Host` lanza `SetValueInvocationException` al mover el cursor y
+  aborta el script entero en su primera línea; descubierto el 2026-09-07:
+  tiró abajo 7 de 9 módulos del pipeline automático sin ejecutar nada de
+  su lógica real. **Todo módulo usa `Clear-HostSafe`, nunca `Clear-Host`
+  directo**), etc.
 - **modules/** — módulos de optimización PowerShell:
   - `00-discover.ps1` — motor de descubrimiento, corre UNA vez por máquina
     (gate: `data/discovery-report.json`). Enumera software instalado,

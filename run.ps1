@@ -47,7 +47,7 @@ function Get-PendingRecs {
 }
 
 function Show-Banner {
-    Clear-Host
+    Clear-HostSafe
     Write-Host ""
     Write-Host "   __  __      _                 ____   ____ " -ForegroundColor Cyan
     Write-Host "  |  \/  | ___(_) ___  _ __ __ _|  _ \ / ___|" -ForegroundColor Cyan

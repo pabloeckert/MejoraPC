@@ -11,7 +11,7 @@ $backupDir = "$scriptRoot\backups"
 if (-not (Test-Path $backupDir)) { New-Item -ItemType Directory -Force $backupDir | Out-Null }
 $stamp = (Get-Date).ToString('yyyy-MM-dd_HH-mm-ss')
 
-Clear-Host
+Clear-HostSafe
 Write-Host ""
 Write-Host "  ╔══════════════════════════════════════════════════╗" -ForegroundColor Cyan
 Write-Host "  ║         01 - BACKUP                              ║" -ForegroundColor Cyan

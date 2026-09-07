@@ -14,7 +14,7 @@ $scriptRoot = Split-Path -Parent $PSScriptRoot
 . "$scriptRoot\lib\helpers.ps1"
 $null = Repair-WingetPath
 
-Clear-Host
+Clear-HostSafe
 Write-Host ""
 Write-Host "  ╔══════════════════════════════════════════════════╗" -ForegroundColor Cyan
 Write-Host "  ║      15 - DIAGNÓSTICO DE HARDWARE Y DRIVERS       ║" -ForegroundColor Cyan
@@ -139,12 +139,24 @@ try {
     $drivers = Get-CimInstance Win32_PnPSignedDriver -ErrorAction Stop |
         Where-Object { $_.DeviceName -and $_.DriverDate } |
         Select-Object DeviceName, DriverVersion, @{N='DriverDate';E={[datetime]$_.DriverDate}}, Manufacturer
-    $old = $drivers | Where-Object { $_.DriverDate -lt (Get-Date).AddYears(-3) -and $_.Manufacturer -notmatch 'Microsoft' } |
-        Sort-Object DriverDate | Select-Object -First 15
+    # Excluye componentes de plataforma/chipset (ACPI, PCI, SMBus, timer, RTC) que
+    # Windows reporta con fecha CENTINELA, no una fecha de driver real: 1968-07-17
+    # (época negativa/placeholder, ningún PC existía en 1968) y 2006-06-20 (fecha
+    # fija del WDK para la clase genérica "(Standard system devices)"). Estos nunca
+    # se actualizan vía driver descargable -- los gestiona el firmware/BIOS -- así
+    # que antes de este filtro generaban WARN en TODA corrida sin ser accionables
+    # (visto el 2026-09-07: 15/15 "candidatos" eran puro ruido de este tipo).
+    $sentinelDates = @('1968-07-17', '2006-06-20')
+    $old = $drivers | Where-Object {
+        $_.DriverDate -lt (Get-Date).AddYears(-3) -and
+        $_.Manufacturer -notmatch 'Microsoft' -and
+        $_.Manufacturer -notmatch 'Standard system devices' -and
+        ($_.DriverDate.ToString('yyyy-MM-dd') -notin $sentinelDates)
+    } | Sort-Object DriverDate | Select-Object -First 15
     if ($old) {
         Report WARN "Drivers de terceros con +3 años sin actualizar" "$($old.Count) candidato(s) — ver logs\hardware-check-$(Get-Date -Format 'yyyy-MM-dd').log para el detalle"
     } else {
-        Report OK 'Antigüedad de drivers' 'nada de terceros con más de 3 años'
+        Report OK 'Antigüedad de drivers' 'nada de terceros con más de 3 años (excluyendo componentes de plataforma con fecha centinela)'
     }
 } catch { $old = @() }
 

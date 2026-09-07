@@ -17,7 +17,7 @@ param([switch]$Auto)
 $scriptRoot = Split-Path -Parent $PSScriptRoot
 . "$scriptRoot\lib\helpers.ps1"
 
-Clear-Host
+Clear-HostSafe
 Write-Host ""
 Write-Host "  ╔══════════════════════════════════════════════════╗" -ForegroundColor Cyan
 Write-Host "  ║      00 - DESCUBRIMIENTO (primera vez aquí)      ║" -ForegroundColor Cyan
