@@ -4,7 +4,7 @@ Escaneo de hardware MANUAL (muestra output en consola).
 Auto-instala dependencias si faltan. Guarda en data/mejorapc.db (hardware_profile)
 y en data/status.json (para el banner de run.ps1).
 
-Perfil definitivo Pablo: 8GB RAM crítico, dev full-stack.
+Perfil definitivo Pablo: 16GB RAM (upgrade de los 8GB originales), dev full-stack.
 """
 import json
 import os

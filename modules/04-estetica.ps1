@@ -2,7 +2,7 @@
 param([switch]$Auto)
 
 # ── MejoraPC — modules/04-estetica.ps1 ─────────────────────────────
-# Ajustes visuales / animaciones. Perfil de 8GB: prioriza rendimiento.
+# Ajustes visuales / animaciones. Prioriza rendimiento (modo automático).
 
 $scriptRoot = Split-Path -Parent $PSScriptRoot
 . "$scriptRoot\lib\helpers.ps1"
@@ -16,7 +16,7 @@ Write-Host ""
 
 $opt = '1'
 if (-not $Auto) {
-    Write-Host "  [1] Modo Rendimiento (sin animaciones — recomendado 8GB)" -ForegroundColor White
+    Write-Host "  [1] Modo Rendimiento (sin animaciones — recomendado)" -ForegroundColor White
     Write-Host "  [2] Modo Equilibrado (efectos esenciales)" -ForegroundColor White
     Write-Host "  [3] Restaurar valores por defecto" -ForegroundColor White
     Write-Host "  [0] Volver" -ForegroundColor DarkGray
@@ -24,7 +24,7 @@ if (-not $Auto) {
     Write-Host "  Opción: " -NoNewline
     $opt = Read-Host
 } else {
-    Write-Host "  Modo automático: aplicando Rendimiento (recomendado 8GB)" -ForegroundColor DarkGray
+    Write-Host "  Modo automático: aplicando Rendimiento (recomendado)" -ForegroundColor DarkGray
 }
 
 $regPath = 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\VisualEffects'

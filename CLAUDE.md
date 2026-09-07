@@ -8,7 +8,12 @@ PCs. Suite de módulos PowerShell (optimización) + monitoreo Python
 (scan/monitor/analyze/report).
 
 ## Perfil de Pablo (esta máquina)
-- **RAM: 8GB — crítico.** Toda decisión prioriza liberar RAM.
+- **RAM: 16GB (upgrade de los 8GB originales, confirmado 2026-09-07).**
+  Windows reporta 15.8GB usable — merma normal por reserva de hardware/BIOS,
+  no falta memoria. Uso intensivo real (dev full-stack + browsers + WSL)
+  sigue generando alertas de RAM >85% frecuentes — ver `monitor/analyze.py`
+  — así que la prioridad de liberar RAM se mantiene, aunque ya no al nivel
+  crítico de la config original de 8GB.
 - Uso: desarrollador full-stack (Claude Code, VSCode, Git, Node, Python 3.14).
 - Hijo: Roblox app nativa (BlueStacks y LDPlayer se desinstalan).
 - Browsers: Chrome (principal), Brave (testing), Edge (alternativo).
