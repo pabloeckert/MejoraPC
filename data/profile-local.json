@@ -122,6 +122,14 @@
         "state_set": 1
       }
     ],
+    "applied_2026-09-07": [
+      {
+        "package": "5319275A.WhatsAppDesktop_cv1g1gvanyjgm",
+        "task_id": "2defd21c-0b9e-4e4e-873a-2a68c47d7da5",
+        "state_set": 1,
+        "_motivo": "Hallado por 16-startup-audit.ps1 (rutina mantenimiento) como StartupTask activo sin decisión previa. Conecta con la recomendacion [Media] de monitor/analyze.py 'Procesos no-dev consistentes: vmmem, WhatsApp.Root.exe' de la misma corrida — WhatsApp (version Store) consumia RAM seguido Y arrancaba solo, en una maquina con alertas de RAM >85% frecuentes (5/dia). WhatsApp sigue disponible, solo deja de abrirse solo al iniciar sesion."
+      }
+    ],
     "roadmap_note": "Si se reinstalan/actualizan estas apps el PackageFamilyName puede cambiar de sufijo (como GoogleChromeAutoLaunch_<hash> en startup_disable) y este bloqueo dejaría de aplicar. Para que 13-verify.ps1 lo re-verifique automáticamente, o 03-performance.ps1 lo re-aplique, habría que extenderlos a leer esta rama del registro además de run_keys — no implementado todavía."
   },
   "startup_audit_reconocidos": {
@@ -138,7 +146,8 @@
     "corel_helper_off": 200,
     "roblox_autostart_off": 60,
     "chrome_autolaunch_off": 150,
-    "canva_autolaunch_off": 40
+    "canva_autolaunch_off": 40,
+    "whatsapp_desktop_uwp_off": 250
   },
   "blockA_extra": {
     "_desc": "Grupos que Pablo confirmó personalmente que no usa. NO son bloatware universal — muchos (PuTTY, WinDirStat, Vivaldi, Opera GX) son herramientas legítimas para otros usuarios.",
