@@ -18,6 +18,9 @@
     ],
     "animaciones_off": [
       { "path": "HKCU:\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\VisualEffects", "name": "VisualFXSetting", "value": 2, "type": "DWord" }
+    ],
+    "processor_scheduling": [
+      { "path": "HKLM:\\SYSTEM\\CurrentControlSet\\Control\\PriorityControl", "name": "Win32PrioritySeparation", "value": 38, "type": "DWord" }
     ]
   },
   "user_preferences_mask": {
@@ -29,6 +32,7 @@
   },
   "services": [
     { "name": "SysMain", "action": "Disabled", "stop": true, "ram_estimate_mb": 100 },
+    { "name": "DiagTrack", "action": "Disabled", "stop": true, "ram_estimate_mb": 50 },
     { "name": "WSearch", "action": "Manual", "stop": false }
   ],
   "startup_disable": {},

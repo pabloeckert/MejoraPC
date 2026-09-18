@@ -161,6 +161,11 @@ específico de una máquina/usuario particular:
     `profile-local.json`). Reafirma solo lo ya aprobado si "drifeó": reporta
     sin tocar todo lo nuevo. Vuelca a `data/last-startup-audit.json`. Fuera
     del pipeline automático, igual que `15-hardware-check.ps1`.
+  - `20-kernel-performance.ps1` — optimización de kernel, MSI y servicios:
+    desactiva SysMain y DiagTrack (parada inmediata + inicio Disabled), activa
+    MSI Mode (MessageSignaledInterruptProperties) en PCIe (WiFi, Ethernet, GPU
+    Intel UHD), depura PATH y fija Win32PrioritySeparation=38 (0x26).
+    Se lanza elevado vía `EJECUTAR_KERNEL_ADMIN.bat`.
   - Módulos del pipeline (00,01,03,04,06,10,13) aceptan `-Auto`: sin
     submenú, decisión por defecto, sin ENTER final. `02-debloat.ps1` usa su
     `-Yes` existente (incluye Bloque B — decisión explícita de Pablo).

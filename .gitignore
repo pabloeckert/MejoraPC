@@ -9,6 +9,7 @@ data/last-verify.json
 data/discovery-report.json
 data/last-hardware-check.json
 data/last-startup-audit.json
+data/last-kernel-performance.json
 
 # Backups generados (contienen info del sistema del usuario)
 backups/
