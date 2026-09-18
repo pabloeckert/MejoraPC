@@ -263,7 +263,8 @@ VSCode, Git, GitHub CLI, Node, Bun, Rust, Python 3.14, Android Platform Tools,
 JDK 17, CorelDRAW, Audacity, SubtitleEdit, CapCut, Office, WinRAR, Total Commander,
 WinSCP, JDownloader, VLC, Spotify, Anthropic.Claude, OneDrive, Ubuntu/WSL,
 Windows Terminal, Chrome/Brave/Edge, Roblox, drivers Intel/Bluetooth/Chipset,
-AppInstaller (winget), Twinkle Tray, CLEVOCO Fan/Control Center.
+AppInstaller (winget), Twinkle Tray, CLEVOCO Fan/Control Center,
+Google.Antigravity / Antigravity IDE.
 (Este listado es específico de `data/profile-local.json` de Pablo — en otra
 PC no aplica, esa máquina tiene el suyo propio.)
 

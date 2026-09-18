@@ -337,6 +337,16 @@ function Invoke-RegistryUninstall {
 function Remove-Package {
     param([string]$Id)
 
+    # Protección de seguridad keep_always: nunca tocar lo explícitamente protegido
+    if ($bloat.keep_always) {
+        $pattern = Resolve-PackageName -Id $Id
+        foreach ($keep in $bloat.keep_always) {
+            if ($Id -like "*$keep*" -or $keep -like "*$Id*" -or $pattern -like "*$keep*" -or $keep -like "*$pattern*") {
+                return 'SKIP (keep_always)'
+            }
+        }
+    }
+
     # Verificación previa: si ya no está instalado, no intentamos nada y lo
     # marcamos SKIP (no instalado) — no es un fallo real.
     if (-not (Test-PackageInstalled -Id $Id)) { return 'SKIP (no instalado)' }

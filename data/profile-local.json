@@ -183,7 +183,6 @@
         "Ollama.Ollama",
         "Flywheel.Local",
         "Alibaba.Qwen",
-        "Google.Antigravity",
         "OpenAI.Codex"
       ],
       "sin_uso_confirmado": [
@@ -265,6 +264,8 @@
     "Intel drivers / Bluetooth / Chipset",
     "Microsoft.AppInstaller",
     "Twinkle Tray",
-    "CLEVOCO Fan Speed Setting / Control Center"
+    "CLEVOCO Fan Speed Setting / Control Center",
+    "Google.Antigravity",
+    "Antigravity IDE"
   ]
 }
