@@ -35,7 +35,7 @@ set "DEST=%LOCALAPPDATA%\MejoraPC"
 echo  Instalando en: %DEST%
 echo.
 
-robocopy "%SRC%." "%DEST%" /E /XD logs backups rescue __pycache__ .git .claude dist installer /XF Setup.bat setup-log.txt /NFL /NDL /NJH /NJS >nul
+robocopy "%SRC%." "%DEST%" /E /XD logs backups rescue __pycache__ .git .agents .gemini dist installer /XF Setup.bat setup-log.txt /NFL /NDL /NJH /NJS >nul
 echo [%date% %time%] robocopy codigo de salida: %ERRORLEVEL% >> "%SETUPLOG%"
 
 if not exist "%DEST%\run.ps1" (

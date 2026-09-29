@@ -112,7 +112,7 @@ memoria está crítica (<2.5GB) o si hay recomendaciones inteligentes pendientes
 
 `data/profile-local.json` **nunca viaja en el paquete USB** — es la
 frontera de seguridad entre "esta PC" y cualquier otra. En esta máquina
-(Pablo): 16GB RAM, dev full-stack (Claude Code, VSCode, Git, Node,
+(Pablo): 16GB RAM, dev full-stack (Antigravity, VSCode, Git, Node,
 Python 3.14), hijo con Roblox nativo, browsers Chrome/Brave/Edge.
 
 Catálogo universal (cualquier PC) en

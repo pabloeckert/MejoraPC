@@ -1,4 +1,4 @@
-﻿[CmdletBinding()]
+[CmdletBinding()]
 param([switch]$Auto)
 
 # ── MejoraPC — modules/10-python-cleanup.ps1 ───────────────────────
@@ -51,10 +51,7 @@ foreach ($p in $pythons) {
 }
 Write-Host ""
 
-# ── 2. Cuál usa Claude Code ────────────────────────────────────────
-$claudePy = $null
-$claudeCfg = "$env:APPDATA\Claude"
-if (Test-Path $claudeCfg) { Write-Host "  Config Claude detectada en $claudeCfg" -ForegroundColor DarkGray }
+# ── 2. Entorno Antigravity / Gemini y Python en PATH ───────────────
 $pathPy = (Get-Command python -ErrorAction SilentlyContinue).Source
 if ($pathPy) { Write-Host "  python en PATH -> $pathPy" -ForegroundColor DarkGray }
 

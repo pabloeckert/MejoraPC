@@ -17,7 +17,7 @@
       "CorelDRAW Graphics Suite 2026"
     ],
     "answered": "2026-08-08",
-    "note": "Encuesta respondida por chat (Claude Code) en vez de por modules/00-discover.ps1 interactivo — la herramienta usada no tiene consola interactiva real para el Read-Host del script. Mismo esquema de datos que generaría el script."
+    "note": "Encuesta respondida por chat (Google Antigravity / Gemini) en vez de por modules/00-discover.ps1 interactivo — la herramienta usada no tiene consola interactiva real para el Read-Host del script. Mismo esquema de datos que generaría el script."
   },
   "registry": {
     "vs_telemetria": [
@@ -252,7 +252,6 @@
     "AppWork.JDownloader",
     "VideoLAN.VLC",
     "Spotify.Spotify",
-    "Anthropic.Claude",
     "Microsoft.OneDrive",
     "Canonical.Ubuntu.2204",
     "WSL",

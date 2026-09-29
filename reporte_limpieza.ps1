@@ -1,4 +1,4 @@
-﻿# Ejecutar como Administrador
+# Ejecutar como Administrador
 # Uso: powershell -ExecutionPolicy Bypass -File C:\Github\Herramientas\MejoraPC\reporte_limpieza.ps1
 
 $report = @()
@@ -185,6 +185,6 @@ Write-Host "Reportes guardados en:" -ForegroundColor Green
 Write-Host "  $outCSV" -ForegroundColor White
 Write-Host "  $outTXT" -ForegroundColor White
 Write-Host ""
-Write-Host "Abre el TXT y pegalo a Claude para el analisis completo." -ForegroundColor Cyan
+Write-Host "Abre el TXT y pegalo a Gemini / Antigravity para el analisis completo." -ForegroundColor Cyan
 Write-Host ""
-Write-Host "Pega el contenido de reporte_limpieza_resultado.txt a Claude para el analisis completo." -ForegroundColor Cyan
+Write-Host "Pega el contenido de reporte_limpieza_resultado.txt a Gemini / Antigravity para el analisis completo." -ForegroundColor Cyan

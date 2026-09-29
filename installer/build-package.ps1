@@ -1,4 +1,4 @@
-﻿[CmdletBinding()]
+[CmdletBinding()]
 param(
     [string]$OutDir = "$PSScriptRoot\..\dist\MejoraPC-portable"
 )
@@ -41,7 +41,7 @@ $excludeFiles = @(
     'mirror-output-dir.txt'
 )
 # Carpetas de runtime/historial + control de versiones/estado local.
-$excludeDirs = @('logs', 'backups', 'rescue', '__pycache__', '.git', '.claude', 'dist')
+$excludeDirs = @('logs', 'backups', 'rescue', '__pycache__', '.git', '.agents', '.gemini', 'dist')
 
 $robocopyArgs = @($scriptRoot, $OutDir, '/E', '/XD') + $excludeDirs + @('/XF') + $excludeFiles + @('/NFL', '/NDL', '/NJH', '/NJS')
 robocopy @robocopyArgs | Out-Null

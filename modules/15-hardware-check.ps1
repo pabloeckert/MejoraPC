@@ -1,4 +1,4 @@
-﻿[CmdletBinding()]
+[CmdletBinding()]
 param([switch]$Auto)
 
 # ── MejoraPC — modules/15-hardware-check.ps1 ───────────────────────
@@ -6,7 +6,7 @@ param([switch]$Auto)
 # instala, actualiza ni desinstala nada (los drivers se proponen para que
 # Pablo confirme, o se derivan a Windows Update / Intel Driver & Support
 # Assistant, que ya vive en keep_always). Parte de la rutina "mantenimiento"
-# (.claude/skills/mantenimiento) — no integra al pipeline automático de
+# (.agents/skills/mantenimiento) — no integra al pipeline automático de
 # run.ps1 por defecto porque algunos chequeos (SMART, eventos del sistema)
 # no hacen falta en cada corrida rápida.
 
