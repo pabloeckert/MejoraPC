@@ -1,4 +1,4 @@
-[CmdletBinding()]
+﻿[CmdletBinding()]
 param([switch]$Menu)
 
 $ErrorActionPreference = 'Continue'
@@ -7,6 +7,35 @@ $scriptRoot = $PSScriptRoot
 Ensure-DataDirectory -ScriptRoot $scriptRoot
 $null = Repair-WingetPath
 Repair-PSModulePath
+
+# ── Verificación Pre-Flight: Codificación UTF-8 con BOM (KB5132061 guardrail) ──
+function Test-ScriptEncodingPreflight {
+    param([string]$Root)
+    $nonBom = [System.Collections.ArrayList]@()
+    Get-ChildItem -Path $Root -Filter *.ps1 -Recurse -ErrorAction SilentlyContinue | ForEach-Object {
+        try {
+            $fs = [System.IO.File]::OpenRead($_.FullName)
+            $bytes = New-Object byte[] 3
+            $read = $fs.Read($bytes, 0, 3)
+            $fs.Close()
+            if ($read -lt 3 -or $bytes[0] -ne 239 -or $bytes[1] -ne 187 -or $bytes[2] -ne 191) {
+                $null = $nonBom.Add($_.FullName.Replace($Root, '').TrimStart('\/'))
+            }
+        } catch { }
+    }
+    if ($nonBom.Count -gt 0) {
+        Write-Host "`n  [x] PRE-FLIGHT ERROR: Scripts .ps1 sin UTF-8 BOM detectados ($($nonBom.Count))." -ForegroundColor Red
+        Write-Host "      Requerido por validación estricta post-KB5132061 en Windows 11 26H2." -ForegroundColor Red
+        foreach ($f in $nonBom) { Write-Host "      - $f" -ForegroundColor Yellow }
+        Write-Host "      Corregir antes de ejecutar el pipeline.`n" -ForegroundColor DarkGray
+        return $false
+    }
+    return $true
+}
+
+if (-not (Test-ScriptEncodingPreflight -Root $scriptRoot)) {
+    if (-not $Menu) { Start-Sleep -Seconds 3; exit 1 }
+}
 
 # Advertir si no es admin
 if (-not ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)) {

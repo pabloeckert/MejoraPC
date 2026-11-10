@@ -1,4 +1,4 @@
-[CmdletBinding()]
+﻿[CmdletBinding()]
 param([switch]$Auto)
 
 # ── MejoraPC — modules/10-python-cleanup.ps1 ───────────────────────

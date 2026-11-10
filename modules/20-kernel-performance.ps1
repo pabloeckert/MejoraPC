@@ -216,6 +216,40 @@ try {
 }
 Write-Host ""
 
+# ═══════════════════════════════════════════════════════════════════
+# 5. AJUSTE DE MEMORIA STANDBY / COMPRESIÓN (Disable-MMAgent -mc)
+# ═══════════════════════════════════════════════════════════════════
+Write-Host "  ── 5. Gestión de Compresión de Memoria (MMAgent)" -ForegroundColor Cyan
+$reportData | Add-Member -NotePropertyName 'memory_compression' -NotePropertyValue $null -Force
+
+$totalRamBytes = (Get-CimInstance Win32_ComputerSystem -ErrorAction SilentlyContinue).TotalPhysicalMemory
+$totalRamGB = if ($totalRamBytes) { [math]::Round($totalRamBytes / 1GB, 1) } else { 0 }
+
+if ($totalRamGB -ge 15.5) { # 16GB nominal (15.8GB por reserva BIOS)
+    try {
+        Disable-MMAgent -MemoryCompression -ErrorAction Stop
+        Write-Status "Memory Compression (MMAgent)" "Deshabilitada ($totalRamGB GB RAM detectados — libera ciclos CPU de compresión)" 'OK'
+        Write-KLog "MMAGENT MemoryCompression Disabled (RAM=$totalRamGB GB)"
+        $reportData.memory_compression = [pscustomobject]@{
+            ram_detected_gb = $totalRamGB
+            action = 'Disabled'
+            reason = 'RAM >= 16GB — se liberan ciclos de compresión de CPU'
+        }
+    } catch {
+        Write-Status "Memory Compression (MMAgent)" "error al aplicar: $_" 'WARN'
+        Write-KLog "MMAGENT FAIL : $_"
+    }
+} else {
+    Write-Status "Memory Compression (MMAgent)" "Omitida ($totalRamGB GB detectados < 16GB — compresión requerida)" 'INFO'
+    Write-KLog "MMAGENT Skip (RAM=$totalRamGB GB < 16GB)"
+    $reportData.memory_compression = [pscustomobject]@{
+        ram_detected_gb = $totalRamGB
+        action = 'Skipped'
+        reason = 'RAM < 16GB — compresión preservada para evitar agotamiento de memoria'
+    }
+}
+Write-Host ""
+
 # ── Guardar datos del reporte consolidado ──────────────────────────
 $dataFile = "$scriptRoot\data\last-kernel-performance.json"
 $reportData | ConvertTo-Json -Depth 6 | Set-Content -Path $dataFile -Encoding UTF8

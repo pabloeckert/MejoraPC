@@ -1,4 +1,4 @@
-[CmdletBinding()]
+﻿[CmdletBinding()]
 param([switch]$Auto)
 
 # ── MejoraPC — modules/16-startup-audit.ps1 ────────────────────────

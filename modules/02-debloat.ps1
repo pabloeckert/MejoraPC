@@ -1,4 +1,4 @@
-[CmdletBinding()]
+﻿[CmdletBinding()]
 param(
     [switch]$Yes,
     # Lee el último log de debloat y reintenta SOLO los FAIL con el método correcto.
@@ -468,6 +468,34 @@ if (Set-RemovePolicy -PolicyBase $policyBase -Pfns $pfns) {
 } else {
     Write-Status "RemoveDefaultMicrosoftStorePackages" "no se pudo escribir (requiere admin)" 'ERROR'
 }
+
+# ── Blindaje de Telemetría Persistente vía Políticas de Registro (Anti-Reversión 26H2) ──
+$telemetryPolicies = @(
+    @{ Path = 'HKLM:\SOFTWARE\Policies\Microsoft\Windows\DataCollection'; Name = 'AllowTelemetry'; Value = 0; Type = 'DWord' },
+    @{ Path = 'HKLM:\SOFTWARE\Policies\Microsoft\Windows\DataCollection'; Name = 'MaxTelemetryAllowed'; Value = 0; Type = 'DWord' },
+    @{ Path = 'HKLM:\SOFTWARE\Policies\Microsoft\Windows\DataCollection'; Name = 'DoNotShowFeedbackNotifications'; Value = 1; Type = 'DWord' },
+    @{ Path = 'HKLM:\SOFTWARE\Policies\Microsoft\Windows\DataCollection'; Name = 'DisableOneSettingsDownloads'; Value = 1; Type = 'DWord' },
+    @{ Path = 'HKLM:\SOFTWARE\Policies\Microsoft\Windows\CloudContent'; Name = 'DisableSoftLanding'; Value = 1; Type = 'DWord' },
+    @{ Path = 'HKLM:\SOFTWARE\Policies\Microsoft\Windows\CloudContent'; Name = 'DisableWindowsConsumerFeatures'; Value = 1; Type = 'DWord' },
+    @{ Path = 'HKLM:\SOFTWARE\Policies\Microsoft\Windows\System'; Name = 'EnableActivityFeed'; Value = 0; Type = 'DWord' },
+    @{ Path = 'HKLM:\SOFTWARE\Policies\Microsoft\Windows\System'; Name = 'PublishUserActivities'; Value = 0; Type = 'DWord' },
+    @{ Path = 'HKLM:\SOFTWARE\Policies\Microsoft\Windows\System'; Name = 'UploadUserActivities'; Value = 0; Type = 'DWord' },
+    @{ Path = 'HKLM:\SOFTWARE\Policies\Microsoft\Windows\AdvertisingInfo'; Name = 'DisabledByGroupPolicy'; Value = 1; Type = 'DWord' },
+    @{ Path = 'HKLM:\SOFTWARE\Policies\Microsoft\Windows\AppCompat'; Name = 'AITEnable'; Value = 0; Type = 'DWord' },
+    @{ Path = 'HKLM:\SOFTWARE\Policies\Microsoft\Windows\AppCompat'; Name = 'DisableInventory'; Value = 1; Type = 'DWord' }
+)
+$polOk = 0
+foreach ($tp in $telemetryPolicies) {
+    try {
+        if (-not (Test-Path $tp.Path)) { New-Item -Path $tp.Path -Force -ErrorAction Stop | Out-Null }
+        Set-ItemProperty -Path $tp.Path -Name $tp.Name -Value $tp.Value -Type $tp.Type -Force -ErrorAction Stop
+        $polOk++
+        Write-Log "POLICY REG  $($tp.Path)\$($tp.Name) = $($tp.Value)"
+    } catch {
+        Write-Log "POLICY REG FAIL  $($tp.Path)\$($tp.Name) : $_"
+    }
+}
+Write-Status "Telemetría persistente (GPO Registry 26H2)" "$polOk de $($telemetryPolicies.Count) políticas de blindaje aplicadas" 'OK'
 Write-Host ""
 
 # ═══════════════════════════════════════════════════════════════════

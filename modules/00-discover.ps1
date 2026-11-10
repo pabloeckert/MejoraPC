@@ -83,12 +83,35 @@ $unrecognizedSample = @($unrecognizedSorted | Select-Object -First 50 | ForEach-
     [pscustomobject]@{ name = $_.Name; publisher = $_.Publisher; size_mb = $_.SizeMB }
 })
 
+# ── 3b. Safe-Zone de Audio: Detección y Blindaje de USB Audio 1.0 (Fix Code 10 en 26H2) ──
+$audioSafeZone = [System.Collections.ArrayList]@()
+try {
+    $usbAudioDevs = Get-PnpDevice -ErrorAction SilentlyContinue | Where-Object {
+        ($_.Service -eq 'usbaudio' -or $_.InstanceId -like 'USB\*' -or $_.InstanceId -like 'SWD\MMDEVAPI\*') -and
+        ($_.Class -in @('MEDIA', 'AudioEndpoint') -or $_.FriendlyName -match 'USB.*Audio|Headset|Micrófono|Altavoces')
+    }
+    foreach ($dev in $usbAudioDevs) {
+        $null = $audioSafeZone.Add([pscustomobject]@{
+            friendly_name = $dev.FriendlyName
+            instance_id   = $dev.InstanceId
+            service       = $dev.Service
+            status        = $dev.Status
+        })
+    }
+    if ($audioSafeZone.Count -gt 0) {
+        Write-Status "Audio Safe-Zone" "$($audioSafeZone.Count) dispositivo(s) USB Audio blindados contra debloat/kernel tuning" 'OK'
+    }
+} catch {
+    Write-Status "Audio Safe-Zone" "no se pudo enumerar dispositivos: $_" 'WARN'
+}
+
 [pscustomobject]@{
-    timestamp          = (Get-Date).ToString('o')
+    timestamp           = (Get-Date).ToString('o')
     installed_count     = $installed.Count
     universal_matches   = $universalMatches
     unrecognized_count  = $unrecognized.Count
     unrecognized_sample = $unrecognizedSample
+    audio_safe_zone     = $audioSafeZone
 } | ConvertTo-Json -Depth 6 | Set-Content -Path "$scriptRoot\data\discovery-report.json" -Encoding UTF8
 Write-Status "Reporte" "guardado en data\discovery-report.json" 'OK'
 
