@@ -93,7 +93,7 @@ function Remove-AppxByFamilyName {
     try {
         Get-AppxProvisionedPackage -Online -ErrorAction SilentlyContinue |
             Where-Object { $_.PackageName -like "$name`_*" -or $_.DisplayName -eq $name } |
-            ForEach-Object { $null = Remove-AppxProvisionedPackage -Online -PackageName $_.PackageName -ErrorAction SilentlyContinue; $removed = $true }
+            ForEach-Object { $null = Remove-AppxProvisionedPackage -Online -PackageName $_.PackageName -ErrorAction SilentlyContinue; $script:removed = $true }
     } catch {
         # Get-AppxProvisionedPackage -Online puede tirar "Access is denied" (COMException)
         # incluso corriendo como admin — límite conocido de DISM en builds recientes de
