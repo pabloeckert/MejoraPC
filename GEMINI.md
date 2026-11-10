@@ -5,8 +5,12 @@ Sistema de mantenimiento preventivo, debloat en 3 capas, optimización de kernel
 ---
 
 ## 1. Perfil del Equipo Principal (Pablo)
-- **Hardware base:** Banghó Max L5 (Intel Core i7-10510U, **16 GB RAM** tras upgrade físico desde los 8 GB originales; Windows reporta ~15.8 GB utilizables por reserva de BIOS/hardware).
-- **Entorno de uso:** Desarrollo full-stack (Google Antigravity IDE, VSCode, Git, Node, Bun, Rust, Python 3.14, WSL/Ubuntu), diseño (CorelDRAW 2026) y uso familiar (Roblox nativo).
+- **Hardware base:** Banghó Max L5 (Intel Core i7-10510U @ 1.80GHz - 2.30 GHz, 4 núcleos físicos / 8 lógicos).
+- **Memoria RAM:** **16 GB RAM** instalados (15.8 GB utilizables por reserva de BIOS/hardware).
+- **Gráficos:** Intel(R) UHD Graphics (Driver 31.0.101.2145).
+- **Almacenamiento:** SSD NVMe 466 GB (C:\ ~160 GB usado de 466 GB, 304 GB libres).
+- **Sistema Operativo:** Windows 11 Pro 64 bits, **Versión 26H2** (Compilación 26300.9974, instalada el 25/09/2026, Paquete de experiencia 1000.26100.385.0).
+- **Entorno de uso:** Desarrollo full-stack (Google Antigravity IDE, VSCode, Git, Node, Bun, Rust, Python 3.14, WSL/Ubuntu), diseño (CorelDRAW 2026), productividad IA (Speechify, Gemini Desktop) y uso familiar (Roblox nativo).
 - **Navegadores activos:** Google Chrome, Brave y Microsoft Edge.
 - **Monitoreo:** 100% silencioso en segundo plano (`pythonw.exe`), cero ventanas emergentes.
 
