@@ -1,4 +1,4 @@
-﻿[CmdletBinding()]
+[CmdletBinding()]
 param([switch]$Auto)
 
 # ── MejoraPC — modules/16-startup-audit.ps1 ────────────────────────
@@ -41,17 +41,17 @@ function Write-Section {
 }
 
 $profilePath = "$scriptRoot\data\profile-local.json"
-$profile = $null
-if (Test-Path $profilePath) { $profile = Get-Content $profilePath -Raw -Encoding UTF8 | ConvertFrom-Json }
+$localProfile = $null
+if (Test-Path $profilePath) { $localProfile = Get-Content $profilePath -Raw -Encoding UTF8 | ConvertFrom-Json }
 $knownUwp = @()
-if ($profile -and $profile.startup_disable_uwp) {
-    foreach ($p in $profile.startup_disable_uwp.PSObject.Properties) {
+if ($localProfile -and $localProfile.startup_disable_uwp) {
+    foreach ($p in $localProfile.startup_disable_uwp.PSObject.Properties) {
         if ($p.Name -like 'applied_*') { $knownUwp += $p.Value }
     }
 }
 $knownUwpKeys = $knownUwp | ForEach-Object { "$($_.package)\$($_.task_id)" }
 $recognized = $null
-if ($profile -and $profile.startup_audit_reconocidos) { $recognized = $profile.startup_audit_reconocidos }
+if ($localProfile -and $localProfile.startup_audit_reconocidos) { $recognized = $localProfile.startup_audit_reconocidos }
 $recognizedTaskPatterns = @($recognized.task_name_patterns)
 $recognizedUwp = @($recognized.uwp)
 

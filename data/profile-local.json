@@ -1,9 +1,9 @@
 {
   "_meta": {
     "profile": "Pablo — definitivo",
-    "ram_gb": 8,
+    "ram_gb": 16,
     "notes": "Perfil LOCAL de esta máquina — nunca viaja en el paquete USB (installer/build-package.ps1 lo excluye). Se mergea sobre data/universal-tweaks.json y data/universal-bloatware.json vía lib/helpers.ps1 (Get-MergedTweaksCatalog / Get-MergedBloatCatalog). En una PC ajena, este archivo lo genera modules/00-discover.ps1 (encuesta breve) en vez de estar curado a mano.",
-    "updated": "2026-09-05",
+    "updated": "2026-11-10",
     "origin": "manual"
   },
   "survey": {
@@ -201,6 +201,10 @@
     "_desc": "Riesgo medio. Ya excluido del catálogo universal por diseño — solo se aplica en máquinas con profile-local.json (autonomía total ya aceptada).",
     "dev_scan": {
       "scan_root": "C:\\Github\\",
+      "scan_roots": [
+        "C:\\Github\\",
+        "C:\\github_personal\\"
+      ],
       "detect": [
         "node_modules con módulos nativos (*.node)",
         "Electron en package.json",

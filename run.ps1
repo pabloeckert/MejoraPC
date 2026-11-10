@@ -1,4 +1,4 @@
-﻿[CmdletBinding()]
+[CmdletBinding()]
 param([switch]$Menu)
 
 $ErrorActionPreference = 'Continue'
@@ -81,7 +81,7 @@ function Show-Banner {
     }
     Write-Host ""
 
-    if ($ramFree -ne $null -and $ramFree -lt 2.5) {
+    if ($null -ne $ramFree -and $ramFree -lt 2.5) {
         Write-Host "  ⚠ MEMORIA CRÍTICA — ejecutá [11] Workflow optimizer primero" -ForegroundColor Red
         Write-Host ""
     }
@@ -114,6 +114,9 @@ function Show-Menu {
     Write-Host "  12  Instalar monitor background" -ForegroundColor Magenta
     Write-Host "  13  Verificación real del sistema" -ForegroundColor Green
     Write-Host "  14  Verificación post-reinicio (manual)" -ForegroundColor Green
+    Write-Host "  15  Diagnóstico de hardware y drivers" -ForegroundColor Cyan
+    Write-Host "  16  Auditoría integral de arranque" -ForegroundColor Cyan
+    Write-Host "  20  Optimización profunda de Kernel, MSI y PATH" -ForegroundColor Yellow
     Write-Host ""
     Write-Host "   0  Salir" -ForegroundColor DarkGray
     Write-Host ""
@@ -326,6 +329,9 @@ do {
         }
         '13' { Invoke-Module "modules\13-verify.ps1" }
         '14' { Invoke-Module "modules\14-post-reboot-verify.ps1" }
+        '15' { Invoke-Module "modules\15-hardware-check.ps1" }
+        '16' { Invoke-Module "modules\16-startup-audit.ps1" }
+        '20' { Invoke-Module "modules\20-kernel-performance.ps1" }
         '0'  { Write-Host "`n  Hasta luego.`n" -ForegroundColor Cyan; break }
         default { Write-Host "`n  Opción no válida." -ForegroundColor Red; Start-Sleep -Seconds 1 }
     }

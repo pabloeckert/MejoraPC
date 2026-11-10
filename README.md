@@ -80,6 +80,9 @@ aprender de esa máquina en adelante).
   12  Instalar monitor background
   13  Verificación real del sistema
   14  Verificación post-reinicio (manual)
+  15  Diagnóstico de hardware y drivers
+  16  Auditoría integral de arranque
+  20  Optimización profunda de Kernel, MSI y PATH
    0  Salir
 ```
 
@@ -107,6 +110,9 @@ memoria está crítica (<2.5GB) o si hay recomendaciones inteligentes pendientes
 | 12 | `monitor/monitor.py --install` | Scheduled tasks **invisibles** (sample 15min + análisis semanal) |
 | 13 | `modules/13-verify.ps1` | Verificación real: relee disco/registry/servicios en vez de confiar en lo que reportaron los otros módulos |
 | 14 | `modules/14-post-reboot-verify.ps1` | Corre la verificación tras reiniciar; se auto-borra de la scheduled task si fue disparado por ella |
+| 15 | `modules/15-hardware-check.ps1` | Diagnóstico de hardware (SMART, CPU/WHEA, RAM) y antigüedad de drivers (solo reporte) |
+| 16 | `modules/16-startup-audit.ps1` | Auditoría integral de arranque (Run/RunOnce, carpetas Startup, Tasks Logon/Boot, Winlogon, UWP StartupTask) |
+| 20 | `modules/20-kernel-performance.ps1` | Optimización profunda de kernel (`Win32PrioritySeparation`), modo MSI en PCIe (Red/Display), servicios y limpieza de `PATH` |
 
 ## 👤 Perfil local (esta máquina)
 
@@ -134,7 +140,7 @@ python monitor/monitor.py --uninstall    # quitar
 ## 🐍 Dependencias Python
 
 ```powershell
-pip install -r monitor/requirements.txt   # psutil, rich, schedule
+pip install -r monitor/requirements.txt   # psutil, rich
 ```
 
 `scan.py` autoinstala `psutil`/`rich` si faltan.

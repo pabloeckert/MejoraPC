@@ -1,4 +1,4 @@
-﻿[CmdletBinding()]
+[CmdletBinding()]
 param(
     [switch]$Yes,
     # Lee el último log de debloat y reintenta SOLO los FAIL con el método correcto.
@@ -511,52 +511,59 @@ Write-Host "  Total Bloque A: $($blockAList.Count) paquetes" -ForegroundColor Wh
 Write-Host ""
 
 # ── Análisis automático VS / Build Tools / .NET (rápido, con timeout) ──
-Write-Host "  Analizando dependencias de desarrollo en C:\Github\ ..." -ForegroundColor DarkGray
-$scanRoot    = $bloat.blockB.dev_scan.scan_root
+$scanRoots = @()
+if ($bloat.blockB -and $bloat.blockB.dev_scan) {
+    if ($bloat.blockB.dev_scan.scan_roots) { $scanRoots += @($bloat.blockB.dev_scan.scan_roots) }
+    elseif ($bloat.blockB.dev_scan.scan_root) { $scanRoots += $bloat.blockB.dev_scan.scan_root }
+}
+$scanRoots = @($scanRoots + (Split-Path -Parent $scriptRoot) | Where-Object { $_ } | Select-Object -Unique)
+Write-Host "  Analizando dependencias de desarrollo en $($scanRoots -join ', ') ..." -ForegroundColor DarkGray
 $needsNative = $false
 $reasons     = [System.Collections.ArrayList]@()
 $timedOut    = $false
 
-# Todo el análisis corre en un job con corte duro a los 10s: aunque un
+# Todo el análisis corre en un job con corte duro a los 25s: aunque un
 # Get-ChildItem se cuelgue dentro, el Wait-Job -Timeout garantiza continuar.
 $scanBlock = {
-    param($root)
+    param([string[]]$roots)
     $found = @()
-    if (Test-Path $root) {
-        foreach ($proj in (Get-ChildItem -Path $root -Directory -ErrorAction SilentlyContinue)) {
-            # package.json (raíz del proyecto) — "electron" → conservar Build Tools
-            $pkg = Join-Path $proj.FullName 'package.json'
-            if (Test-Path $pkg) {
-                if ((Get-Content $pkg -Raw -ErrorAction SilentlyContinue) -match '"electron"') {
-                    $found += "Electron (package.json) en $($proj.Name)"
+    foreach ($root in $roots) {
+        if (Test-Path $root) {
+            foreach ($proj in (Get-ChildItem -Path $root -Directory -ErrorAction SilentlyContinue)) {
+                # package.json (raíz del proyecto) — "electron" → conservar Build Tools
+                $pkg = Join-Path $proj.FullName 'package.json'
+                if (Test-Path $pkg) {
+                    if ((Get-Content $pkg -Raw -ErrorAction SilentlyContinue) -match '"electron"') {
+                        $found += "Electron (package.json) en $($proj.Name)"
+                    }
                 }
-            }
-            # requirements.txt (raíz) — "pythonnet"/"clr" → conservar .NET
-            $req = Join-Path $proj.FullName 'requirements.txt'
-            if (Test-Path $req) {
-                if ((Get-Content $req -Raw -ErrorAction SilentlyContinue) -match 'pythonnet|clr') {
-                    $found += "pythonnet/.NET (requirements.txt) en $($proj.Name)"
+                # requirements.txt (raíz) — "pythonnet"/"clr" → conservar .NET
+                $req = Join-Path $proj.FullName 'requirements.txt'
+                if (Test-Path $req) {
+                    if ((Get-Content $req -Raw -ErrorAction SilentlyContinue) -match 'pythonnet|clr') {
+                        $found += "pythonnet/.NET (requirements.txt) en $($proj.Name)"
+                    }
                 }
-            }
-            # pyproject.toml (raíz) — "pythonnet"/"clr" → conservar .NET
-            $pyproj = Join-Path $proj.FullName 'pyproject.toml'
-            if (Test-Path $pyproj) {
-                if ((Get-Content $pyproj -Raw -ErrorAction SilentlyContinue) -match 'pythonnet|clr') {
-                    $found += "pythonnet/.NET (pyproject.toml) en $($proj.Name)"
+                # pyproject.toml (raíz) — "pythonnet"/"clr" → conservar .NET
+                $pyproj = Join-Path $proj.FullName 'pyproject.toml'
+                if (Test-Path $pyproj) {
+                    if ((Get-Content $pyproj -Raw -ErrorAction SilentlyContinue) -match 'pythonnet|clr') {
+                        $found += "pythonnet/.NET (pyproject.toml) en $($proj.Name)"
+                    }
                 }
-            }
-            # node_modules — extensión .node → conservar Build Tools
-            $nm = Join-Path $proj.FullName 'node_modules'
-            if (Test-Path $nm) {
-                $nodeNative = Get-ChildItem -Path $nm -Recurse -Filter '*.node' -ErrorAction SilentlyContinue -Force | Select-Object -First 1
-                if ($nodeNative) { $found += "Módulos nativos Node (.node) en $($proj.Name)" }
+                # node_modules — extensión .node → conservar Build Tools
+                $nm = Join-Path $proj.FullName 'node_modules'
+                if (Test-Path $nm) {
+                    $nodeNative = Get-ChildItem -Path $nm -Recurse -Filter '*.node' -ErrorAction SilentlyContinue -Force | Select-Object -First 1
+                    if ($nodeNative) { $found += "Módulos nativos Node (.node) en $($proj.Name)" }
+                }
             }
         }
     }
     ,$found
 }
 
-$job = Start-Job -ScriptBlock $scanBlock -ArgumentList $scanRoot
+$job = Start-Job -ScriptBlock $scanBlock -ArgumentList (,$scanRoots)
 if (Wait-Job $job -Timeout 25) {
     foreach ($r in (Receive-Job $job)) { $needsNative = $true; $null = $reasons.Add($r) }
 } else {

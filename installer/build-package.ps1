@@ -31,9 +31,8 @@ New-Item -ItemType Directory -Force -Path $OutDir | Out-Null
 $excludeFiles = @(
     'mejorapc.db', 'profile-local.json', 'status.json',
     'last-verify.json', 'discovery-report.json', 'monitor.log',
-    'last-hardware-check.json', 'last-startup-audit.json',
+    'last-hardware-check.json', 'last-startup-audit.json', 'last-kernel-performance.json',
     'hardware-profile.json', 'recommendations.json', 'smart-recommendations.json',
-    'reporte_limpieza_resultado.csv', 'reporte_limpieza_resultado.txt',
     # Config de un despliegue puntual (ruta de una carpeta de OneDrive
     # compartida específica) — gitignoreado, pero robocopy no respeta
     # .gitignore, así que sin esta entrada terminaba igual en el paquete USB

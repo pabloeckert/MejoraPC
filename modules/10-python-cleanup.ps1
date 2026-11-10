@@ -57,38 +57,40 @@ if ($pathPy) { Write-Host "  python en PATH -> $pathPy" -ForegroundColor DarkGra
 
 # ── 3. Escanear dependencias de proyectos (rápido, con timeout) ────
 # Mismo enfoque que 02-debloat.ps1: todo el escaneo corre en un job con
-# corte duro a los 10s. Solo primer nivel de C:\Github\ (no recursivo) y
-# solo archivos en la raíz de cada proyecto. Si se cuelga, se asume que no
-# hay dependencias específicas y se continúa.
+# corte duro a los 10s. Solo primer nivel de C:\Github\ y C:\github_personal\
+# (no recursivo) y solo archivos en la raíz de cada proyecto. Si se cuelga,
+# se asume que no hay dependencias específicas y se continúa.
 $pinned   = [System.Collections.ArrayList]@()
-$ghRoot   = 'C:\Github\'
+$ghRoots  = @('C:\Github\', 'C:\github_personal\', (Split-Path -Parent $scriptRoot)) | Select-Object -Unique
 $timedOut = $false
 
 # Versión instalada más nueva (p. ej. 3.14): si satisface un constraint de
 # mínimo (>=, ~=, ^) no hace falta conservar versiones viejas.
-$installedMinors = @($pythons | ForEach-Object { ($_.Version -split '\.')[1] -as [int] } | Where-Object { $_ -ne $null })
+$installedMinors = @($pythons | ForEach-Object { ($_.Version -split '\.')[1] -as [int] } | Where-Object { $null -ne $_ })
 $newestMinor     = if ($installedMinors) { ($installedMinors | Measure-Object -Maximum).Maximum } else { 14 }
 
 $scanBlock = {
-    param($root, $newestMinor)
+    param([string[]]$roots, $newestMinor)
     $newest = [version]"3.$newestMinor"
     $versions = @()
-    if (Test-Path $root) {
-        foreach ($proj in (Get-ChildItem -Path $root -Directory -ErrorAction SilentlyContinue)) {
-            foreach ($file in '.python-version', 'pyproject.toml', 'requirements.txt') {
-                $f = Join-Path $proj.FullName $file
-                if (-not (Test-Path $f)) { continue }
-                $c = Get-Content $f -Raw -ErrorAction SilentlyContinue
-                # Captura un specifier opcional (==, ===, ~=, >=, >, ^) antes de 3.Y.
-                foreach ($m in [regex]::Matches($c, '(===|==|~=|>=|>|\^)?\s*3\.(\d+)')) {
-                    $spec = $m.Groups[1].Value
-                    $ver  = [version]"3.$($m.Groups[2].Value)"
-                    switch -regex ($spec) {
-                        # Mínimo: si la instalada más nueva ya satisface, NO pinear.
-                        '^(>=|~=|\^|>)$' { if ($newest -lt $ver) { $versions += "3.$($m.Groups[2].Value)" } }
-                        # Exacto (== / ===) o bare (.python-version): pinear salvo que la
-                        # versión exacta sea la instalada más nueva.
-                        default          { if ($ver -ne $newest) { $versions += "3.$($m.Groups[2].Value)" } }
+    foreach ($root in $roots) {
+        if (Test-Path $root) {
+            foreach ($proj in (Get-ChildItem -Path $root -Directory -ErrorAction SilentlyContinue)) {
+                foreach ($file in '.python-version', 'pyproject.toml', 'requirements.txt') {
+                    $f = Join-Path $proj.FullName $file
+                    if (-not (Test-Path $f)) { continue }
+                    $c = Get-Content $f -Raw -ErrorAction SilentlyContinue
+                    # Captura un specifier opcional (==, ===, ~=, >=, >, ^) antes de 3.Y.
+                    foreach ($m in [regex]::Matches($c, '(===|==|~=|>=|>|\^)?\s*3\.(\d+)')) {
+                        $spec = $m.Groups[1].Value
+                        $ver  = [version]"3.$($m.Groups[2].Value)"
+                        switch -regex ($spec) {
+                            # Mínimo: si la instalada más nueva ya satisface, NO pinear.
+                            '^(>=|~=|\^|>)$' { if ($newest -lt $ver) { $versions += "3.$($m.Groups[2].Value)" } }
+                            # Exacto (== / ===) o bare (.python-version): pinear salvo que la
+                            # versión exacta sea la instalada más nueva.
+                            default          { if ($ver -ne $newest) { $versions += "3.$($m.Groups[2].Value)" } }
+                        }
                     }
                 }
             }
@@ -97,7 +99,7 @@ $scanBlock = {
     ,($versions | Select-Object -Unique)
 }
 
-$job = Start-Job -ScriptBlock $scanBlock -ArgumentList $ghRoot, $newestMinor
+$job = Start-Job -ScriptBlock $scanBlock -ArgumentList (,$ghRoots), $newestMinor
 if (Wait-Job $job -Timeout 10) {
     foreach ($v in (Receive-Job $job)) {
         if ($pinned -notcontains $v) { $null = $pinned.Add($v) }
