@@ -12,6 +12,16 @@ llevarlo a otra PC.
 
 ## ⚡ Uso
 
+### 1. Optimización Inteligente 1-Click (Recomendado para uso diario)
+Doble-click directo en:
+```cmd
+OPTIMIZAR_1CLICK.bat
+```
+*(Se auto-eleva a Administrador con UAC, escanea el equipo, purga basura profunda de Windows y disco, audita antimalware, blinda contra fuga de datos, optimiza el kernel y abre el dashboard visual automáticamente).*
+
+---
+
+### 2. Pipeline Completo Desatendido
 ```powershell
 # Click derecho en INICIAR.bat → Ejecutar como administrador
 # o directamente:
@@ -112,6 +122,7 @@ memoria está crítica (<2.5GB) o si hay recomendaciones inteligentes pendientes
 | 14 | `modules/14-post-reboot-verify.ps1` | Corre la verificación tras reiniciar; se auto-borra de la scheduled task si fue disparado por ella |
 | 15 | `modules/15-hardware-check.ps1` | Diagnóstico de hardware (SMART, CPU/WHEA, RAM) y antigüedad de drivers (solo reporte) |
 | 16 | `modules/16-startup-audit.ps1` | Auditoría integral de arranque (Run/RunOnce, carpetas Startup, Tasks Logon/Boot, Winlogon, UWP StartupTask) |
+| 17 | `modules/17-smart-maintenance.ps1` | Mantenimiento inteligente 1-Click (Disco, WinSxS DISM, Antivirus Defender/Malwarebytes, Antirobo y Privacidad) |
 | 20 | `modules/20-kernel-performance.ps1` | Optimización profunda de kernel (`Win32PrioritySeparation`), modo MSI en PCIe (Red/Display), servicios y limpieza de `PATH` |
 
 ## 👤 Perfil local (esta máquina)
