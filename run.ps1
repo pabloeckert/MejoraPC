@@ -145,6 +145,7 @@ function Show-Menu {
     Write-Host "  14  Verificación post-reinicio (manual)" -ForegroundColor Green
     Write-Host "  15  Diagnóstico de hardware y drivers" -ForegroundColor Cyan
     Write-Host "  16  Auditoría integral de arranque" -ForegroundColor Cyan
+    Write-Host "  17  Mantenimiento inteligente 1-Click (Disco, WinSxS, Antivirus, Antirobo)" -ForegroundColor Green
     Write-Host "  20  Optimización profunda de Kernel, MSI y PATH" -ForegroundColor Yellow
     Write-Host ""
     Write-Host "   0  Salir" -ForegroundColor DarkGray
@@ -240,6 +241,11 @@ function Invoke-AutoOptimize {
     Invoke-AutoStep "06 - Seguridad" {
         Invoke-Module "modules\06-seguridad.ps1" -Auto
         Invoke-Py "monitor\record_run.py" @('--action', '06-seguridad', '--detail', 'telemetría + ads + actividad')
+    }
+
+    Invoke-AutoStep "17 - Mantenimiento inteligente y Antirobo" {
+        Invoke-Module "modules\17-smart-maintenance.ps1" -Auto
+        Invoke-Py "monitor\record_run.py" @('--action', '17-smart-maintenance', '--detail', 'disco, winsxs, antivirus, antirobo')
     }
 
     Invoke-AutoStep "10 - Python cleanup (solo reporte)" {
@@ -360,6 +366,7 @@ do {
         '14' { Invoke-Module "modules\14-post-reboot-verify.ps1" }
         '15' { Invoke-Module "modules\15-hardware-check.ps1" }
         '16' { Invoke-Module "modules\16-startup-audit.ps1" }
+        '17' { Invoke-Module "modules\17-smart-maintenance.ps1" }
         '20' { Invoke-Module "modules\20-kernel-performance.ps1" }
         '0'  { Write-Host "`n  Hasta luego.`n" -ForegroundColor Cyan; break }
         default { Write-Host "`n  Opción no válida." -ForegroundColor Red; Start-Sleep -Seconds 1 }

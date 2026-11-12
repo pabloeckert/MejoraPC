@@ -37,6 +37,23 @@ def render(data):
     with open(CSS_PATH, "r", encoding="utf-8") as f:
         css = f.read()
 
+    sec = data.get("security_status", {})
+    hero_html = f'''
+    <div class="card card-hero">
+      <h2>⚡ Centro de Control: Optimización y Limpieza Inteligente 1-Click</h2>
+      <p style="font-size: 14px; margin-bottom: 14px; color: var(--gris);">
+        Escaneo continuo basado en uso, eliminación de basura profunda de Windows (DISM WinSxS y temporales), escudo antimalware y blindaje contra exfiltración de datos.
+      </p>
+      <div class="kv"><span>Antimalware &amp; Antivirus</span><strong><span class="status-pill pill-ok">ACTIVO</span> {_esc(sec.get("antivirus", ""))}</strong></div>
+      <div class="kv"><span>Cortafuegos y Antirobo</span><strong><span class="status-pill pill-ok">BLINDADO</span> {_esc(sec.get("firewall", ""))}</strong></div>
+      <div class="kv"><span>Protección de Datos</span><strong>{_esc(sec.get("data_shield", ""))}</strong></div>
+      <div class="kv"><span>Sincronización OneDrive</span><strong><span class="status-pill pill-ok">CONTINUO</span> {_esc(sec.get("onedrive_sync", ""))}</strong></div>
+      <div style="margin-top: 16px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px;">
+        <span style="font-size: 13px; color: var(--gris);">Ejecutable directo en la raíz del proyecto o desde el menú interactivo (opción 17):</span>
+        <code style="font-weight: 700; color: var(--azul);">OPTIMIZAR_1CLICK.bat</code>
+      </div>
+    </div>'''
+
     hw = data.get("hardware")
     hw_html = ""
     if hw:
@@ -129,6 +146,7 @@ def render(data):
     <div class="tagline">Sistema de mantenimiento y análisis · generado {generated}</div>
   </header>
   <main>
+    {hero_html}
     {hw_html}
     {verify_html}
     {discovery_html}

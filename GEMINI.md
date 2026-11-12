@@ -88,6 +88,10 @@ El corazón del diseño separa estrictamente qué es seguro aplicar en **cualqui
 ---
 
 ## 5. Historial de Higiene y Decisiones Técnicas Relevantes
+- **2026-11-12 — Mantenimiento Inteligente 1-Click, Antirobo y Antimalware:**
+  - Creación de `modules/17-smart-maintenance.ps1`: escaneo inteligente basado en uso y salud de hardware, purga profunda de temporales/papelera/WER/CrashDumps, limpieza de componentes de Windows (`DISM /StartComponentCleanup`), auditoría de antimalware (Windows Defender y Malwarebytes `MBAMService`), escudo antirobo y privacidad (firewall en todos los perfiles, bloqueo de portapapeles en la nube y keylogger/telemetría de tecleo) y verificación de OneDrive.
+  - Creación de launcher directo `OPTIMIZAR_1CLICK.bat` con auto-elevación UAC para ejecución de punta a punta en un solo click.
+  - Integración en `run.ps1` (opción `17` en menú interactivo y paso desatendido en `Invoke-AutoOptimize`), `monitor/dashboard_data.py`, `monitor/html_report.py` y `monitor/assets/dashboard.css` (Centro de Control 1-Click en `logs/dashboard.html`).
 - **2026-11-12 — Optimización Fase 1 y Blindaje Desatendido de OneDrive:**
   - Garantía de sincronización continua de OneDrive sin intervención del usuario: configuración de políticas de grupo (`DisablePauseOnBatterySaver = 1`, `DisablePauseOnMeteredNetwork = 1`, `DisableFRETour = 1`), preservación estricta de autoarranque y exclusión en `modules/12-workflow-optimizer.ps1` y `data/profile-local.json` (`auto_adjust_declined`, `keep_always`, `startup_audit_reconocidos`).
   - Desactivación de servicios de telemetría y recolección parásita de Intel (`ESRV_SVC_QUEENCREEK`, `USER_ESRV_SVC_QUEENCREEK`, `IntelTelemetryAgent`, `IntelCollectorService`) en `data/universal-tweaks.json`, liberando ~335 MB de RAM sin alterar drivers gráficos ni de cómputo.
