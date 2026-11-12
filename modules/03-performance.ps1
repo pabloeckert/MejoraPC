@@ -19,7 +19,13 @@ function Set-RegTweak {
     param([string]$Path, [string]$Name, $Value, [string]$Type = 'DWord')
     try {
         if (-not (Test-Path $Path)) { New-Item -Path $Path -Force -ErrorAction Stop | Out-Null }
-        $old = (Get-ItemProperty -Path $Path -Name $Name -ErrorAction SilentlyContinue).$Name
+        $old = $null
+        try {
+            $prop = Get-ItemProperty -Path $Path -ErrorAction Stop
+            if ($prop -and $prop.PSObject.Properties[$Name]) {
+                $old = $prop.$Name
+            }
+        } catch { }
         # -ErrorAction Stop: sin esto, un "acceso denegado" en HKLM (ej. sin admin)
         # es un error NO terminante — cae de largo a las líneas de abajo y reporta
         # OK aunque el valor no se haya escrito. Con Stop, el catch lo agarra bien.
@@ -61,7 +67,11 @@ try {
     $upm = $tweaks.user_preferences_mask
     if (-not (Test-Path $upm.path)) { New-Item -Path $upm.path -Force -ErrorAction Stop | Out-Null }
     $bytes = for ($i = 0; $i -lt $upm.value_hex.Length; $i += 2) { [Convert]::ToByte($upm.value_hex.Substring($i, 2), 16) }
-    $old = (Get-ItemProperty -Path $upm.path -Name $upm.name -ErrorAction SilentlyContinue).$($upm.name)
+    $old = $null
+    try {
+        $upmProp = Get-ItemProperty -Path $upm.path -ErrorAction Stop
+        if ($upmProp -and $upmProp.PSObject.Properties[$upm.name]) { $old = $upmProp.$($upm.name) }
+    } catch { }
     Set-ItemProperty -Path $upm.path -Name $upm.name -Value ([byte[]]$bytes) -Type Binary -Force -ErrorAction Stop
     Write-Log "REG  UserPreferencesMask actualizado (old bytes: $($old -join ','))"
     Write-Status "UserPreferencesMask" "aplicado" 'OK'
@@ -99,9 +109,12 @@ foreach ($group in $tweaks.startup_disable.PSObject.Properties) {
                     $found = $true
                     try {
                         Remove-ItemProperty -Path $rk -Name $p.Name -ErrorAction Stop
-                        # Verificar de verdad: -ErrorAction SilentlyContinue en el Remove
-                        # puede tragarse un "acceso denegado" sin avisar. Se relee la key.
-                        $stillHere = (Get-ItemProperty -Path $rk -Name $p.Name -ErrorAction SilentlyContinue)
+                        # Verificar de verdad: releer la key de forma segura sin arrojar excepción si no existe
+                        $stillHere = $false
+                        try {
+                            $recheckProp = Get-ItemProperty -Path $rk -ErrorAction Stop
+                            if ($recheckProp -and $recheckProp.PSObject.Properties[$p.Name]) { $stillHere = $true }
+                        } catch { }
                         if ($stillHere) {
                             Write-Log "STARTUP  FAIL (sigue presente tras Remove) $rk\$($p.Name)"
                             Write-Status "Run\$($p.Name)" "no se pudo remover (¿admin?)" 'ERROR'
@@ -193,19 +206,29 @@ try {
 } catch { Write-Status "Pagefile" "error: $_" 'ERROR' }
 
 # ── Ultimate Performance ───────────────────────────────────────────
-# GUID fijo de "Máximo rendimiento" en este equipo. Si no existe el plan,
-# se duplica desde la plantilla oficial de Microsoft y se guarda el GUID
-# generado en data/status.json bajo "power_plan_guid".
+# Activar o crear el plan "Máximo rendimiento" (Ultimate Performance).
+# Se busca primero si ya existe un plan Ultimate Performance en el equipo,
+# o se duplica desde la plantilla oficial de Microsoft (tplGuid).
 try {
-    $ultGuid = 'e5062635-e13c-4eac-a7e9-ec5a6fb7d65b'
     $tplGuid = 'e9a42b02-d5df-448d-aa00-03f14749eb61'
+    $plansList = powercfg /list 2>&1 | Out-String
+    
+    # 1) Detectar si ya existe un esquema de Ultimate / Máximo rendimiento
+    $existingGuid = $null
+    foreach ($line in ($plansList -split "`n")) {
+        if ($line -match '(?i)([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})\s+\((?:Ultimate Performance|M[aá]ximo rendimiento)\)') {
+            $existingGuid = $matches[1]
+            break
+        }
+    }
 
-    # 1) Intentar activar directamente el GUID conocido.
-    powercfg /setactive $ultGuid 2>&1 | Out-Null
-    if ($LASTEXITCODE -ne 0) {
+    if ($existingGuid) {
+        powercfg /setactive $existingGuid 2>&1 | Out-Null
+        Write-Log "POWER  plan existente activado ($existingGuid)"
+    } else {
         # 2) El plan no existe: duplicar la plantilla y capturar el GUID nuevo.
-        Write-Log "POWER  plan $ultGuid no existe, duplicando plantilla $tplGuid"
-        $dupOut = powercfg -duplicatescheme $tplGuid 2>&1 | Out-String
+        Write-Log "POWER  duplicando plantilla $tplGuid"
+        $dupOut = powercfg /duplicatescheme $tplGuid 2>&1 | Out-String
         $m = [regex]::Match($dupOut, '([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})')
         if ($m.Success) {
             $newGuid = $m.Groups[1].Value
@@ -241,6 +264,20 @@ try {
     Write-Log "POWER  getactivescheme -> $($active.Trim())"
     Write-Status "Power plan" "activo: $($active.Trim())" 'OK'
 } catch { Write-Status "Power plan" "error: $_" 'ERROR' }
+
+# ── Garantía de Sincronización Desatendida (OneDrive) ─────────────
+Write-Host ""
+Write-Host "  ── sincronización en segundo plano (OneDrive)" -ForegroundColor DarkCyan
+$oneDriveProc = Get-Process -Name OneDrive -ErrorAction SilentlyContinue
+$oneDriveSync = Get-Process -Name 'OneDrive.Sync.Service' -ErrorAction SilentlyContinue
+if ($oneDriveProc) {
+    Write-Status "OneDrive Core" "activo (PID $($oneDriveProc.Id), background sync garantizado)" 'OK'
+} else {
+    Write-Status "OneDrive Core" "no detectado en ejecución" 'WARN'
+}
+if ($oneDriveSync) {
+    Write-Status "OneDrive Sync Service" "activo (PID $($oneDriveSync.Id))" 'OK'
+}
 
 Write-Log "=== FIN PERFORMANCE ==="
 Write-Host ""

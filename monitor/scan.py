@@ -71,6 +71,10 @@ def init_db():
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             timestamp TEXT, action TEXT, detail TEXT
         );
+        CREATE INDEX IF NOT EXISTS idx_usage_timestamp ON usage_samples(timestamp DESC);
+        CREATE INDEX IF NOT EXISTS idx_ram_alerts_timestamp ON ram_alerts(timestamp DESC);
+        CREATE INDEX IF NOT EXISTS idx_recs_applied ON smart_recommendations(applied, priority);
+        CREATE INDEX IF NOT EXISTS idx_hardware_timestamp ON hardware_profile(timestamp DESC);
         """
     )
     con.commit()

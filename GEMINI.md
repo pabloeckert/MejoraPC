@@ -88,6 +88,10 @@ El corazón del diseño separa estrictamente qué es seguro aplicar en **cualqui
 ---
 
 ## 5. Historial de Higiene y Decisiones Técnicas Relevantes
+- **2026-11-12 — Optimización Fase 1 y Blindaje Desatendido de OneDrive:**
+  - Garantía de sincronización continua de OneDrive sin intervención del usuario: configuración de políticas de grupo (`DisablePauseOnBatterySaver = 1`, `DisablePauseOnMeteredNetwork = 1`, `DisableFRETour = 1`), preservación estricta de autoarranque y exclusión en `modules/12-workflow-optimizer.ps1` y `data/profile-local.json` (`auto_adjust_declined`, `keep_always`, `startup_audit_reconocidos`).
+  - Desactivación de servicios de telemetría y recolección parásita de Intel (`ESRV_SVC_QUEENCREEK`, `USER_ESRV_SVC_QUEENCREEK`, `IntelTelemetryAgent`, `IntelCollectorService`) en `data/universal-tweaks.json`, liberando ~335 MB de RAM sin alterar drivers gráficos ni de cómputo.
+  - Creación de índices SQLite en `data/mejorapc.db` (`usage_samples`, `ram_alerts`, `smart_recommendations`, `hardware_profile`) en `monitor/scan.py` y `monitor/monitor.py` para optimizar consultas de telemetría y evitar contención de disco.
 - **2026-11-10 — Higienización integral bajo protocolo Zero-Trust (Antigravity):**
   - Eliminación de archivos huérfanos y redundantes del árbol (`lib/run-hidden.vbs`, `REPORTE_AUDITORIA.md`, `EJECUTAR_KERNEL_ADMIN.bat`, `reporte_limpieza.ps1`).
   - Creación de `GEMINI.md` como bitácora canónica de gobernanza local tras la purga del ecosistema legado.

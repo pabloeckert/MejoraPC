@@ -48,6 +48,8 @@ def _connect():
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             timestamp TEXT, top5_processes TEXT
         );
+        CREATE INDEX IF NOT EXISTS idx_usage_timestamp ON usage_samples(timestamp DESC);
+        CREATE INDEX IF NOT EXISTS idx_ram_alerts_timestamp ON ram_alerts(timestamp DESC);
         """
     )
     return con

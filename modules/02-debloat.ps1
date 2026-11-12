@@ -349,7 +349,13 @@ function Remove-Package {
 
     # Verificación previa: si ya no está instalado, no intentamos nada y lo
     # marcamos SKIP (no instalado) — no es un fallo real.
-    if (-not (Test-PackageInstalled -Id $Id)) { return 'SKIP (no instalado)' }
+    if (-not (Test-PackageInstalled -Id $Id)) {
+        if ($Id -match '(?i)Stremio') {
+            # Si Stremio ya no está en el registro/package list pero quedan carpetas residuales huérfanas
+            Remove-StremioRemnants
+        }
+        return 'SKIP (no instalado)'
+    }
 
     # MSIX/Store primero — no aparece en Get-Package como desinstalable normal.
     if (Test-IsMsix -Id $Id) { return (Remove-AppxById -Id $Id) }
@@ -370,11 +376,40 @@ function Remove-Package {
     }
 
     # Get-Package no pudo (o no lo lista): UninstallString del registry.
-    if (Invoke-RegistryUninstall -Pattern $pattern) { return 'OK (registry)' }
+    $uninstalled = Invoke-RegistryUninstall -Pattern $pattern
+    if ($uninstalled) {
+        # Fallback de limpieza física específica para Stremio si quedan restos en AppData/ProgramFiles
+        if ($Id -match '(?i)Stremio') {
+            Remove-StremioRemnants
+        }
+        return 'OK (registry)'
+    }
 
     # Último recurso: winget por --id (Publisher.Package) o --name (ARP/espacios).
     $byName = ($Id -match '\\') -or ($Id -notmatch '^[^\s\\]+\.[^\s\\]+$')
-    return (Invoke-WingetUninstall -Id $Id -ByName:$byName)
+    $res = Invoke-WingetUninstall -Id $Id -ByName:$byName
+    if ($res -like 'OK*' -and $Id -match '(?i)Stremio') {
+        Remove-StremioRemnants
+    }
+    return $res
+}
+
+function Remove-StremioRemnants {
+    $stremioDirs = @(
+        "$env:LOCALAPPDATA\Programs\LNV\Stremio",
+        "$env:LOCALAPPDATA\Stremio",
+        "$env:APPDATA\stremio",
+        "$env:ProgramFiles\Stremio",
+        "${env:ProgramFiles(x86)}\Stremio"
+    )
+    foreach ($d in $stremioDirs) {
+        if (Test-Path $d) {
+            try {
+                Remove-Item -Path $d -Recurse -Force -ErrorAction SilentlyContinue
+                Write-Log "STREMIO PURGE  $d"
+            } catch { }
+        }
+    }
 }
 
 # Lee el último debloat-*.log y devuelve los IDs marcados FAIL en su última corrida.

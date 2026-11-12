@@ -33,6 +33,26 @@
         "value": 0,
         "type": "DWord"
       }
+    ],
+    "onedrive_unattended": [
+      {
+        "path": "HKLM:\\SOFTWARE\\Policies\\Microsoft\\OneDrive",
+        "name": "DisablePauseOnBatterySaver",
+        "value": 1,
+        "type": "DWord"
+      },
+      {
+        "path": "HKLM:\\SOFTWARE\\Policies\\Microsoft\\OneDrive",
+        "name": "DisablePauseOnMeteredNetwork",
+        "value": 1,
+        "type": "DWord"
+      },
+      {
+        "path": "HKLM:\\SOFTWARE\\Policies\\Microsoft\\OneDrive",
+        "name": "DisableFRETour",
+        "value": 1,
+        "type": "DWord"
+      }
     ]
   },
   "startup_disable": {
