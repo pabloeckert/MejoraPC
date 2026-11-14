@@ -43,7 +43,8 @@ LOG = os.path.join(DATA, "monitor.log")
 TASK_NAME = "MejoraPC-Analyze"
 
 DEV_TOOLS = {"code", "node", "python", "pythonw", "chrome", "brave", "msedge",
-             "git", "bash", "powershell", "windowsterminal", "explorer", "antigravity"}
+             "git", "bash", "powershell", "windowsterminal", "explorer", "antigravity",
+             "language_server", "rust-analyzer", "cargo", "dart", "bun"}
 
 Recommendation = namedtuple("Recommendation", "priority title description module auto_action")
 

@@ -103,7 +103,12 @@
     "_desc": "Procesos que monitor/analyze.py detecta como 'no-dev consistentes' pero que Pablo ya decidió explícitamente NO tocar. monitor/auto_adjust.py y la regla rule_non_dev_processes de analyze.py leen esta lista para no re-proponer ni re-promover lo mismo en cada corrida (sin esto, la recomendación 'cerrada' reaparecía sola cada vez que la condición seguía siendo cierta — descubierto el 2026-09-05 con OneDrive).",
     "processes": [
       "OneDrive",
-      "MsMpEng"
+      "MsMpEng",
+      "MBAMService",
+      "Malwarebytes",
+      "SpeechifyWindowsApp",
+      "Spotify",
+      "GoogleDriveFS"
     ]
   },
   "startup_disable_uwp": {

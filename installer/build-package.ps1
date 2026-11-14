@@ -13,7 +13,9 @@ param(
 # para copiar/sincronizar.
 
 $scriptRoot = Split-Path -Parent $PSScriptRoot
-$zipPath = "$scriptRoot\dist\MejoraPC.zip"
+$distDir    = "$scriptRoot\dist"
+$OutDir     = "$distDir\MejoraPC-portable"
+$zipPath    = "$distDir\MejoraPC.zip"
 
 Write-Host ""
 Write-Host "  Empaquetando MejoraPC para USB..." -ForegroundColor Cyan
@@ -21,6 +23,9 @@ Write-Host "  Origen:  $scriptRoot" -ForegroundColor DarkGray
 Write-Host "  Destino: $OutDir" -ForegroundColor DarkGray
 Write-Host ""
 
+if (-not (Test-Path $distDir)) {
+    New-Item -ItemType Directory -Force -Path $distDir | Out-Null
+}
 if (Test-Path $OutDir) {
     Write-Host "  Limpiando destino previo..." -ForegroundColor DarkGray
     Remove-Item -Path $OutDir -Recurse -Force
